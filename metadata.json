@@ -1,0 +1,6 @@
+{
+  "name": "Teacher Tool",
+  "description": "AI CBC Lesson Plan Generator Platform created by NKUNDIMANA Theogene for primary and secondary teachers. Features CBC/REB lesson plan format, multi-language support, 1-page print export, MoMo subscriptions, and real-time payment confirmation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

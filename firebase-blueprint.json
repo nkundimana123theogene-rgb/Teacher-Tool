@@ -1,0 +1,98 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user profile registered in Teacher Tool.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "country": { "type": "string" },
+        "currentPlan": { "type": "string" },
+        "remainingPlans": { "type": "number" },
+        "totalGenerated": { "type": "number" },
+        "lastFreeResetMonth": { "type": "string" },
+        "isAdmin": { "type": "boolean" },
+        "authProvider": { "type": "string" },
+        "password": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "lastLoginAt": { "type": "string" },
+        "status": { "type": "string" },
+        "loginCount": { "type": "number" },
+        "sessionToken": { "type": "string" }
+      },
+      "required": ["id", "email", "name", "country", "currentPlan", "remainingPlans", "totalGenerated", "isAdmin"]
+    },
+    "PaymentSubmission": {
+      "title": "PaymentSubmission",
+      "description": "A proof of payment submitted by a user for plan activation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhone": { "type": "string" },
+        "planId": { "type": "string" },
+        "planLabel": { "type": "string" },
+        "amountFrw": { "type": "number" },
+        "plansCount": { "type": "number" },
+        "momoTxRef": { "type": "string" },
+        "momoNumber": { "type": "string" },
+        "status": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "userEmail", "planId", "momoTxRef", "status", "timestamp"]
+    },
+    "PlanLog": {
+      "title": "PlanLog",
+      "description": "A log of a generated lesson plan for administrative auditing.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "userName": { "type": "string" },
+        "subject": { "type": "string" },
+        "classGrade": { "type": "string" },
+        "unitTitle": { "type": "string" },
+        "lessonTitle": { "type": "string" },
+        "language": { "type": "string" },
+        "format": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "schoolName": { "type": "string" },
+        "instructionalObjective": { "type": "string" }
+      },
+      "required": ["id", "userEmail", "subject", "lessonTitle", "timestamp"]
+    },
+    "ResetCode": {
+      "title": "ResetCode",
+      "description": "A temporary verification code for user password recovery.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "code": { "type": "string" },
+        "expiresAt": { "type": "number" }
+      },
+      "required": ["email", "code", "expiresAt"]
+    }
+  },
+  "firestore": {
+    "users/{email}": {
+      "schema": "User",
+      "description": "User profiles indexed by their lowercase email."
+    },
+    "payments/{paymentId}": {
+      "schema": "PaymentSubmission",
+      "description": "Payment proof submissions."
+    },
+    "planLogs/{logId}": {
+      "schema": "PlanLog",
+      "description": "Logs of generated lesson plans."
+    },
+    "resetCodes/{email}": {
+      "schema": "ResetCode",
+      "description": "Verification codes for forgot password."
+    }
+  }
+}

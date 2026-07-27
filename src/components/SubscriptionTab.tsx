@@ -1,0 +1,421 @@
+import React, { useState } from 'react';
+import {
+  Zap,
+  CheckCircle2,
+  Phone,
+  Mail,
+  MessageSquare,
+  ShieldCheck,
+  CreditCard,
+  Sparkles,
+  ArrowRight,
+  Send,
+  User,
+  X
+} from 'lucide-react';
+import { SubscriptionPlan, UserProfile } from '../types';
+import { SUBSCRIPTION_PLANS, OWNER_INFO } from '../data/plans';
+
+interface SubscriptionTabProps {
+  user: UserProfile | null;
+  onOpenSignIn: () => void;
+  onSubmitPayment: (paymentData: {
+    planId: string;
+    momoTxRef: string;
+    momoNumber: string;
+    userPhone: string;
+  }) => Promise<void>;
+}
+
+export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
+  user,
+  onOpenSignIn,
+  onSubmitPayment,
+}) => {
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(
+    SUBSCRIPTION_PLANS.find((p) => p.id === 'plan_25') || SUBSCRIPTION_PLANS[3]
+  );
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [momoTxRef, setMomoTxRef] = useState('');
+  const [momoNumber, setMomoNumber] = useState(user?.phone || '0788000000');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedSuccess, setSubmittedSuccess] = useState(false);
+
+  const handleSelectUpgrade = (plan: SubscriptionPlan) => {
+    if (!user) {
+      onOpenSignIn();
+      return;
+    }
+    if (plan.isFree) return;
+    setSelectedPlan(plan);
+    setShowPaymentModal(true);
+    setSubmittedSuccess(false);
+  };
+
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPlan || !momoTxRef) return;
+    setIsSubmitting(true);
+    try {
+      await onSubmitPayment({
+        planId: selectedPlan.id,
+        momoTxRef,
+        momoNumber,
+        userPhone: momoNumber,
+      });
+      setSubmittedSuccess(true);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // WhatsApp formatted proof link
+  const getWhatsAppPaymentUrl = () => {
+    if (!selectedPlan) return '#';
+    const message = `Hello NKUNDIMANA Theogene,\nI have paid for ${selectedPlan.label} (${selectedPlan.priceFrw} Frw).\n\nMy Details:\nName: ${user?.name || 'Teacher'}\nEmail: ${user?.email || 'N/A'}\nMoMo Phone: ${momoNumber}\nMoMo TxRef / Code: ${momoTxRef || 'Pending'}\n\nPlease approve my Teacher Pedagogy plan access. Thank you!`;
+    return `https://wa.me/250781339530?text=${encodeURIComponent(message)}`;
+  };
+
+  return (
+    <div className="space-y-8 max-w-6xl mx-auto">
+      {/* Hero Header */}
+      <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="relative z-10 max-w-3xl space-y-3">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-400 text-slate-900 rounded-full text-xs font-black">
+            <Zap className="w-3.5 h-3.5 fill-slate-900" />
+            <span>Teacher Tool • AI Lesson Plans</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
+            Hitamo Plan Yagufasha Gukora Lesson Plans Buri Kwezi
+          </h1>
+          <p className="text-emerald-100 text-sm leading-relaxed">
+            Lesson Plans ku mwarimu n'amashuri. Hitamo plan ikubereye maze wishyure ukoresheje telefone yawe direct via Mobile Money (MTN / Airtel Code <strong className="text-amber-300 font-mono">{OWNER_INFO.momoCode}</strong>).
+          </p>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-semibold text-emerald-200">
+            <div className="flex items-center gap-1.5 bg-amber-400 text-slate-950 px-3 py-1.5 rounded-xl font-mono font-black shadow-sm">
+              <Phone className="w-4 h-4 text-slate-900" />
+              <span>MoMo Code: {OWNER_INFO.momoCode}</span>
+            </div>
+            <a
+              href={OWNER_INFO.whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-xl font-bold shadow-sm transition-all"
+            >
+              <MessageSquare className="w-4 h-4 text-emerald-200" />
+              <span>🤖 WhatsApp & AI Robotics Support (0781339530)</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* 3 Free Plans Policy & Monthly Expiration Policy Notice */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Card 1: 3 Free Plans */}
+        <div className="bg-emerald-50 border-2 border-emerald-500/80 rounded-2xl p-5 shadow-xs flex items-start gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md mt-0.5">
+            <Sparkles className="w-5 h-5 text-amber-300" />
+          </div>
+          <div>
+            <div className="inline-block bg-emerald-700 text-white font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md mb-1">
+              🎁 3 FREE LESSON PLANS BURI KWEZI
+            </div>
+            <h3 className="text-sm font-black text-emerald-950">
+              Lesson Plans 3 z'UBUNTU Buri Kwezi (3 Free Plans/Month)
+            </h3>
+            <p className="text-xs text-emerald-800 mt-1 leading-relaxed">
+              Buri mukiriya ahabwa Lesson Plans 3 z'ubuntu buri ntangiriro z'ukwezi zo gukora n'isesengura ry'amasomo (AI).
+            </p>
+          </div>
+        </div>
+
+        {/* Card 2: 1 Month Plan Expiration */}
+        <div className="bg-amber-50 border-2 border-amber-400 rounded-2xl p-5 shadow-xs flex items-start gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md mt-0.5">
+            <ShieldCheck className="w-5 h-5 text-amber-950" />
+          </div>
+          <div>
+            <div className="inline-block bg-amber-700 text-white font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md mb-1">
+              📅 1 MONTH VALIDITY & RENEWAL
+            </div>
+            <h3 className="text-sm font-black text-amber-950">
+              Ifatabuguzi Rirangirana n'Ukwezi (Monthly Plan Expiry)
+            </h3>
+            <p className="text-xs text-amber-900 mt-1 leading-relaxed">
+              Lesson plans z'ibiciro zirangirana n'ukwezi (1 Month Validity). Hashira ukundi kwezi umukiriya akongera akagura izindi plan gukomeza gukora amasomo.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Pricing Grid */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Igiciro kuri buri lesson plan (Price Plans)</h2>
+            <p className="text-xs text-slate-500">Choose the number of lesson plans you need each month</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {SUBSCRIPTION_PLANS.map((plan) => {
+            const isCurrent = user?.currentPlan === plan.label;
+            return (
+              <div
+                key={plan.id}
+                className={`rounded-2xl border p-5 flex flex-col justify-between transition-all relative bg-white hover:shadow-md ${
+                  plan.popular
+                    ? 'border-amber-400 ring-2 ring-amber-400/30'
+                    : 'border-slate-200'
+                }`}
+              >
+                {plan.popular && (
+                  <span className="absolute -top-3 right-4 bg-amber-500 text-white font-black text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-xs">
+                    Most Popular
+                  </span>
+                )}
+
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                    {plan.isFree ? 'Free Trial' : 'Monthly Plan'}
+                  </div>
+                  <h3 className="text-lg font-extrabold text-slate-900">{plan.label}</h3>
+
+                  <div className="mt-3 flex items-baseline gap-1">
+                    <span className="text-2xl font-black text-emerald-800">
+                      {plan.priceFrw === 0 ? 'FREE' : `${plan.priceFrw.toLocaleString()} Frw`}
+                    </span>
+                    {!plan.isFree && <span className="text-xs text-slate-500">/ month</span>}
+                  </div>
+
+                  <ul className="mt-4 space-y-2 text-xs text-slate-600">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>{plan.plansCount} AI Generated Lesson Plans</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>1-Page REB & CBC Grid Format</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>All Languages (Kinyarwanda, English, etc.)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Instant PDF Export & Printing</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-slate-100">
+                  {plan.isFree ? (
+                    <div className="text-center text-xs font-bold text-slate-500 py-2">
+                      Included Default Plan
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleSelectUpgrade(plan)}
+                      className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-1.5 ${
+                        plan.popular
+                          ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                          : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      }`}
+                      id={`upgrade-btn-${plan.id}`}
+                    >
+                      <span>SELECT UPGRADE</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Kwishyura / Mobile Money Instructions Box */}
+      <div className="bg-gradient-to-br from-amber-50 via-emerald-50 to-teal-50 border-2 border-emerald-300 rounded-3xl p-6 sm:p-8 text-slate-800 space-y-6 shadow-md">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-200/80 pb-4">
+          <h3 className="text-lg font-black text-emerald-950 flex items-center gap-2.5">
+            <CreditCard className="w-6 h-6 text-emerald-600 shrink-0" />
+            <span>UBURYO BWO KWISHYURA (PAYMENT METHODS)</span>
+          </h3>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-3 py-1 bg-emerald-600 text-white rounded-full text-xs font-bold shadow-2xs">
+              ✓ Instant Account Activation
+            </span>
+            <span className="px-3 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-full text-xs font-extrabold shadow-2xs">
+              ✓ Paid Plans (Automatically Saved)
+            </span>
+          </div>
+        </div>
+
+        <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed">
+          Hitamo plan ukoresheje Mobile Money / Airtel Money, hanyuma wohereze gihamya yo kwishyura kuri WhatsApp cyangwa kuri platform wihuse:
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-medium">
+          {/* Step 1 */}
+          <div className="bg-white p-5 rounded-2xl border border-emerald-200 shadow-2xs space-y-2">
+            <div className="w-7 h-7 bg-emerald-100 text-emerald-800 font-black rounded-full flex items-center justify-center text-xs">
+              1
+            </div>
+            <h4 className="font-bold text-slate-900 text-sm">Ohereza Amafaranga (Send MoMo)</h4>
+            <p className="text-slate-600 text-[11px] leading-snug">
+              Kanda <code className="bg-slate-100 px-1 py-0.5 rounded text-emerald-800 font-mono font-bold">*182*1*1#</code> maze wohereze kuri:
+            </p>
+            <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+              <div className="text-sm font-black text-emerald-900">0781339530 / 0724038043</div>
+              <div className="text-[11px] text-slate-600 font-semibold">Izina: {OWNER_INFO.accountHolder}</div>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className="bg-white p-5 rounded-2xl border border-emerald-200 shadow-2xs space-y-2">
+            <div className="w-7 h-7 bg-amber-100 text-amber-800 font-black rounded-full flex items-center justify-center text-xs">
+              2
+            </div>
+            <h4 className="font-bold text-slate-900 text-sm">Injiza Code ya SMS (Submit TxRef)</h4>
+            <p className="text-slate-600 text-[11px] leading-snug">
+              Kanda ubuto bwa <span className="font-bold text-emerald-700">SELECT UPGRADE</span> kuri plan wihitiyemo, maze winjize numero ya telefone na Code ya SMS.
+            </p>
+            <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-200 text-[11px] font-semibold text-amber-900">
+              ⚡ Account yawe ihita yiyongeraho plans waguze!
+            </div>
+          </div>
+
+          {/* Step 3 */}
+          <div className="bg-white p-5 rounded-2xl border border-emerald-200 shadow-2xs space-y-2">
+            <div className="w-7 h-7 bg-purple-100 text-purple-800 font-black rounded-full flex items-center justify-center text-xs">
+              3
+            </div>
+            <h4 className="font-bold text-slate-900 text-sm">Cyangwa Vugana na Nyir'urubuga</h4>
+            <p className="text-slate-600 text-[11px] leading-snug">
+              Ushobora no kohereza gihamya kuri WhatsApp k'ubufatanye bwihuse:
+            </p>
+            <a
+              href={`https://wa.me/250781339530?text=${encodeURIComponent(`Hello NKUNDIMANA Theogene, nishyuriye kuri Teacher Pedagogy. Mfasha gukora activation.`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Vugana n'Umuyobozi (0781339530)</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Payment Confirmation Modal */}
+      {showPaymentModal && selectedPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden relative">
+            <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-5 text-white relative">
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="absolute top-4 right-4 text-amber-100 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <h3 className="text-lg font-bold">Submit Payment for {selectedPlan.label}</h3>
+              <p className="text-xs text-amber-100 mt-0.5">Amount: {selectedPlan.priceFrw.toLocaleString()} Frw / month</p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {submittedSuccess ? (
+                <div className="text-center py-6 space-y-3">
+                  <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-7 h-7" />
+                  </div>
+                  <h4 className="text-base font-bold text-slate-900">Payment Proof Submitted & (Automatically Saved)!</h4>
+                  <p className="text-xs text-slate-600 leading-relaxed max-w-sm mx-auto">
+                    Your payment details have been recorded and <strong className="text-emerald-700">(Automatically Saved)</strong> in the system for <span className="font-bold">{OWNER_INFO.name}</span>. You can also confirm immediately via WhatsApp for instant approval.
+                  </p>
+
+                  <div className="pt-3 flex flex-col gap-2">
+                    <a
+                      href={getWhatsAppPaymentUrl()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-sm"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      <span>Confirm & Send Proof on WhatsApp ({OWNER_INFO.whatsapp})</span>
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPaymentModal(false)}
+                      className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl"
+                    >
+                      Close Window
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handlePaymentSubmit} className="space-y-4">
+                  <div className="bg-amber-50 p-3 rounded-xl border border-amber-200 text-xs text-amber-900">
+                    <span className="font-bold">Kwishyura Step 1:</span> Send <strong>{selectedPlan.priceFrw} Frw</strong> to Mobile Money <strong>{OWNER_INFO.momoNumbers[0]}</strong> ({OWNER_INFO.name}).
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Your Phone Number used for MoMo Payment
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 0781339530"
+                      value={momoNumber}
+                      onChange={(e) => setMomoNumber(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      MoMo Transaction Reference / SMS Code / Phone
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 0781339530 or SMS Code"
+                      value={momoTxRef}
+                      onChange={(e) => setMomoTxRef(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-amber-500 focus:outline-hidden font-mono"
+                    />
+                  </div>
+
+                  <div className="pt-2 flex flex-col gap-2">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2"
+                      id="submit-momo-payment-btn"
+                    >
+                      {isSubmitting ? 'Submitting Payment...' : 'Submit MoMo Payment Proof'}
+                    </button>
+
+                    <a
+                      href={getWhatsAppPaymentUrl()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl text-center flex items-center justify-center gap-2"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      <span>Or Pay & Confirm directly via WhatsApp</span>
+                    </a>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
