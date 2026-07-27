@@ -14,7 +14,12 @@ import {
   Save,
   RotateCcw,
   Plus,
-  Trash2
+  Trash2,
+  ThumbsUp,
+  ThumbsDown,
+  MessageSquare,
+  Send,
+  CheckCircle2
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -35,9 +40,49 @@ export const LessonPlanView: React.FC<LessonPlanViewProps> = ({ plan, onBack }) 
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
+  // Feedback State
+  const [feedbackVote, setFeedbackVote] = useState<'up' | 'down' | null>(null);
+  const [feedbackComment, setFeedbackComment] = useState<string>('');
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false);
+
   useEffect(() => {
     setEditedPlan(plan);
+    setFeedbackVote(null);
+    setFeedbackComment('');
+    setFeedbackSubmitted(false);
   }, [plan]);
+
+  const handleVote = (type: 'up' | 'down') => {
+    setFeedbackVote(type);
+    if (type === 'up' && !feedbackComment) {
+      setFeedbackSubmitted(true);
+      saveFeedbackToStorage(type, '');
+    }
+  };
+
+  const handleCommentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!feedbackVote) return;
+    setFeedbackSubmitted(true);
+    saveFeedbackToStorage(feedbackVote, feedbackComment);
+  };
+
+  const saveFeedbackToStorage = (type: 'up' | 'down', comment: string) => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('teacher_plan_feedback') || '[]');
+      stored.push({
+        id: editedPlan.id || Date.now(),
+        lessonTitle: editedPlan.header.lessonTitle,
+        subject: editedPlan.header.subject,
+        vote: type,
+        comment,
+        createdAt: new Date().toISOString(),
+      });
+      localStorage.setItem('teacher_plan_feedback', JSON.stringify(stored));
+    } catch (err) {
+      console.warn('Feedback storage write error:', err);
+    }
+  };
 
   const handlePrint = () => {
     window.print();
@@ -982,6 +1027,132 @@ export const LessonPlanView: React.FC<LessonPlanViewProps> = ({ plan, onBack }) 
             <div className="border-t pt-2 text-xs italic text-slate-600">
               <span className="font-bold not-italic">{labels.selfEvaluation}:</span> {editedPlan.selfEvaluation || ''}
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* THUMBS UP / THUMBS DOWN FEEDBACK COMPONENT (Screen only) */}
+      <div className="bg-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-xl border border-slate-800 max-w-5xl mx-auto space-y-4 print:hidden">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-400" />
+              <h3 className="font-extrabold text-sm sm:text-base text-white">
+                {editedPlan.language === 'Kinyarwanda'
+                  ? 'Ese iri somo ryujuje ibyo wifuza mu kwigisha?'
+                  : editedPlan.language === 'French'
+                  ? 'Ce plan de cours répond-il à vos exigences ?'
+                  : 'Does this generated lesson plan meet your requirements?'}
+              </h3>
+            </div>
+            <p className="text-xs text-slate-400">
+              {editedPlan.language === 'Kinyarwanda'
+                ? 'Ibitekerezo byanyu bidufasha gukora serivisi irushaho kunoga ku mwarimu.'
+                : editedPlan.language === 'French'
+                ? 'Vos retours nous aident à améliorer continuellement l\'outil pour les enseignants.'
+                : 'Your feedback helps us continuously improve AI generation for teachers.'}
+            </p>
+          </div>
+
+          {/* Voting Buttons */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => handleVote('up')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all shadow-xs ${
+                feedbackVote === 'up'
+                  ? 'bg-emerald-500 text-white ring-2 ring-emerald-300 scale-105'
+                  : 'bg-slate-800 hover:bg-emerald-600/30 text-slate-200 border border-slate-700'
+              }`}
+              title="Yes, meets requirements"
+            >
+              <ThumbsUp className="w-4 h-4 text-emerald-400" />
+              <span>
+                {editedPlan.language === 'Kinyarwanda' ? 'Yego, Ryujuje' : editedPlan.language === 'French' ? 'Oui, Conforme' : 'Yes, Helpful'}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleVote('down')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all shadow-xs ${
+                feedbackVote === 'down'
+                  ? 'bg-rose-600 text-white ring-2 ring-rose-300 scale-105'
+                  : 'bg-slate-800 hover:bg-rose-600/30 text-slate-200 border border-slate-700'
+              }`}
+              title="Needs improvement"
+            >
+              <ThumbsDown className="w-4 h-4 text-rose-400" />
+              <span>
+                {editedPlan.language === 'Kinyarwanda' ? 'Oya, Harabura' : editedPlan.language === 'French' ? 'À améliorer' : 'Needs Improvement'}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Comment Box when vote is cast or user wants to specify */}
+        {feedbackVote && !feedbackSubmitted && (
+          <form onSubmit={handleCommentSubmit} className="space-y-3 pt-1 animate-in fade-in duration-200">
+            <label className="block text-xs font-semibold text-slate-300">
+              {feedbackVote === 'up'
+                ? editedPlan.language === 'Kinyarwanda'
+                  ? 'Ni iki kigushimishije cyane kuri iri somo? (Ihitamo)'
+                  : 'What did you like most about this plan? (Optional)'
+                : editedPlan.language === 'Kinyarwanda'
+                ? 'Ni iki cyahinduka cyangwa cyajyamo gishya?'
+                : 'What specifically should be fixed or improved in this lesson plan?'}
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={feedbackComment}
+                onChange={(e) => setFeedbackComment(e.target.value)}
+                placeholder={
+                  feedbackVote === 'up'
+                    ? editedPlan.language === 'Kinyarwanda'
+                      ? 'Andika icyagushimishije...'
+                      : 'Add a comment...'
+                    : editedPlan.language === 'Kinyarwanda'
+                    ? 'Intego, ibikorwa by\'abanyeshuri, icyigwa...'
+                    : 'Objectives, learner activities, timing...'
+                }
+                className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              <button
+                type="submit"
+                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors shrink-0"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>{editedPlan.language === 'Kinyarwanda' ? 'Ohereza' : 'Submit'}</span>
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Submission Confirmation Message */}
+        {feedbackSubmitted && (
+          <div className="bg-emerald-950/80 border border-emerald-500/40 p-3.5 rounded-xl flex items-center justify-between text-xs text-emerald-200 animate-in fade-in duration-300">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>
+                {editedPlan.language === 'Kinyarwanda'
+                  ? 'Murakoze cyane ku bitekerezo byanyu! Isomo ryongewe mu murongo w\'ibyiza.'
+                  : editedPlan.language === 'French'
+                  ? 'Merci beaucoup pour vos commentaires ! Votre avis a bien été enregistré.'
+                  : 'Thank you for your feedback! Your evaluation has been recorded.'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setFeedbackVote(null);
+                setFeedbackSubmitted(false);
+                setFeedbackComment('');
+              }}
+              className="text-[11px] underline text-emerald-300 hover:text-white font-semibold ml-2 shrink-0"
+            >
+              {editedPlan.language === 'Kinyarwanda' ? 'Guhindura' : 'Change'}
+            </button>
           </div>
         )}
       </div>

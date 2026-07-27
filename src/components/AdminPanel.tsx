@@ -69,7 +69,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onPaymentApproved 
         }
       });
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json().catch(() => []);
         setPayments(data);
       } else if (res.status === 401 || res.status === 403) {
         console.warn(`Admin access not authenticated (status ${res.status}).`);
@@ -99,7 +99,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onPaymentApproved 
         }
       });
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json().catch(() => []);
         setUsersList(data);
       } else if (res.status === 401 || res.status === 403) {
         console.warn(`Admin access not authenticated for users (status ${res.status}).`);
@@ -123,7 +123,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onPaymentApproved 
         }
       });
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json().catch(() => []);
         setPlanLogs(data);
       } else if (res.status === 401 || res.status === 403) {
         console.warn(`Admin access not authenticated for logs (status ${res.status}).`);

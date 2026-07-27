@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { LessonPlanRequest, LanguageOption, PlanFormatOption, UserProfile } from '../types';
 import { OWNER_INFO } from '../data/plans';
+import { LessonPlanSkeleton } from './LessonPlanSkeleton';
 
 const DRAFT_KEY = 'teachers_tools_lesson_plan_draft';
 
@@ -378,7 +379,7 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
 
     onSubmit({
       schoolName,
-      teacherName: teacherName || user.name,
+      teacherName: teacherName || user?.name || 'Teacher',
       term,
       date,
       subject,
@@ -400,6 +401,24 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
       additionalNotes,
     });
   };
+
+  // Scroll to top when generating starts so the user sees the skeleton screen immediately
+  useEffect(() => {
+    if (isGenerating) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [isGenerating]);
+
+  if (isGenerating) {
+    return (
+      <LessonPlanSkeleton
+        language={selectedLanguage}
+        format={format}
+        subject={subject}
+        topic={lessonTitle || unitTitle}
+      />
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-md p-6 sm:p-8 max-w-4xl mx-auto space-y-6">

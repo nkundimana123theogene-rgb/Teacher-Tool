@@ -30,6 +30,7 @@ interface HeaderProps {
   onSignOut: () => void;
   activeTab: 'dashboard' | 'generator' | 'history' | 'subscription' | 'admin' | 'founder';
   onTabChange: (tab: 'dashboard' | 'generator' | 'history' | 'subscription' | 'admin' | 'founder') => void;
+  apiStatus?: 'online' | 'offline' | 'checking';
 }
 
 const COUNTRIES = [
@@ -57,6 +58,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSignOut,
   activeTab,
   onTabChange,
+  apiStatus = 'online',
 }) => {
   const labels = getLessonPlanLabels(selectedLanguage);
   const [showCountryMenu, setShowCountryMenu] = useState(false);
@@ -88,10 +90,24 @@ export const Header: React.FC<HeaderProps> = ({
                     <span>IT/Developer: Nkundimana Theogene</span>
                   </span>
                   <span className="text-slate-300">•</span>
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-extrabold rounded-md border border-emerald-200">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>24/7 Active (Ibihe Byose)</span>
-                  </span>
+                  {apiStatus === 'online' && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-extrabold rounded-md border border-emerald-200" title="API connected and active">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span>API Online</span>
+                    </span>
+                  )}
+                  {apiStatus === 'offline' && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-50 text-amber-800 text-[10px] font-extrabold rounded-md border border-amber-200" title="Server API endpoint offline - using instant client generator fallback">
+                      <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                      <span>Offline Mode</span>
+                    </span>
+                  )}
+                  {apiStatus === 'checking' && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-extrabold rounded-md border border-slate-200" title="Checking API status...">
+                      <span className="w-2 h-2 rounded-full bg-slate-400 animate-ping"></span>
+                      <span>Ping...</span>
+                    </span>
+                  )}
                 </span>
               </div>
             </button>
