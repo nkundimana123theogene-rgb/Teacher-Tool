@@ -24,7 +24,9 @@ import {
   GraduationCap,
   Globe,
   Eye,
-  X
+  X,
+  Lock,
+  Unlock
 } from 'lucide-react';
 import { PaymentSubmission, UserProfile, LessonPlanLog } from '../types';
 import { OWNER_INFO } from '../data/plans';
@@ -659,6 +661,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onPaymentApproved 
                               <Plus className="w-3 h-3" />
                               <span>+10 Plans</span>
                             </button>
+
+                            {!u.isAdmin && (
+                              <button
+                                onClick={() => handleUserAction(u.email, 'toggle_cert_download')}
+                                className={`px-2.5 py-1 font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1 ${
+                                  u.canDownloadCertificate
+                                    ? 'bg-lime-400 text-slate-950 hover:bg-lime-300 font-extrabold border border-lime-500'
+                                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                                }`}
+                                title={u.canDownloadCertificate ? "Kura uburenganzira bwo gukura certificate" : "Muhe uburenganzira bwo gukura Certificate"}
+                              >
+                                {u.canDownloadCertificate ? (
+                                  <>
+                                    <Unlock className="w-3 h-3 text-slate-950" />
+                                    <span>Cert Allowed 🔓</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Lock className="w-3 h-3 text-slate-600" />
+                                    <span>Cert Locked 🔒</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
 
                             {!u.isAdmin && (
                               <button

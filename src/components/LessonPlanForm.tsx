@@ -17,17 +17,180 @@ import {
   Save,
   Trash2,
   Loader2,
-  Check
+  Check,
+  Bookmark,
+  FolderHeart,
+  Plus,
+  X,
+  Layout
 } from 'lucide-react';
 import { LessonPlanRequest, LanguageOption, PlanFormatOption, UserProfile } from '../types';
 import { OWNER_INFO } from '../data/plans';
 import { LessonPlanSkeleton } from './LessonPlanSkeleton';
 
 const DRAFT_KEY = 'teachers_tools_lesson_plan_draft';
+const TEMPLATES_KEY = 'teachers_tools_custom_templates';
+
+export interface LessonPlanTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: 'primary' | 'secondary_science' | 'secondary_humanities' | 'remedial' | 'tvet' | 'custom';
+  format: PlanFormatOption;
+  schoolName?: string;
+  district?: string;
+  teacherName?: string;
+  term?: string;
+  subject?: string;
+  classGrade?: string;
+  unitNo?: string;
+  lessonNo?: string;
+  duration?: string;
+  classSize?: string;
+  specialNeeds?: string;
+  unitTitle?: string;
+  keyUnitCompetence?: string;
+  lessonTitle?: string;
+  instructionalObjective?: string;
+  location?: string;
+  learningMaterials?: string;
+  references?: string;
+  remedialCount?: string;
+  consolidationCount?: string;
+  extensionCount?: string;
+  createdAt?: string;
+}
+
+const PRESET_TEMPLATES: LessonPlanTemplate[] = [
+  {
+    id: 'preset-primary-math',
+    name: 'Primary Standard CBC Template',
+    description: 'P1-P6 Standard REB Competence-Based Curriculum structure',
+    category: 'primary',
+    format: 'reb_grid',
+    subject: 'Mathematics',
+    classGrade: 'P5',
+    term: 'Term 1',
+    duration: '40 minutes',
+    classSize: '45 learners',
+    location: 'In Classroom',
+    unitNo: 'Unit 3',
+    lessonNo: '1 of 2',
+    unitTitle: 'Fractions and Decimals',
+    keyUnitCompetence: 'To add and subtract proper fractions with equal denominators in real-life problems.',
+    lessonTitle: 'Addition of Proper Fractions with Equal Denominators',
+    instructionalObjective: 'Given illustrative fraction charts, P5 learners will calculate and solve addition of proper fractions with equal denominators accurately without error within 40 minutes.',
+    learningMaterials: 'Fraction cards, chalkboard, fraction strips',
+    references: 'REB Primary 5 Mathematics Curriculum Page 42-45',
+    specialNeeds: '1 learner with low vision seated in front',
+  },
+  {
+    id: 'preset-secondary-lab',
+    name: 'Science & Practical Lab Template',
+    description: 'S1-S6 Practical experiment & laboratory teaching structure',
+    category: 'secondary_science',
+    format: 'reb_grid',
+    subject: 'Chemistry',
+    classGrade: 'S4 MCB',
+    term: 'Term 2',
+    duration: '40 minutes',
+    classSize: '36 learners',
+    location: 'Science / Computer Laboratory',
+    unitNo: 'Unit 4',
+    lessonNo: '2 of 3',
+    unitTitle: 'Chemical Bonding and Molecular Structure',
+    keyUnitCompetence: 'Analyze ionic, covalent, and metallic bonding and relate bonding types to physical properties of substances.',
+    lessonTitle: 'Differentiating Covalent and Ionic Bonds through Conductivity',
+    instructionalObjective: 'By the end of the lesson, using salt and sugar solutions with a test circuit, learners will correctly classify 4 compound samples into ionic or covalent bonds.',
+    learningMaterials: 'Distilled water, sodium chloride, glucose powder, beaker, battery circuit test kit',
+    references: 'REB Senior 4 Chemistry Student Book Page 88-92',
+    specialNeeds: 'None',
+  },
+  {
+    id: 'preset-remedial-rlp',
+    name: 'Remedial Program (RLP) Template',
+    description: 'Differentiated group learning for slow, average, and fast learners',
+    category: 'remedial',
+    format: 'remedial_grid',
+    subject: 'English Language',
+    classGrade: 'S2',
+    term: 'Term 1',
+    duration: '40 minutes',
+    classSize: '40 learners',
+    location: 'In Classroom',
+    unitNo: 'Unit 2',
+    lessonNo: '1 of 1',
+    unitTitle: 'Environmental Protection & Climate Change',
+    keyUnitCompetence: 'Use conditional sentences (If-clauses) to discuss environmental issues.',
+    lessonTitle: 'Remedial Grammar: Type 1 Conditionals in Environmental Discussions',
+    instructionalObjective: 'In differentiated peer groups, learners will construct 5 correct conditional sentences regarding tree planting based on their competency levels.',
+    learningMaterials: 'Flashcards, reading passage handouts, group worksheet',
+    references: 'REB Senior 2 English Textbook Page 60-65',
+    remedialCount: '8 learners',
+    consolidationCount: '22 learners',
+    extensionCount: '10 learners',
+    specialNeeds: '2 learners needing peer tutoring',
+  },
+  {
+    id: 'preset-humanities-open',
+    name: 'Humanities & Debate Open Template',
+    description: 'Flexible open format for Entrepreneurship, History, and Languages',
+    category: 'secondary_humanities',
+    format: 'open_format',
+    subject: 'Entrepreneurship',
+    classGrade: 'S2',
+    term: 'Term 3',
+    duration: '40 minutes',
+    classSize: '42 learners',
+    location: 'In Classroom',
+    unitNo: 'Unit 5',
+    lessonNo: '1 of 2',
+    unitTitle: 'Business Ideas and Opportunity Identification',
+    keyUnitCompetence: 'Analyze local market gaps and generate viable business ideas for community development.',
+    lessonTitle: 'Conducting a SWOT Analysis for a Local Micro-Business',
+    instructionalObjective: 'Learners working in groups will formulate a SWOT matrix for a local enterprise and present 2 viable market strategies.',
+    learningMaterials: 'Business case study handouts, chart paper, markers',
+    references: 'REB Senior 2 Entrepreneurship Learner\'s Book Page 35-40',
+    specialNeeds: 'None',
+  },
+  {
+    id: 'preset-tvet-practical',
+    name: 'TVET & Workshop Practical Template',
+    description: 'Hands-on practical workshop structure for TVET Levels 3-5',
+    category: 'tvet',
+    format: 'reb_grid',
+    subject: 'Information Communication and Technology( I.C.T)',
+    classGrade: 'TVET Level 3',
+    term: 'Term 2',
+    duration: '40 minutes',
+    classSize: '30 learners',
+    location: 'Science / Computer Laboratory',
+    unitNo: 'Unit 2',
+    lessonNo: '3 of 5',
+    unitTitle: 'Computer Hardware & Network Cabling',
+    keyUnitCompetence: 'Assemble Ethernet cables according to T568B wiring standards and perform continuity testing.',
+    lessonTitle: 'Crimping RJ-45 Connectors for Local Area Networks',
+    instructionalObjective: 'Working in pairs with crimping pliers and cable testers, learners will correctly terminate 1 straight-through Cat-6 cable with 100% pass on tester.',
+    learningMaterials: 'Cat-6 cables, RJ45 connectors, crimping pliers, network cable tester',
+    references: 'TVET Level 3 ICT Networking Competency Standard Page 18-24',
+    specialNeeds: 'None',
+  }
+];
+
+const getSavedCustomTemplates = (): LessonPlanTemplate[] => {
+  try {
+    const raw = localStorage.getItem(TEMPLATES_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {
+    // Ignore errors
+  }
+  return [];
+};
 
 interface LessonPlanDraft {
   format?: PlanFormatOption;
   schoolName?: string;
+  district?: string;
   teacherName?: string;
   term?: string;
   date?: string;
@@ -46,6 +209,13 @@ interface LessonPlanDraft {
   learningMaterials?: string;
   references?: string;
   additionalNotes?: string;
+  remedialCount?: string;
+  consolidationCount?: string;
+  extensionCount?: string;
+  remedialGroup1Category?: string;
+  remedialGroup2Category?: string;
+  remedialGroup3Category?: string;
+  remedialGroup4Category?: string;
   lastSavedAt?: string;
 }
 
@@ -67,6 +237,7 @@ interface LessonPlanFormProps {
   isGenerating: boolean;
   onOpenSubscription: () => void;
   onOpenSignIn: () => void;
+  initialFormat?: PlanFormatOption;
 }
 
 // Primary and Secondary (Ordinary Level) Subject Lists
@@ -121,11 +292,19 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
   isGenerating,
   onOpenSubscription,
   onOpenSignIn,
+  initialFormat,
 }) => {
   const savedDraft = getSavedDraft();
 
-  const [format, setFormat] = useState<PlanFormatOption>(savedDraft?.format || 'reb_grid');
+  const [format, setFormat] = useState<PlanFormatOption>(initialFormat || savedDraft?.format || 'reb_grid');
+
+  useEffect(() => {
+    if (initialFormat) {
+      setFormat(initialFormat);
+    }
+  }, [initialFormat]);
   const [schoolName, setSchoolName] = useState(savedDraft?.schoolName || '');
+  const [district, setDistrict] = useState(savedDraft?.district || localStorage.getItem('tegura_saved_district') || '');
   const [teacherName, setTeacherName] = useState(savedDraft?.teacherName || user?.name || '');
   const [term, setTerm] = useState(savedDraft?.term || '');
   const [date, setDate] = useState(savedDraft?.date || new Date().toISOString().split('T')[0]);
@@ -133,7 +312,7 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
   const [classGrade, setClassGrade] = useState(savedDraft?.classGrade || '');
   const [unitNo, setUnitNo] = useState(savedDraft?.unitNo || '');
   const [lessonNo, setLessonNo] = useState(savedDraft?.lessonNo || '');
-  const [duration, setDuration] = useState(savedDraft?.duration || '');
+  const [duration, setDuration] = useState(savedDraft?.duration || '40 minutes');
   const [classSize, setClassSize] = useState(savedDraft?.classSize || '');
   const [specialNeeds, setSpecialNeeds] = useState(savedDraft?.specialNeeds || '');
   const [unitTitle, setUnitTitle] = useState(savedDraft?.unitTitle || '');
@@ -144,11 +323,118 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
   const [learningMaterials, setLearningMaterials] = useState(savedDraft?.learningMaterials || '');
   const [references, setReferences] = useState(savedDraft?.references || '');
   const [additionalNotes, setAdditionalNotes] = useState(savedDraft?.additionalNotes || '');
+  
+  // Remedial Learning Program (RLP) fields
+  const [remedialCount, setRemedialCount] = useState(savedDraft?.remedialCount || '8');
+  const [consolidationCount, setConsolidationCount] = useState(savedDraft?.consolidationCount || '22');
+  const [extensionCount, setExtensionCount] = useState(savedDraft?.extensionCount || '10');
+  const [remedialGroup1Category, setRemedialGroup1Category] = useState(savedDraft?.remedialGroup1Category || 'Slow learners / Needing Remediation');
+  const [remedialGroup2Category, setRemedialGroup2Category] = useState(savedDraft?.remedialGroup2Category || 'Average learners / Consolidation');
+  const [remedialGroup3Category, setRemedialGroup3Category] = useState(savedDraft?.remedialGroup3Category || 'Fast learners / Extension');
+  const [remedialGroup4Category, setRemedialGroup4Category] = useState(savedDraft?.remedialGroup4Category || 'Peer tutoring & support');
+
   const [showQuotaPaymentModal, setShowQuotaPaymentModal] = useState(false);
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(savedDraft?.lastSavedAt || null);
   const [isRestoredFromDraft, setIsRestoredFromDraft] = useState<boolean>(!!savedDraft);
   const [saveStatus, setSaveStatus] = useState<'saving' | 'saved'>('saved');
   const isInitialMount = useRef(true);
+
+  // Template Gallery States
+  const [customTemplates, setCustomTemplates] = useState<LessonPlanTemplate[]>(getSavedCustomTemplates());
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [newTemplateDesc, setNewTemplateDesc] = useState('');
+  const [templateNotification, setTemplateNotification] = useState<string | null>(null);
+  const [templateFilter, setTemplateFilter] = useState<'all' | 'custom' | 'primary' | 'secondary_science' | 'secondary_humanities' | 'remedial' | 'tvet'>('all');
+  const [showTemplateGallery, setShowTemplateGallery] = useState(true);
+
+  const handleApplyTemplate = (tpl: LessonPlanTemplate) => {
+    if (tpl.format) setFormat(tpl.format);
+    if (tpl.schoolName) setSchoolName(tpl.schoolName);
+    if (tpl.district) setDistrict(tpl.district);
+    if (tpl.teacherName) setTeacherName(tpl.teacherName);
+    if (tpl.term) setTerm(tpl.term);
+    if (tpl.subject) setSubject(tpl.subject);
+    if (tpl.classGrade) setClassGrade(tpl.classGrade);
+    if (tpl.unitNo) setUnitNo(tpl.unitNo);
+    if (tpl.lessonNo) setLessonNo(tpl.lessonNo);
+    if (tpl.duration) setDuration(tpl.duration);
+    if (tpl.classSize) setClassSize(tpl.classSize);
+    if (tpl.specialNeeds) setSpecialNeeds(tpl.specialNeeds);
+    if (tpl.unitTitle) setUnitTitle(tpl.unitTitle);
+    if (tpl.keyUnitCompetence) setKeyUnitCompetence(tpl.keyUnitCompetence);
+    if (tpl.lessonTitle) setLessonTitle(tpl.lessonTitle);
+    if (tpl.instructionalObjective) setInstructionalObjective(tpl.instructionalObjective);
+    if (tpl.location) setLocation(tpl.location);
+    if (tpl.learningMaterials) setLearningMaterials(tpl.learningMaterials);
+    if (tpl.references) setReferences(tpl.references);
+    if (tpl.remedialCount) setRemedialCount(tpl.remedialCount);
+    if (tpl.consolidationCount) setConsolidationCount(tpl.consolidationCount);
+    if (tpl.extensionCount) setExtensionCount(tpl.extensionCount);
+
+    setTemplateNotification(`✓ Loaded template: "${tpl.name}"`);
+    setTimeout(() => setTemplateNotification(null), 3000);
+  };
+
+  const handleSaveCurrentAsTemplate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTemplateName.trim()) return;
+
+    const newTpl: LessonPlanTemplate = {
+      id: 'custom-' + Date.now(),
+      name: newTemplateName.trim(),
+      description: newTemplateDesc.trim() || `${subject || 'General'} template for ${classGrade || 'Class'}`,
+      category: 'custom',
+      format,
+      schoolName,
+      district,
+      teacherName,
+      term,
+      subject,
+      classGrade,
+      unitNo,
+      lessonNo,
+      duration,
+      classSize,
+      specialNeeds,
+      unitTitle,
+      keyUnitCompetence,
+      lessonTitle,
+      instructionalObjective,
+      location,
+      learningMaterials,
+      references,
+      remedialCount,
+      consolidationCount,
+      extensionCount,
+      createdAt: new Date().toLocaleDateString(),
+    };
+
+    const updated = [newTpl, ...customTemplates];
+    setCustomTemplates(updated);
+    try {
+      localStorage.setItem(TEMPLATES_KEY, JSON.stringify(updated));
+    } catch {
+      // Ignore
+    }
+
+    setNewTemplateName('');
+    setNewTemplateDesc('');
+    setShowSaveTemplateModal(false);
+    setTemplateNotification(`✨ Template "${newTpl.name}" saved successfully!`);
+    setTimeout(() => setTemplateNotification(null), 3000);
+  };
+
+  const handleDeleteCustomTemplate = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = customTemplates.filter((t) => t.id !== id);
+    setCustomTemplates(updated);
+    try {
+      localStorage.setItem(TEMPLATES_KEY, JSON.stringify(updated));
+    } catch {
+      // Ignore
+    }
+  };
 
   // Auto-save form progress to localStorage draft whenever input fields change
   useEffect(() => {
@@ -165,6 +451,7 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
       const draftData: LessonPlanDraft = {
         format,
         schoolName,
+        district,
         teacherName,
         term,
         date,
@@ -183,6 +470,13 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
         learningMaterials,
         references,
         additionalNotes,
+        remedialCount,
+        consolidationCount,
+        extensionCount,
+        remedialGroup1Category,
+        remedialGroup2Category,
+        remedialGroup3Category,
+        remedialGroup4Category,
         lastSavedAt: timeString,
       };
       try {
@@ -198,6 +492,7 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
   }, [
     format,
     schoolName,
+    district,
     teacherName,
     term,
     date,
@@ -216,6 +511,13 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
     learningMaterials,
     references,
     additionalNotes,
+    remedialCount,
+    consolidationCount,
+    extensionCount,
+    remedialGroup1Category,
+    remedialGroup2Category,
+    remedialGroup3Category,
+    remedialGroup4Category,
   ]);
 
   const handleClearDraft = () => {
@@ -226,6 +528,7 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
     }
     setFormat('reb_grid');
     setSchoolName('');
+    setDistrict('');
     setTeacherName(user?.name || '');
     setTerm('');
     setDate(new Date().toISOString().split('T')[0]);
@@ -233,7 +536,7 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
     setClassGrade('');
     setUnitNo('');
     setLessonNo('');
-    setDuration('');
+    setDuration('40 minutes');
     setClassSize('');
     setSpecialNeeds('');
     setUnitTitle('');
@@ -377,8 +680,13 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
       return;
     }
 
+    if (district) {
+      localStorage.setItem('tegura_saved_district', district);
+    }
+
     onSubmit({
       schoolName,
+      district,
       teacherName: teacherName || user?.name || 'Teacher',
       term,
       date,
@@ -399,6 +707,13 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
       language: selectedLanguage,
       format,
       additionalNotes,
+      remedialCount,
+      consolidationCount,
+      extensionCount,
+      remedialGroup1Category,
+      remedialGroup2Category,
+      remedialGroup3Category,
+      remedialGroup4Category,
     });
   };
 
@@ -423,48 +738,78 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-md p-6 sm:p-8 max-w-4xl mx-auto space-y-6">
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-full text-xs font-black mb-2 shadow-2xs">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Teacher Tool AI Generator</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-            Create Official REB Lesson Plan
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Generate 1-page printable lesson plans instantly in any language.
-          </p>
-        </div>
-
-        {/* Quota & User Badge */}
-        <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 shrink-0">
+      <div className={`p-5 rounded-2xl border transition-all ${
+        format === 'remedial_grid'
+          ? 'bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-white border-amber-400 shadow-md'
+          : 'bg-white border-slate-200'
+      }`}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="text-[11px] text-slate-500 font-medium">Remaining Credits</div>
-            <div className="text-sm font-black text-emerald-800">
-              {user ? (user.isAdmin ? '👑 Unlimited' : `${user.remainingPlans} Plans Left`) : 'Sign in for 3 Free Plans'}
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black mb-2 shadow-2xs ${
+              format === 'remedial_grid'
+                ? 'bg-amber-950 text-amber-200 border border-amber-300'
+                : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+            }`}>
+              <Sparkles className="w-3.5 h-3.5 fill-current" />
+              <span>
+                {format === 'remedial_grid'
+                  ? 'REMEDIAL LEARNING PROGRAM (RLP) GENERATOR'
+                  : 'OFFICIAL REB / CBC LESSON PLAN GENERATOR'}
+              </span>
             </div>
+            <h1 className={`text-2xl sm:text-3xl font-black tracking-tight ${
+              format === 'remedial_grid' ? 'text-white' : 'text-slate-950'
+            }`}>
+              {format === 'remedial_grid'
+                ? 'Isomo ryo Kungoza (Remedial Learning Program)'
+                : 'Create Official REB Lesson Plan'}
+            </h1>
+            <p className={`text-xs mt-1 ${
+              format === 'remedial_grid' ? 'text-amber-100 font-medium' : 'text-slate-500'
+            }`}>
+              {format === 'remedial_grid'
+                ? 'Gahunda y\'isomo ryo kungoza no kuzahura abanyeshuri bafite inyunganira zitandukanye (Remediation, Consolidation & Extension).'
+                : 'Generate 1-page printable lesson plans instantly in any language.'}
+            </p>
           </div>
-          {user ? (
-            <button
-              type="button"
-              onClick={onOpenSubscription}
-              className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg shadow-xs transition-colors flex items-center gap-1"
-              id="form-upgrade-access-btn"
-            >
-              <Zap className="w-3.5 h-3.5" />
-              ⚡ Upgrade
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onOpenSignIn}
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors"
-              id="form-sign-in-btn"
-            >
-              Sign In
-            </button>
-          )}
+
+          {/* Quota & User Badge */}
+          <div className={`flex items-center gap-3 p-3 rounded-xl border shrink-0 ${
+            format === 'remedial_grid'
+              ? 'bg-amber-950/40 border-amber-300/40 text-white'
+              : 'bg-slate-50 border-slate-200'
+          }`}>
+            <div>
+              <div className={`text-[11px] font-medium ${
+                format === 'remedial_grid' ? 'text-amber-200' : 'text-slate-500'
+              }`}>Remaining Credits</div>
+              <div className={`text-sm font-black ${
+                format === 'remedial_grid' ? 'text-amber-100' : 'text-emerald-800'
+              }`}>
+                {user ? (user.isAdmin ? '👑 Unlimited' : `${user.remainingPlans} Plans Left`) : 'Sign in for 3 Free Plans'}
+              </div>
+            </div>
+            {user ? (
+              <button
+                type="button"
+                onClick={onOpenSubscription}
+                className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs rounded-lg shadow-xs transition-colors flex items-center gap-1"
+                id="form-upgrade-access-btn"
+              >
+                <Zap className="w-3.5 h-3.5 fill-slate-950" />
+                ⚡ Upgrade
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onOpenSignIn}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors"
+                id="form-sign-in-btn"
+              >
+                Sign In
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -501,43 +846,260 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
         </button>
       </div>
 
-      {/* Format Toggle & Quick Presets */}
-      <div className="grid md:grid-cols-2 gap-4">
-        {/* Format Selector */}
-        <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-          <label className="block text-xs font-bold text-slate-700 mb-2">
-            ✓ Select Lesson Plan Format:
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setFormat('reb_grid')}
-              className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                format === 'reb_grid'
-                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                  : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'
-              }`}
-              id="format-reb-grid-btn"
-            >
-              <LayoutGrid className="w-4 h-4" />
-              <span>REB Grid Format</span>
-            </button>
+      {/* TEMPLATE GALLERY SECTION */}
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white rounded-2xl p-5 shadow-lg space-y-4 border border-slate-700">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-700/80 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
+              <Bookmark className="w-5 h-5 fill-emerald-400/20" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-black tracking-tight text-white">
+                  Template Gallery / Ububiko bw'Inyandikorugero
+                </h2>
+                <span className="px-2 py-0.5 text-[10px] font-black bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 rounded-full">
+                  {PRESET_TEMPLATES.length + customTemplates.length} Templates
+                </span>
+              </div>
+              <p className="text-xs text-slate-300">
+                Hitamo inyandikorugero ikwiye cyangwa ubike iyagoze nk'inyandikorugero wazajya ukoresha (Select standard structure or save custom templates)
+              </p>
+            </div>
+          </div>
 
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => setFormat('open_format')}
-              className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                format === 'open_format'
-                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                  : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'
-              }`}
-              id="format-open-format-btn"
+              onClick={() => setShowSaveTemplateModal(true)}
+              className="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 hover:scale-[1.02]"
+              id="save-custom-template-btn"
             >
-              <FileText className="w-4 h-4" />
-              <span>Flexible Open Format</span>
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>Bika Form ngi nk'Template (Save Custom)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowTemplateGallery(!showTemplateGallery)}
+              className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 text-xs font-bold transition-colors"
+            >
+              {showTemplateGallery ? 'Hide Gallery' : 'Show Gallery'}
             </button>
           </div>
         </div>
+
+        {templateNotification && (
+          <div className="p-2.5 bg-emerald-500/20 border border-emerald-400/40 rounded-xl text-xs font-bold text-emerald-200 flex items-center justify-between animate-in fade-in">
+            <span>{templateNotification}</span>
+            <button onClick={() => setTemplateNotification(null)} className="p-1 hover:text-white">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {showTemplateGallery && (
+          <div className="space-y-3 pt-1">
+            {/* Filter Chips */}
+            <div className="flex flex-wrap gap-1.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setTemplateFilter('all')}
+                className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                  templateFilter === 'all'
+                    ? 'bg-emerald-500 text-slate-950 shadow-xs'
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                All ({PRESET_TEMPLATES.length + customTemplates.length})
+              </button>
+              {customTemplates.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setTemplateFilter('custom')}
+                  className={`px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1 ${
+                    templateFilter === 'custom'
+                      ? 'bg-amber-400 text-slate-950 shadow-xs'
+                      : 'bg-slate-800 text-amber-300 hover:bg-slate-700'
+                  }`}
+                >
+                  <FolderHeart className="w-3.5 h-3.5" />
+                  <span>My Custom ({customTemplates.length})</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setTemplateFilter('primary')}
+                className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                  templateFilter === 'primary'
+                    ? 'bg-emerald-500 text-slate-950 shadow-xs'
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                🎒 Primary (P1-P6)
+              </button>
+              <button
+                type="button"
+                onClick={() => setTemplateFilter('secondary_science')}
+                className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                  templateFilter === 'secondary_science'
+                    ? 'bg-emerald-500 text-slate-950 shadow-xs'
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                🧪 Science & Lab
+              </button>
+              <button
+                type="button"
+                onClick={() => setTemplateFilter('secondary_humanities')}
+                className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                  templateFilter === 'secondary_humanities'
+                    ? 'bg-emerald-500 text-slate-950 shadow-xs'
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                📖 Humanities
+              </button>
+              <button
+                type="button"
+                onClick={() => setTemplateFilter('remedial')}
+                className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                  templateFilter === 'remedial'
+                    ? 'bg-amber-400 text-slate-950 shadow-xs'
+                    : 'bg-slate-800 text-amber-300 hover:bg-slate-700'
+                }`}
+              >
+                ✨ Remedial (RLP)
+              </button>
+              <button
+                type="button"
+                onClick={() => setTemplateFilter('tvet')}
+                className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                  templateFilter === 'tvet'
+                    ? 'bg-emerald-500 text-slate-950 shadow-xs'
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                🛠️ TVET
+              </button>
+            </div>
+
+            {/* Template Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {[...customTemplates, ...PRESET_TEMPLATES]
+                .filter((t) => templateFilter === 'all' || t.category === templateFilter)
+                .map((tpl) => {
+                  const isCustom = tpl.category === 'custom';
+                  return (
+                    <div
+                      key={tpl.id}
+                      className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between gap-3 group relative ${
+                        isCustom
+                          ? 'bg-slate-800/90 border-amber-400/40 hover:border-amber-400'
+                          : 'bg-slate-800/60 border-slate-700 hover:border-emerald-500/60'
+                      }`}
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                            isCustom
+                              ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
+                              : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          }`}>
+                            {isCustom ? '⭐ Custom Saved' : tpl.category.replace('_', ' ')}
+                          </span>
+                          {isCustom && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteCustomTemplate(tpl.id, e)}
+                              className="text-slate-400 hover:text-red-400 p-1 rounded-md transition-colors"
+                              title="Delete custom template"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        <h3 className="font-extrabold text-sm text-white group-hover:text-emerald-300 transition-colors">
+                          {tpl.name}
+                        </h3>
+                        <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed">
+                          {tpl.description}
+                        </p>
+                        <div className="flex flex-wrap gap-1 text-[10px] text-slate-400 pt-1">
+                          {tpl.subject && <span className="bg-slate-900/80 px-1.5 py-0.5 rounded text-slate-300">📚 {tpl.subject}</span>}
+                          {tpl.classGrade && <span className="bg-slate-900/80 px-1.5 py-0.5 rounded text-slate-300">🎓 {tpl.classGrade}</span>}
+                          {tpl.duration && <span className="bg-slate-900/80 px-1.5 py-0.5 rounded text-slate-300">⏱️ {tpl.duration}</span>}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleApplyTemplate(tpl)}
+                        className={`w-full py-2 px-3 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                          isCustom
+                            ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-xs'
+                            : 'bg-slate-700 hover:bg-emerald-600 text-white'
+                        }`}
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Koresha Iyi Template (Apply)</span>
+                      </button>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Format Selector */}
+      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 col-span-1 md:col-span-2">
+        <label className="block text-xs font-bold text-slate-700 mb-2">
+          ✓ Select Lesson Plan Format:
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={() => setFormat('reb_grid')}
+            className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+              format === 'reb_grid'
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'
+            }`}
+            id="format-reb-grid-btn"
+          >
+            <LayoutGrid className="w-4 h-4" />
+            <span>REB Standard Grid</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFormat('remedial_grid')}
+            className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+              format === 'remedial_grid'
+                ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                : 'bg-white text-slate-700 border-slate-200 hover:border-amber-300'
+            }`}
+            id="format-remedial-grid-btn"
+          >
+            <Sparkles className="w-4 h-4 text-amber-200" />
+            <span>Remedial Program (RLP)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFormat('open_format')}
+            className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+              format === 'open_format'
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'
+            }`}
+            id="format-open-format-btn"
+          >
+            <FileText className="w-4 h-4" />
+            <span>Flexible Open Format</span>
+          </button>
+        </div>
+      </div>
 
         {/* Quick Subject Selectors for Primary and Secondary O-Level */}
         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 col-span-1 md:col-span-2 space-y-3">
@@ -640,7 +1202,6 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
             </div>
           </div>
         </div>
-      </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Basic School & Teacher Metadata */}
@@ -650,7 +1211,7 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
             1. School & Class Information
           </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
                 School Name <span className="text-red-500 font-bold">*</span>
@@ -662,6 +1223,20 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
                 onChange={(e) => setSchoolName(e.target.value)}
                 placeholder="e.g. G.S. Remera Catholic"
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden placeholder:text-slate-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                District / Akarere <span className="text-red-500 font-bold">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={district}
+                onChange={(e) => setDistrict(e.target.value)}
+                placeholder="e.g. Gasabo"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden placeholder:text-slate-500 font-semibold text-slate-800"
               />
             </div>
 
@@ -809,17 +1384,25 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Duration <span className="text-red-500 font-bold">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[11px] font-bold text-slate-700">
+                  Duration (Igihe cy'Isomo) <span className="text-red-500 font-bold">*</span>
+                </label>
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-950 border border-emerald-300">
+                  Max 40 min
+                </span>
+              </div>
               <input
                 type="text"
                 required
                 value={duration}
                 onChange={(e) => setDuration(e.target.value)}
-                placeholder="e.g. 40 minutes"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden placeholder:text-slate-500"
+                placeholder="40 minutes"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-bold text-slate-900 placeholder:text-slate-500 placeholder:font-normal"
               />
+              <span className="text-[10px] text-emerald-800 font-semibold mt-1 block">
+                ⏱️ Igihe cy'isomo isanzwe ni iminota 40 ku isomo rimwe (Standard lesson period max 40 min).
+              </span>
             </div>
 
             <div>
@@ -853,6 +1436,117 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
             </div>
           </div>
         </div>
+
+        {/* REMEDIAL LEARNING PROGRAM (RLP) SPECIFIC FIELDS */}
+        {format === 'remedial_grid' && (
+          <div className="bg-amber-50/90 border-2 border-amber-300 p-4 sm:p-5 rounded-2xl space-y-4 shadow-xs">
+            <div className="flex items-center gap-2 text-amber-950 font-black text-sm border-b border-amber-200 pb-2">
+              <Sparkles className="w-4 h-4 text-amber-600" />
+              <span>Remedial Learning Program (RLP) Configuration / Igice cy'Isomo ryo Kungoza</span>
+            </div>
+            <p className="text-xs text-amber-800">
+              Configure learner breakdown and group differentiation categories as required by REB Remedial guidelines.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-amber-900 mb-1">
+                  Learners Needing Remediation (Kungoza) <span className="text-red-500 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={remedialCount}
+                  onChange={(e) => setRemedialCount(e.target.value)}
+                  placeholder="e.g. 8 learners"
+                  className="w-full px-3 py-2 border border-amber-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-amber-500 font-semibold text-slate-900 placeholder:text-slate-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-amber-900 mb-1">
+                  Students Needing Consolidation (Gukomeza) <span className="text-red-500 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={consolidationCount}
+                  onChange={(e) => setConsolidationCount(e.target.value)}
+                  placeholder="e.g. 22 learners"
+                  className="w-full px-3 py-2 border border-amber-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-amber-500 font-semibold text-slate-900 placeholder:text-slate-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-amber-900 mb-1">
+                  Students Needing Extension (Gusumbisha) <span className="text-red-500 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={extensionCount}
+                  onChange={(e) => setExtensionCount(e.target.value)}
+                  placeholder="e.g. 10 learners"
+                  className="w-full px-3 py-2 border border-amber-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-amber-500 font-semibold text-slate-900 placeholder:text-slate-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-amber-200">
+              <div>
+                <label className="block text-[11px] font-bold text-amber-900 mb-1">
+                  Group 1: Remediation Category (Slow Learners)
+                </label>
+                <input
+                  type="text"
+                  value={remedialGroup1Category}
+                  onChange={(e) => setRemedialGroup1Category(e.target.value)}
+                  placeholder="e.g. Slow learners needing step-by-step guidance"
+                  className="w-full px-3 py-2 border border-amber-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-amber-500 text-slate-900 placeholder:text-slate-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-amber-900 mb-1">
+                  Group 2: Consolidation Category (Average Learners)
+                </label>
+                <input
+                  type="text"
+                  value={remedialGroup2Category}
+                  onChange={(e) => setRemedialGroup2Category(e.target.value)}
+                  placeholder="e.g. Average learners needing reinforcement exercises"
+                  className="w-full px-3 py-2 border border-amber-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-amber-500 text-slate-900 placeholder:text-slate-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-amber-900 mb-1">
+                  Group 3: Extension Category (Fast Learners)
+                </label>
+                <input
+                  type="text"
+                  value={remedialGroup3Category}
+                  onChange={(e) => setRemedialGroup3Category(e.target.value)}
+                  placeholder="e.g. Fast learners needing advanced challenges"
+                  className="w-full px-3 py-2 border border-amber-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-amber-500 text-slate-900 placeholder:text-slate-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-amber-900 mb-1">
+                  Group 4: Special / Peer Tutoring Category
+                </label>
+                <input
+                  type="text"
+                  value={remedialGroup4Category}
+                  onChange={(e) => setRemedialGroup4Category(e.target.value)}
+                  placeholder="e.g. Peer support and group leadership"
+                  className="w-full px-3 py-2 border border-amber-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-amber-500 text-slate-900 placeholder:text-slate-500"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Special Educational Needs */}
         <div>
@@ -923,31 +1617,32 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
           <div>
             <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
               <label className="block text-[11px] font-bold text-slate-800">
-                Instructional Objective (ABCD Model of Objectives) <span className="text-red-500 font-bold">*</span>
+                Instructional Objective (5 Models: Condition, Who, Action/Behavior, Content, Degree) <span className="text-red-500 font-bold">*</span>
               </label>
               <span className="text-[10px] text-emerald-800 font-extrabold bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300 flex items-center gap-1 shadow-2xs">
                 <Sparkles className="w-3 h-3 text-amber-600 fill-amber-400" />
-                <span>AI ABCD-Model Auto-Generated</span>
+                <span>AI 5-Model Objective Auto-Generated</span>
               </span>
             </div>
             <textarea
               rows={3}
               value={instructionalObjective}
               onChange={(e) => setInstructionalObjective(e.target.value)}
-              placeholder="e.g. By the end of the lesson, given proper fraction cards and charts, learners will be able to add proper fractions with equal denominators accurately."
+              placeholder="e.g. Given illustrative fraction charts [Condition], learners [Who] will be able to calculate and solve [Action/Behavior] addition of proper fractions [Content] accurately without error within 40 minutes [Degree of Performance]."
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden placeholder:text-slate-400 font-medium text-slate-800"
             />
             
-            {/* ABCD Criteria Micro Guide */}
-            <div className="mt-1.5 p-2 bg-slate-50 border border-slate-200 rounded-xl text-[10.5px] text-slate-600 space-y-1">
+            {/* 5 Models Criteria Micro Guide */}
+            <div className="mt-1.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[10.5px] text-slate-600 space-y-1.5">
               <div className="font-extrabold text-slate-800 flex items-center gap-1">
-                <span>🎯 ABCD Model (Four Components of Instructional Objectives):</span>
+                <span>🎯 Five (5) Models of Instructional Objectives:</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1 text-[10px] text-slate-700 font-medium pt-0.5">
-                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">A. Audience (Umwigishwa)</span>
-                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">B. Behavior (Igikorwa/Inshinga)</span>
-                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">C. Condition (Ibikoresho/Imitwarire)</span>
-                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">D. Degree (Urugero/Ipimo)</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-1 text-[10px] text-slate-700 font-medium pt-0.5">
+                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">1. Condition (Imfashanyigisho)</span>
+                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">2. Who (Umwigishwa)</span>
+                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">3. Action/Behavior (Igikorwa/Inshinga)</span>
+                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">4. Content (Mubiri w'isomo)</span>
+                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">5. Degree (Ipimo/Urugero)</span>
               </div>
             </div>
           </div>
@@ -1078,6 +1773,86 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+      {/* Save Custom Template Modal */}
+      {showSaveTemplateModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <form
+            onSubmit={handleSaveCurrentAsTemplate}
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-150"
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2 text-slate-900 font-black text-sm">
+                <Bookmark className="w-5 h-5 text-emerald-600" />
+                <h3>Bika Form ngi nk'Template Nshya (Save Template)</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSaveTemplateModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Uzuza izina ry'inyandikorugero zawe z'isomo kugira ngo uzajye ubasha kuzikoresha vuba utarinze kongera kwandika amakuru meza buri gihe.
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Izina rya Template (Template Name) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. S4 Physics Lab Experiment Structure"
+                  value={newTemplateName}
+                  onChange={(e) => setNewTemplateName(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Ibisobanuro mu nshamake (Optional Description)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Practical lab configuration for S4 Physics PCM"
+                  value={newTemplateDesc}
+                  onChange={(e) => setNewTemplateDesc(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-600 space-y-1">
+                <span className="font-bold text-slate-800">Amakuru agiye kubikwa mu nshamake (Saved Data Summary):</span>
+                <p>• Subject: <strong>{subject || 'Not specified'}</strong> ({classGrade || 'Any grade'})</p>
+                <p>• School / Teacher: <strong>{schoolName || 'Current school'}</strong></p>
+                <p>• Format: <strong>{format}</strong> | Duration: <strong>{duration}</strong></p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowSaveTemplateModal(false)}
+                className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors"
+              >
+                Anula / Cancel
+              </button>
+              <button
+                type="submit"
+                className="py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+              >
+                <Save className="w-4 h-4" />
+                <span>Bika Template</span>
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>

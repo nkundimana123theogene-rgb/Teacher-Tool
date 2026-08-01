@@ -26,5 +26,15 @@ service cloud.firestore {
     match /resetCodes/{email} {
       allow read, write: if true;
     }
+
+    // Certificates Collection Matcher
+    match /certificates/{certificateId} {
+      allow read, write: if true;
+    }
+
+    // Class Diaries Collection Matcher
+    match /classDiaries/{diaryId} {
+      allow read, write: if true;
+    }
   }
 }

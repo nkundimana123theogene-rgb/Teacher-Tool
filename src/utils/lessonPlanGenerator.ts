@@ -27,17 +27,67 @@ export function generateClientLessonPlan(request: LessonPlanRequest, defaultTeac
   if (request.instructionalObjective && request.instructionalObjective.length > 5 && !request.instructionalObjective.includes('Auto-generated')) {
     obj = request.instructionalObjective;
   } else if (isKiny) {
-    obj = `Mu gusoza isomo, bahawe imfashanyigisho n'inyandiko zikwiye, abanyeshuri bazaba bashoboye gusobanura no gukoresha ${lessonTitle} mu buryo bw'ukuri no bila kuguza.`;
+    obj = `Mu gusoza isomo, bahawe imfashanyigisho n'inyandiko zikwiye [Condition], abanyeshuri [Who] bazaba bashoboye gusobanura no gukoresha [Action/Behavior] umutwe wa ${lessonTitle} [Content] mu buryo bw'ukuri no kumpamo [Degree of Performance].`;
   } else if (isFrench) {
-    obj = `À la fin de la leçon, à l'aide des supports pédagogiques fournis, les apprenants seront capables d'expliquer et d'appliquer ${lessonTitle} avec précision.`;
+    obj = `À la fin de la leçon, à l'aide des supports pédagogiques fournis [Condition], les apprenants [Who] seront capables d'expliquer et d'appliquer [Action/Behavior] le sujet ${lessonTitle} [Content] avec précision et sans erreur [Degree of Performance].`;
   } else if (isSwahili) {
-    obj = `Fikia mwisho wa somo, kwa kutumia vifaa vya kufundishia, wanafunzi wataweza kufafanua na kutumia ${lessonTitle} kwa usahihi.`;
+    obj = `Fikia mwisho wa somo, kwa kutumia vifaa vya kufundishia [Condition], wanafunzi [Who] wataweza kufafanua na kutumia [Action/Behavior] mada ya ${lessonTitle} [Content] kwa usahihi kabisa [Degree of Performance].`;
   } else {
-    obj = `By the end of the lesson, given illustrative charts and exercise sheets, learners will be able to explain, construct, and apply ${lessonTitle} accurately within ${duration}.`;
+    obj = `By the end of the lesson, given illustrative charts and exercise sheets [Condition], learners [Who] will be able to explain, construct, and apply [Action/Behavior] ${lessonTitle} [Content] accurately and correctly within ${duration} [Degree of Performance].`;
   }
 
   let steps = [];
-  if (isKiny) {
+  if (request.format === 'remedial_grid') {
+    if (isKiny) {
+      steps = [
+        {
+          stepName: '1. IRIBURIRO N\'ISUZUMA MBULE (DIAGNOSTIC INTRODUCTION)',
+          timing: '5 min',
+          teacherActivities: `Mwarimu abaza ibibazo ngororamutu n'isuzuma mbule kugira ngo agaragaze ibyuho n'ingorane z'abanyeshuri ku mutwe wa "${lessonTitle}". Agaba abanyeshuri mu matsinda 3 y'inyunganira: Remediation (${request.remedialCount || '8'}), Consolidation (${request.consolidationCount || '22'}), n'Extension (${request.extensionCount || '10'}).`,
+          learnerActivities: `Abanyeshuri barasubiza ibibazo by'isuzuma mbule, bitegereza ibikoresho by'isomo, maze buri wese akijyana mu tsinda yagawemo ajyanye n'ikigero cye muri RLP.`,
+          competencesAndCrossCutting: 'Kumenya ibyuho mu bumenyi (Diagnostic self-awareness) & Kwishyira mu matsinda (Collaboration).'
+        },
+        {
+          stepName: '2. IBIKORWA BYO KUNGOZA NO KUZAHURA (DIFFERENTIATED REMEDIAL ACTIVITIES)',
+          timing: '25 min',
+          teacherActivities: `• Group 1 - Remediation (${request.remedialGroup1Category || 'Abakeneye inyunganira yihariye'}): Mwarimu yikora kuri iki tsinda, abasobanurira umwimerere wa "${lessonTitle}" akoresheje ibikoresho bifatika no kubafasha intambwe ku yindi.\n• Group 2 - Consolidation (${request.remedialGroup2Category || 'Abakomeza ubumenyi'}): Mwarimu aha iki tsinda imyitozo yo gukomeza ubumenyi n'ibibazo byo gukemura mu bwumvikane.\n• Group 3 - Extension (${request.remedialGroup3Category || 'Abihuta / Extension'}): Mwarimu aha iki tsinda ibibazo bitoroshye (high-order challenge problems) no kuba abafasha b'abandi (peer tutors).`,
+          learnerActivities: `• Group 1 (Remediation): Abanyeshuri bafashwa na mwarimu mu buryo bw'umwimerere no gukora imyitozo yoroshye ifasha kuzahura ubumenyi.\n• Group 2 (Consolidation): Abanyeshuri bakora imyitozo yo gukomeza ubumenyi bagasobanurirana mu tsinda.\n• Group 3 (Extension): Abanyeshuri b'abahanga bakora imyitozo yisumbuye gihamya bakagira n'uruhare mu gufasha bagenzi babo.`,
+          competencesAndCrossCutting: 'Inyunganira yihariye (Differentiated Remediation), Ubusabane (Cooperation) & Uburinganire muri RLP.'
+        },
+        {
+          stepName: '3. ISUZUMA RY\'AMATSINDA N\'UMWANZURO (REMEDIAL EVALUATION & PROGRESS CHECK)',
+          timing: '10 min',
+          teacherActivities: `Mwarimu apima niba ibyuho z'abanyeshuri bo mu tsinda rya Remediation byazahuwe n'isuzuma rigufi. Aha buri tsinda umukoro wihariye uzahura ubumenyi.`,
+          learnerActivities: `Abanyeshuri barasubiza ibibazo by'isuzuma ry'amatsinda, baratanga feedback y'ibyo bavumbuye, bakandika umukoro wo mu rugo muri kaye zabo.`,
+          competencesAndCrossCutting: 'Gukemura ibibazo (Problem Solving) & Kwigira no gukura mu bumenyi (Lifelong Growth).'
+        }
+      ];
+    } else {
+      steps = [
+        {
+          stepName: '1. DIAGNOSTIC RECAP & GROUPING (REMEDIAL INTRODUCTION)',
+          timing: '5 min',
+          teacherActivities: `Teacher administers a diagnostic pre-assessment to identify specific learning gaps in "${lessonTitle}". Groups learners into 3 differentiated categories: Remediation (${request.remedialCount || '8'}), Consolidation (${request.consolidationCount || '22'}), and Extension (${request.extensionCount || '10'}).`,
+          learnerActivities: `Learners respond to diagnostic review questions, receive feedback on targeted gaps, and move into their designated RLP learning groups.`,
+          competencesAndCrossCutting: 'Self-awareness of learning gaps & Collaborative teamwork.'
+        },
+        {
+          stepName: '2. DIFFERENTIATED REMEDIAL ACTIVITIES (RLP DEVELOPMENT)',
+          timing: '25 min',
+          teacherActivities: `• Group 1 - Remediation (${request.remedialGroup1Category || 'Struggling learners'}): Direct step-by-step teacher coaching, visual aids, scaffolded tasks on core concepts of "${lessonTitle}".\n• Group 2 - Consolidation (${request.remedialGroup2Category || 'Proficient learners'}): Guided group problem-solving exercises to reinforce mastery.\n• Group 3 - Extension (${request.remedialGroup3Category || 'Advanced learners'}): High-order challenge tasks, analytical problem sets, and peer tutoring opportunities.`,
+          learnerActivities: `• Group 1 (Remediation): Learners receive targeted teacher remediation and practice fundamental exercises to bridge gaps.\n• Group 2 (Consolidation): Learners work on consolidation worksheets and discuss solutions with peers.\n• Group 3 (Extension): Advanced learners solve complex extension problems and assist peers.`,
+          competencesAndCrossCutting: 'Differentiated learning, Critical thinking, and Peer collaboration.'
+        },
+        {
+          stepName: '3. TARGETED EVALUATION & PROGRESS CHECK (REMEDIAL CONCLUSION)',
+          timing: '10 min',
+          teacherActivities: `Teacher evaluates gap closure across all three groups through exit tickets. Assigns group-tailored homework assignments.`,
+          learnerActivities: `Learners demonstrate improved understanding on exit tickets and note down differentiated home assignments.`,
+          competencesAndCrossCutting: 'Metacognition, Problem-solving, and Self-assessment.'
+        }
+      ];
+    }
+  } else if (isKiny) {
     steps = [
       {
         stepName: '1. IRIBURIRO (INTRODUCTION)',

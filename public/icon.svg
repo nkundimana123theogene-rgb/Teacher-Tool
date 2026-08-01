@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="128" fill="#020617"/>
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#a3e635" stroke-width="12" stroke-dasharray="16 8"/>
+  <rect x="64" y="64" width="384" height="384" rx="96" fill="url(#limeGrad)" />
+  <defs>
+    <linearGradient id="limeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#052e16" />
+    </linearGradient>
+  </defs>
+  <!-- Book / Graduation Cap Icon -->
+  <path d="M256 140 L380 200 L256 260 L132 200 Z" fill="#a3e635" />
+  <path d="M160 230 V310 C160 340 352 340 352 310 V230" fill="none" stroke="#a3e635" stroke-width="20" stroke-linecap="round" />
+  <circle cx="380" cy="250" r="12" fill="#facc15" />
+  <path d="M380 250 V310" stroke="#facc15" stroke-width="8" stroke-linecap="round" />
+  <!-- Sparkles -->
+  <path d="M120 120 L128 140 L148 148 L128 156 L120 176 L112 156 L92 148 L112 140 Z" fill="#facc15" />
+  <path d="M390 350 L396 364 L410 370 L396 376 L390 390 L384 376 L370 370 L384 364 Z" fill="#a3e635" />
+</svg>

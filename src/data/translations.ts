@@ -25,13 +25,25 @@ export interface LessonPlanLabels {
   learnerActivitiesHeading: string;
   competencesHeading: string;
   selfEvaluation: string;
+  remedialProgramTitle: string;
+  remedialCountLabel: string;
+  consolidationCountLabel: string;
+  extensionCountLabel: string;
+  groupCategoryLabel: string;
   // Menu Navigation
   navDashboard: string;
   navLessonPlans: string;
+  navRemedialPlans: string;
   navSavedPlans: string;
   navSubscription: string;
   navAdmin: string;
   navFounder: string;
+  navExercises: string;
+  navWorksheets: string;
+  navNurseryPlans: string;
+  navSlides: string;
+  navLibrary: string;
+  navCertificates: string;
 }
 
 export const LABELS_BY_LANGUAGE: Record<string, LessonPlanLabels> = {
@@ -62,12 +74,24 @@ export const LABELS_BY_LANGUAGE: Record<string, LessonPlanLabels> = {
     learnerActivitiesHeading: "Learner's activities",
     competencesHeading: "Generic competences and Cross cutting issues to be addressed + a short explanation",
     selfEvaluation: "Teacher self-evaluation",
+    remedialProgramTitle: "REMEDIAL LEARNING PROGRAM (RLP) LESSON PLAN",
+    remedialCountLabel: "Learners Needing Remediation",
+    consolidationCountLabel: "Students Needing Consolidation",
+    extensionCountLabel: "Students Needing Extension",
+    groupCategoryLabel: "Group Differentiation Category",
     navDashboard: "Dashboard",
-    navLessonPlans: "Create Lesson Plan",
+    navLessonPlans: "Create Lesson Plan (CBC)",
+    navRemedialPlans: "Remedial Plan (RLP)",
     navSavedPlans: "My Lesson Plans",
     navSubscription: "Subscription Status",
     navAdmin: "Admin",
     navFounder: "Nkundimana Theogene",
+    navExercises: "Homework & Exams Creator",
+    navWorksheets: "Printable Worksheet",
+    navNurseryPlans: "Nursery Lesson Plan",
+    navSlides: "Presentation Slides",
+    navLibrary: "Library & Schemes",
+    navCertificates: "AI Certificate Generator",
   },
   Kinyarwanda: {
     schoolNameLabel: "Izina ry'ishuri:",
@@ -96,12 +120,24 @@ export const LABELS_BY_LANGUAGE: Record<string, LessonPlanLabels> = {
     learnerActivitiesHeading: "Ibikorwa bw'umunyeshuri",
     competencesHeading: "Ubushobozi rusange n'insanganyamatsiko zirebana n'isomo + ibisobanuro ngufi",
     selfEvaluation: "Isuzuma ry'umwarimu",
+    remedialProgramTitle: "ISOMO RYO KUNGOZA / KUZAHURA UBURANGI (REMEDIAL LEARNING PROGRAM - RLP)",
+    remedialCountLabel: "Abanyeshuri Bakeneye Kungoza (Remediation)",
+    consolidationCountLabel: "Abanyeshuri Bakeneye Gukomeza (Consolidation)",
+    extensionCountLabel: "Abanyeshuri Bakeneye Imyitozo Yisumbuye (Extension)",
+    groupCategoryLabel: "Icyiciro cy'amatsinda y'abanyeshuri (Differentiation Groups)",
     navDashboard: "Dashboard",
-    navLessonPlans: "Create Lesson Plan",
+    navLessonPlans: "Isomo Rusange (CBC)",
+    navRemedialPlans: "Isomo ryo Kungoza (RLP)",
     navSavedPlans: "My Lesson Plans",
     navSubscription: "Subscription Status",
     navAdmin: "Admin Panel",
     navFounder: "Nkundimana Theogene",
+    navExercises: "Imyitozo n'Ibizami",
+    navWorksheets: "Kora Worksheets",
+    navNurseryPlans: "Tegura Isomo ry'Inshuke",
+    navSlides: "Tegura Slides z'Isomo",
+    navLibrary: "Isomero n'Amateganyanyigisho",
+    navCertificates: "Hanga Certificates (AI)",
   },
   French: {
     schoolNameLabel: "Nom de l'école:",
@@ -130,12 +166,24 @@ export const LABELS_BY_LANGUAGE: Record<string, LessonPlanLabels> = {
     learnerActivitiesHeading: "Activités de l'apprenant",
     competencesHeading: "Compétences génériques et thèmes transversaux à aborder + une courte explication",
     selfEvaluation: "Auto-évaluation de l'enseignant",
+    remedialProgramTitle: "PROGRAMME DE REMÉDIATION PÉDAGOGIQUE (REMEDIAL LEARNING PROGRAM - RLP)",
+    remedialCountLabel: "Apprenants Nécessitant une Remédiation",
+    consolidationCountLabel: "Apprenants Nécessitant une Consolidation",
+    extensionCountLabel: "Apprenants Nécessitant un Dépassement / Extension",
+    groupCategoryLabel: "Catégories de Différenciation des Groupes",
     navDashboard: "Tableau de Bord",
-    navLessonPlans: "Créer une Leçon",
+    navLessonPlans: "Créer une Leçon (CBC)",
+    navRemedialPlans: "Plan Remédiation (RLP)",
     navSavedPlans: "Leçons Enregistrées",
     navSubscription: "Abonnement",
     navAdmin: "Admin",
     navFounder: "Nkundimana Theogene",
+    navExercises: "Créateur d'Exercices",
+    navWorksheets: "Fiches de Travail",
+    navNurseryPlans: "Plan de Leçon Maternelle",
+    navSlides: "Diapositives de Présentation",
+    navLibrary: "Bibliothèque & Schémas",
+    navCertificates: "Générateur de Certificats IA",
   },
   Swahili: {
     schoolNameLabel: "Jina la shule:",
@@ -154,7 +202,7 @@ export const LABELS_BY_LANGUAGE: Record<string, LessonPlanLabels> = {
     lessonTitle: "Kichwa cha somo",
     instructionalObjective: "Lengo la somo",
     planForClass: "Eneo la somo",
-    planLocationNote: "(eneo: darasani / nje)",
+    planLocationNote: "(area: darasani / nje)",
     learningMaterials: "Zana za kufundishia",
     learningMaterialsNote: "(kwa wanafunzi wote)",
     references: "Marejeleo",
@@ -164,12 +212,24 @@ export const LABELS_BY_LANGUAGE: Record<string, LessonPlanLabels> = {
     learnerActivitiesHeading: "Shughuli za mwanafunzi",
     competencesHeading: "Uwezo wa jumla na masuala mtambuka yatakayoshughulikiwa + maelezo mafupi",
     selfEvaluation: "Tathmini binafsi ya mwalimu",
+    remedialProgramTitle: "MPANGO WA MASOMO YA KUREKEBISHA (REMEDIAL LEARNING PROGRAM - RLP)",
+    remedialCountLabel: "Wanafunzi Wanaohitaji Kurekebishwa (Remediation)",
+    consolidationCountLabel: "Wanafunzi Wanaohitaji Kuimarishwa (Consolidation)",
+    extensionCountLabel: "Wanafunzi Wanaohitaji Mazoezi ya Ziada (Extension)",
+    groupCategoryLabel: "Kipengele cha Makundi Mbalimbali",
     navDashboard: "Deski la Mwalimu",
-    navLessonPlans: "Tengeneza Somo",
+    navLessonPlans: "Tengeneza Somo (CBC)",
+    navRemedialPlans: "Somo la Kurekebisha (RLP)",
     navSavedPlans: "Masomo Yaliyohifadhiwa",
     navSubscription: "Kifurushi",
     navAdmin: "Utawala",
     navFounder: "Nkundimana Theogene",
+    navExercises: "Muundo wa Mazoezi",
+    navWorksheets: "Karatasi za Kazi",
+    navNurseryPlans: "Somo la Chekechea",
+    navSlides: "Slaidi za Somo",
+    navLibrary: "Maktaba na Mipango ya Kazi",
+    navCertificates: "Vyeti vya AI",
   },
 };
 

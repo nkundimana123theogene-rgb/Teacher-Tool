@@ -1,5 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, X, Send, Sparkles, MessageSquare, Phone, ExternalLink, HelpCircle, ShieldCheck, Zap } from 'lucide-react';
+import { 
+  Bot, 
+  X, 
+  Send, 
+  Sparkles, 
+  MessageSquare, 
+  Phone, 
+  ExternalLink, 
+  HelpCircle, 
+  ShieldCheck, 
+  Zap,
+  History,
+  Trash2,
+  Copy,
+  Check,
+  Search,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react';
 import { OWNER_INFO } from '../data/plans';
 
 interface Message {
@@ -11,25 +29,105 @@ interface Message {
   whatsappLink?: boolean;
 }
 
+interface HistoryItem {
+  id: string;
+  question: string;
+  answer: string;
+  time: string;
+}
+
 export const RoboticsAssistantWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
+  const [activeTab, setActiveTab] = useState<'chat' | 'history'>('chat');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Load chat messages from sessionStorage or fall back to default greeting
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const defaultGreeting: Message = {
       id: '1',
       sender: 'bot',
       text: "Muraho! Ndi Teacher Tool AI Assistant 🤖. Mfite ubumenyi bwo kugufasha ku birebana n'imikoreshereze ya Teacher Tool, kwishyura no gukora Lesson Plans.",
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    },
-  ]);
+    };
+
+    try {
+      const saved = sessionStorage.getItem('robotics_chat_messages');
+      return saved ? JSON.parse(saved) : [defaultGreeting];
+    } catch {
+      return [defaultGreeting];
+    }
+  });
+
+  // Load history list from sessionStorage
+  const [historyItems, setHistoryItems] = useState<HistoryItem[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('robotics_chat_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Persist chat messages
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('robotics_chat_messages', JSON.stringify(messages));
+    } catch (err) {
+      console.warn('Could not save chat messages:', err);
+    }
+  }, [messages]);
+
+  // Persist history list
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('robotics_chat_history', JSON.stringify(historyItems));
+    } catch (err) {
+      console.warn('Could not save chat history:', err);
+    }
+  }, [historyItems]);
+
+  // Listen for custom event or global method to open robotic assistant immediately
+  useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
+    window.addEventListener('open-robotics-assistant', handleOpen);
+    (window as any).openRoboticsAssistant = handleOpen;
+    return () => {
+      window.removeEventListener('open-robotics-assistant', handleOpen);
+      delete (window as any).openRoboticsAssistant;
+    };
+  }, []);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && activeTab === 'chat') {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isOpen]);
+  }, [messages, isOpen, activeTab]);
+
+  const handleCopyText = (text: string, id: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
+
+  const handleClearHistory = () => {
+    if (window.confirm('Ese urashaka gusiba amateka yose y\'ibibazo wabajije?')) {
+      setHistoryItems([]);
+      const defaultGreeting: Message = {
+        id: '1',
+        sender: 'bot',
+        text: "Muraho! Ndi Teacher Tool AI Assistant 🤖. Mfite ubumenyi bwo kugufasha ku birebana n'imikoreshereze ya Teacher Tool, kwishyura no gukora Lesson Plans.",
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages([defaultGreeting]);
+    }
+  };
 
   const handleSendQuickQuery = (question: string, botAnswer: string, showWhatsapp = false) => {
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -42,36 +140,52 @@ export const RoboticsAssistantWidget: React.FC = () => {
       whatsappLink: showWhatsapp,
     };
     setMessages((prev) => [...prev, userMsg, botMsg]);
+
+    // Add to session history
+    const newItem: HistoryItem = {
+      id: Date.now().toString(),
+      question,
+      answer: botAnswer,
+      time,
+    };
+    setHistoryItems((prev) => [newItem, ...prev]);
   };
 
-  const handleSendMessage = (e?: React.FormEvent) => {
+  const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
 
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const userText = input.trim();
     setInput('');
+    setIsLoading(true);
 
     const userMsg: Message = { id: Date.now().toString(), sender: 'user', text: userText, time };
-    setMessages((prev) => [...prev, userMsg]);
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
 
-    // Simple AI bot rule-based routing for instant, accurate customer responses
-      setTimeout(() => {
-        let botResponse = `Urakoze ku kibazo cyawe! Teacher Tool AI Assistant ifite amakuru arambuye ku rwego rwa Mwarimu. Twagufasha kuri MoMo Code (${OWNER_INFO.momoCode}), gukora Lesson Plan, cyangwa ukadusanga mu muryango wa WhatsApp Group kuri ${OWNER_INFO.whatsapp}.`;
-        let showWhatsapp = false;
+    try {
+      const response = await fetch('/api/chat-assistant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: updatedMessages.slice(-12).map(msg => ({
+            sender: msg.sender,
+            text: msg.text
+          }))
+        }),
+      });
 
-        const lower = userText.toLowerCase();
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
 
-        if (lower.includes('momo') || lower.includes('kwishyura') || lower.includes('pay') || lower.includes('igiciro') || lower.includes('code')) {
-          botResponse = `Kwishyura biroroshye cyane!\n\n1. Kanda Code ya Mobile Money: ${OWNER_INFO.momoCode}\n2. Shyiramo amafaranga y'ifatabuguzi wahisemo (Single Plan: 1,000 RWF, Teacher Monthly: 5,000 RWF, Unlimited: 15,000 RWF).\n3. Izina rizazaho: ${OWNER_INFO.accountHolder}.\n4. Umaze kwishyura, kanda kuri 'Admin Panel' cyangwa ukoreshe WhatsApp ${OWNER_INFO.whatsapp} kugira ngo bakwegukane konti yawe!`;
-        } else if (lower.includes('free') || lower.includes('ubuntu') || lower.includes(' quota')) {
-          botResponse = `Buri mwarimu n'umukiriya ahabwa LESSON PLANS 3 Z'UBUNTU buri ntangiriro z'ukwezi! Umaze kuzirangiza, ushobora kugura ifatabuguzi ry'ukwezi gukomeza gukora amasomo ahanitse.`;
-        } else if (lower.includes('whatsapp') || lower.includes('group') || lower.includes('kwinjira') || lower.includes('ubufasha') || lower.includes('phone') || lower.includes('nimero')) {
-          botResponse = `Ushobora kwinjira mu muryango wacu wa WhatsApp no kubona ubufasha bw'ako kanya kuri nimero ${OWNER_INFO.whatsapp} (${OWNER_INFO.accountHolder}).`;
-          showWhatsapp = true;
-        } else if (lower.includes('lesson plan') || lower.includes('reb') || lower.includes('gukora') || lower.includes('generate')) {
-          botResponse = `Kugira ngo ukore Lesson Plan nshya:\n1. Kanda 'Generate Lesson Plan'\n2. Uzuza ibintu by'isomo ry icyigwa (Subject, Grade, Lesson Title, Unit, Learning Materials)\n3. AI izaguha Instructional Objective yakozwe neza n'imigendekere yose y'isomo mu rurimi wahisemo!`;
-        }
+      const data = await response.json();
+      const botResponse = data.reply;
+      const lowerReply = botResponse.toLowerCase();
+      const showWhatsapp = lowerReply.includes('whatsapp') || lowerReply.includes('0781339530');
 
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
@@ -80,9 +194,67 @@ export const RoboticsAssistantWidget: React.FC = () => {
         time,
         whatsappLink: showWhatsapp,
       };
+
       setMessages((prev) => [...prev, botMsg]);
-    }, 400);
+
+      // Add to session history
+      const newItem: HistoryItem = {
+        id: Date.now().toString(),
+        question: userText,
+        answer: botResponse,
+        time,
+      };
+      setHistoryItems((prev) => [newItem, ...prev]);
+    } catch (err) {
+      console.error('Error fetching AI response, falling back to local system:', err);
+      
+      // Simple local fallback in case of connection failure or server error
+      let botResponse = `Urakoze ku kibazo cyawe! Teacher Tool AI Assistant ifite amakuru arambuye ku rwego rwa Mwarimu. Twagufasha kuri MoMo Code (${OWNER_INFO.momoCode}), gukora Lesson Plan kuri urubuga rwacu https://teacherlessonplans.ai.studio, cyangwa ukadusanga mu muryango wa WhatsApp Group kuri ${OWNER_INFO.whatsapp}.`;
+      let showWhatsapp = false;
+
+      const lower = userText.toLowerCase();
+
+      if (lower.includes('link') || lower.includes('website') || lower.includes('site') || lower.includes('url') || lower.includes('urubuga') || lower.includes('web')) {
+        botResponse = `Urubuga rwacu rw'Ikoranabuhanga ruzwi nka Nkorera Education rushobora kuboneka kuri link: https://teacherlessonplans.ai.studio - Aha niho ushobora gukorera no gukura (download) Lesson Plans, Schemes of Work, na Worksheets zigezweho!`;
+      } else if (lower.includes('momo') || lower.includes('kwishyura') || lower.includes('pay') || lower.includes('igiciro') || lower.includes('code')) {
+        botResponse = `Kwishyura biroroshye cyane!\n\n1. Kanda Code ya Mobile Money: ${OWNER_INFO.momoCode}\n2. Shyiramo amafaranga y'ifatabuguzi wahisemo (Single Plan: 1,000 RWF, Teacher Monthly: 5,000 RWF, Unlimited: 15,000 RWF).\n3. Izina rizazaho: ${OWNER_INFO.accountHolder}.\n4. Umaze kwishyura, kanda kuri 'Admin Panel' cyangwa ukoreshe WhatsApp ${OWNER_INFO.whatsapp} kugira ngo bakwegukane konti yawe! Ushobora no gusura urubuga rwacu: https://teacherlessonplans.ai.studio`;
+      } else if (lower.includes('free') || lower.includes('ubuntu') || lower.includes(' quota')) {
+        botResponse = `Buri mwarimu n'umukiriya ahabwa LESSON PLANS 3 Z'UBUNTU buri ntangiriro z'ukwezi kuri https://teacherlessonplans.ai.studio! Umaze kuzirangiza, ushobora kugura ifatabuguzi ry'ukwezi gukomeza gukora amasomo ahanitse.`;
+      } else if (lower.includes('whatsapp') || lower.includes('group') || lower.includes('kwinjira') || lower.includes('ubufasha') || lower.includes('phone') || lower.includes('nimero')) {
+        botResponse = `Ushobora kwinjira mu muryango wacu wa WhatsApp no kubona ubufasha bw'ako kanya kuri nimero ${OWNER_INFO.whatsapp} (${OWNER_INFO.accountHolder}). Link y'urubuga rwacu ni https://teacherlessonplans.ai.studio`;
+        showWhatsapp = true;
+      } else if (lower.includes('lesson plan') || lower.includes('reb') || lower.includes('gukora') || lower.includes('generate')) {
+        botResponse = `Kugira ngo ukore Lesson Plan nshya kuri https://teacherlessonplans.ai.studio :\n1. Kanda 'Generate Lesson Plan'\n2. Uzuza ibintu by'isomo ry icyigwa (Subject, Grade, Lesson Title, Unit, Learning Materials)\n3. AI izaguha Instructional Objective yakozwe neza n'imigendekere yose y'isomo mu rurimi wahisemo!`;
+      }
+
+      const botMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: 'bot',
+        text: botResponse,
+        time,
+        whatsappLink: showWhatsapp,
+      };
+      
+      setMessages((prev) => [...prev, botMsg]);
+
+      // Add to session history
+      const newItem: HistoryItem = {
+        id: Date.now().toString(),
+        question: userText,
+        answer: botResponse,
+        time,
+      };
+      setHistoryItems((prev) => [newItem, ...prev]);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  // Filter history items by search query
+  const filteredHistoryItems = historyItems.filter(item => 
+    item.question.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    item.answer.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <>
@@ -119,7 +291,7 @@ export const RoboticsAssistantWidget: React.FC = () => {
 
       {/* Robotics Chat Widget Panel */}
       {isOpen && (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-[92vw] sm:w-[400px] h-[550px] max-h-[85vh] bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200 print:hidden">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-[92vw] sm:w-[400px] h-[550px] max-h-[85vh] bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200 print:hidden" id="robotics-assistant-panel">
           {/* Header */}
           <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 p-4 text-white flex items-center justify-between shrink-0 border-b border-emerald-700/50">
             <div className="flex items-center gap-3">
@@ -148,102 +320,291 @@ export const RoboticsAssistantWidget: React.FC = () => {
             </button>
           </div>
 
-          {/* Quick Shortcuts Bar */}
-          <div className="bg-slate-50 p-2.5 border-b border-slate-200 overflow-x-auto flex items-center gap-2 text-xs shrink-0 no-scrollbar">
+          {/* DUAL NAVIGATION TABS */}
+          <div className="flex bg-slate-100 border-b border-slate-200 shrink-0">
             <button
-              onClick={() =>
-                handleSendQuickQuery(
-                  "Nkoza nte kwishyura kuri MoMo Code?",
-                  `Kanda Code ya MoMo: ${OWNER_INFO.momoCode} (Izina: ${OWNER_INFO.accountHolder}). Shyiramo amafaranga y'ifatabuguzi ryawe, hanyuma wuzuze kwishyura!`
-                )
-              }
-              className="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 rounded-lg border border-slate-200 text-[11px] font-bold shrink-0 transition-colors flex items-center gap-1"
+              onClick={() => setActiveTab('chat')}
+              className={`flex-1 py-2.5 text-xs font-black transition-all flex items-center justify-center gap-2 border-b-2 ${
+                activeTab === 'chat'
+                  ? 'border-emerald-600 text-emerald-800 bg-white'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
             >
-              <Zap className="w-3 h-3 text-amber-500" />
-              <span>MoMo Code ({OWNER_INFO.momoCode})</span>
+              <MessageSquare className="w-4 h-4" />
+              <span>Chat Bot 💬</span>
             </button>
             <button
-              onClick={() =>
-                handleSendQuickQuery(
-                  "Ese Lesson Plans 3 z'ubuntu zikora zite?",
-                  `Buri mwarimu n'umukiriya wese ahabwa Lesson Plans 3 z'UBUNTU buri ntangiriro z'ukwezi! Zikoreshe gukora n'isesengura ry'amasomo yawe.`
-                )
-              }
-              className="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 rounded-lg border border-slate-200 text-[11px] font-bold shrink-0 transition-colors flex items-center gap-1"
+              onClick={() => setActiveTab('history')}
+              className={`flex-1 py-2.5 text-xs font-black transition-all flex items-center justify-center gap-2 border-b-2 relative ${
+                activeTab === 'history'
+                  ? 'border-emerald-600 text-emerald-800 bg-white'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
             >
-              <Sparkles className="w-3 h-3 text-emerald-600" />
-              <span>3 Free Plans/Month</span>
-            </button>
-            <button
-              onClick={() =>
-                handleSendQuickQuery(
-                  "Nshaka kwinjira mu muryango wa WhatsApp!",
-                  `Ushobora kwinjira mu muryango wa WhatsApp ukoresheje nimero 0781339530 cyangwa ukanda buto y'icyobere yo kwinjira kumpapuro!`,
-                  true
-                )
-              }
-              className="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-[11px] font-bold shrink-0 transition-colors flex items-center gap-1 shadow-2xs"
-            >
-              <Phone className="w-3 h-3 text-amber-300" />
-              <span>WhatsApp Group (0781339530)</span>
+              <History className="w-4 h-4" />
+              <span>Session History 📜</span>
+              {historyItems.length > 0 && (
+                <span className="absolute right-4 top-2.5 px-1.5 py-0.5 bg-emerald-600 text-white text-[9px] font-black rounded-full leading-none">
+                  {historyItems.length}
+                </span>
+              )}
             </button>
           </div>
 
-          {/* Messages Body */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
-              >
-                <div
-                  className={`max-w-[85%] p-3 rounded-2xl text-xs leading-relaxed ${
-                    msg.sender === 'user'
-                      ? 'bg-emerald-700 text-white rounded-tr-none font-medium shadow-xs'
-                      : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none shadow-xs'
-                  }`}
+          {/* CHAT TAB VIEW */}
+          {activeTab === 'chat' && (
+            <>
+              {/* Quick Shortcuts Bar */}
+              <div className="bg-slate-50 p-2.5 border-b border-slate-200 overflow-x-auto flex items-center gap-2 text-xs shrink-0 no-scrollbar">
+                <button
+                  onClick={() =>
+                    handleSendQuickQuery(
+                      "Nkoza nte kwishyura kuri MoMo Code?",
+                      `Kanda Code ya MoMo: ${OWNER_INFO.momoCode} (Izina: ${OWNER_INFO.accountHolder}). Shyiramo amafaranga y'ifatabuguzi ryawe, hanyuma wuzuze kwishyura!`
+                    )
+                  }
+                  className="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 rounded-lg border border-slate-200 text-[11px] font-bold shrink-0 transition-colors flex items-center gap-1"
                 >
-                  <p className="whitespace-pre-line">{msg.text}</p>
-
-                  {msg.whatsappLink && (
-                    <div className="mt-2.5 pt-2 border-t border-slate-100">
-                      <a
-                        href={OWNER_INFO.whatsappUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-lg shadow-xs transition-colors"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>Kwinjira mu WhatsApp Group (0781339530)</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-                  )}
-                </div>
-                <span className="text-[9px] text-slate-400 mt-1 px-1">{msg.time}</span>
+                  <Zap className="w-3 h-3 text-amber-500" />
+                  <span>MoMo Code ({OWNER_INFO.momoCode})</span>
+                </button>
+                <button
+                  onClick={() =>
+                    handleSendQuickQuery(
+                      "Ese Lesson Plans 3 z'ubuntu zikora zite?",
+                      `Buri mwarimu n'umukiriya wese ahabwa Lesson Plans 3 z'UBUNTU buri ntangiriro z'ukwezi! Zikoreshe gukora n'isesengura ry'amasomo yawe.`
+                    )
+                  }
+                  className="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 rounded-lg border border-slate-200 text-[11px] font-bold shrink-0 transition-colors flex items-center gap-1"
+                >
+                  <Sparkles className="w-3 h-3 text-emerald-600" />
+                  <span>3 Free Plans/Month</span>
+                </button>
+                <button
+                  onClick={() =>
+                    handleSendQuickQuery(
+                      "Nshaka kwinjira mu muryango wa WhatsApp!",
+                      `Ushobora kwinjira mu muryango wa WhatsApp ukoresheje nimero 0781339530 cyangwa ukanda buto y'icyobere yo kwinjira kumpapuro!`,
+                      true
+                    )
+                  }
+                  className="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-[11px] font-bold shrink-0 transition-colors flex items-center gap-1 shadow-2xs"
+                >
+                  <Phone className="w-3 h-3 text-amber-300" />
+                  <span>WhatsApp Group (0781339530)</span>
+                </button>
               </div>
-            ))}
-            <div ref={chatEndRef} />
-          </div>
 
-          {/* Input Footer */}
-          <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-slate-200 flex items-center gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Baza Robotic cyangwa wandike ikibazo..."
-              className="flex-1 px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white text-slate-800"
-            />
-            <button
-              type="submit"
-              disabled={!input.trim()}
-              className="p-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 text-white rounded-xl shadow-xs transition-all flex items-center justify-center shrink-0"
-              title="Ohereza / Send"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </form>
+              {/* Messages Body */}
+              <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50">
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
+                  >
+                    <div
+                      className={`max-w-[85%] p-3 rounded-2xl text-xs leading-relaxed ${
+                        msg.sender === 'user'
+                          ? 'bg-emerald-700 text-white rounded-tr-none font-medium shadow-xs'
+                          : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none shadow-xs'
+                      }`}
+                    >
+                      <p className="whitespace-pre-line">{msg.text}</p>
+
+                      {msg.whatsappLink && (
+                        <div className="mt-2.5 pt-2 border-t border-slate-100">
+                          <a
+                            href={OWNER_INFO.whatsappUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-lg shadow-xs transition-colors"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span>Kwinjira mu WhatsApp Group (0781339530)</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-[9px] text-slate-400 mt-1 px-1">{msg.time}</span>
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="flex flex-col items-start animate-pulse">
+                    <div className="bg-white text-slate-500 border border-slate-200 rounded-2xl rounded-tl-none p-3 text-xs flex items-center gap-1.5 shadow-xs">
+                      <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      <span className="text-[10px] font-semibold text-slate-400 ml-1">AI Assistant ariko gutegura igisubizo...</span>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              {/* Input Footer */}
+              <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-slate-200 flex items-center gap-2 shrink-0">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  disabled={isLoading}
+                  placeholder={isLoading ? "Tegereza igisubizo..." : "Baza Robotic cyangwa wandike ikibazo..."}
+                  className="flex-1 px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white text-slate-800 disabled:opacity-60"
+                />
+                <button
+                  type="submit"
+                  disabled={!input.trim() || isLoading}
+                  className="p-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 text-white rounded-xl shadow-xs transition-all flex items-center justify-center shrink-0"
+                  title="Ohereza / Send"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </form>
+            </>
+          )}
+
+          {/* SESSION HISTORY TAB VIEW */}
+          {activeTab === 'history' && (
+            <div className="flex-1 flex flex-col min-h-0 bg-slate-50/50">
+              {/* Live Filter Search Input */}
+              <div className="p-3 bg-white border-b border-slate-200 shrink-0">
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search history / Shakisha ibyahise..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white text-slate-800 font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* Empty state when no history exists */}
+              {filteredHistoryItems.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-3">
+                  <div className="w-14 h-14 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center text-2xl shadow-inner border border-slate-200">
+                    📜
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-extrabold text-xs text-slate-700">Nta mateka y'ibibazo arahari</h4>
+                    <p className="text-[11px] text-slate-500 leading-normal max-w-[240px] mx-auto font-medium">
+                      Ibibazo byose ubaza robot cyangwa AI suggestions uhabwa birabikwa hano muri iyi session ngo uze kubyibuka neza.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                /* History List */
+                <div className="flex-1 overflow-y-auto p-3 space-y-2.5 min-h-0">
+                  <div className="flex items-center justify-between px-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
+                    <span>{filteredHistoryItems.length} Q&A Items</span>
+                    <button
+                      onClick={handleClearHistory}
+                      className="text-rose-500 hover:text-rose-600 transition-colors flex items-center gap-1 font-black"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Siba byose (Clear)</span>
+                    </button>
+                  </div>
+
+                  {filteredHistoryItems.map((item) => {
+                    const isExpanded = expandedItemId === item.id;
+                    return (
+                      <div 
+                        key={item.id}
+                        className="bg-white border border-slate-200 rounded-2xl p-3.5 space-y-2 hover:border-emerald-500/40 transition-all shadow-xs text-left"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div 
+                            onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
+                            className="flex-1 cursor-pointer"
+                          >
+                            <span className="text-[9px] text-slate-400 font-extrabold block mb-0.5">{item.time}</span>
+                            <h4 className="font-extrabold text-xs text-slate-800 line-clamp-2 leading-snug">
+                              ❓ {item.question}
+                            </h4>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={() => handleCopyText(item.question, item.id + '-q')}
+                              className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-emerald-700 rounded-lg transition-colors"
+                              title="Copy Question"
+                            >
+                              {copiedId === item.id + '-q' ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
+                              className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-emerald-700 rounded-lg transition-colors"
+                              title={isExpanded ? "Collapse" : "Expand"}
+                            >
+                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Collapsed teaser */}
+                        {!isExpanded && (
+                          <div 
+                            onClick={() => setExpandedItemId(item.id)}
+                            className="text-[11px] text-slate-500 line-clamp-1 font-semibold bg-slate-50/80 px-2.5 py-1.5 rounded-lg cursor-pointer hover:bg-slate-100"
+                          >
+                            🤖 {item.answer}
+                          </div>
+                        )}
+
+                        {/* Expanded detail card */}
+                        {isExpanded && (
+                          <div className="space-y-3 pt-2.5 border-t border-slate-100 animate-in fade-in duration-150">
+                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                              <span className="text-[9px] font-black text-slate-400 block mb-1 uppercase tracking-wide">
+                                AI Assistant Reply:
+                              </span>
+                              <p className="text-[11.5px] text-slate-700 leading-relaxed font-bold whitespace-pre-line">
+                                🤖 {item.answer}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-2 pt-1 text-[11px]">
+                              <button
+                                onClick={() => handleCopyText(item.answer, item.id + '-a')}
+                                className="flex items-center gap-1.5 text-emerald-700 hover:text-emerald-800 font-extrabold"
+                              >
+                                {copiedId === item.id + '-a' ? (
+                                  <>
+                                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                    <span>Copied!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3.5 h-3.5" />
+                                    <span>Copy Response 📋</span>
+                                  </>
+                                )}
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  setActiveTab('chat');
+                                }}
+                                className="text-slate-500 hover:text-slate-800 font-black flex items-center gap-1"
+                              >
+                                <span>Open in Chat 💬</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </>

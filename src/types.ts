@@ -1,6 +1,6 @@
 export type LanguageOption = 'English' | 'Kinyarwanda' | 'French' | 'Swahili';
 
-export type PlanFormatOption = 'reb_grid' | 'open_format';
+export type PlanFormatOption = 'reb_grid' | 'open_format' | 'remedial_grid' | 'nursery_grid';
 
 export interface SubscriptionPlan {
   id: string;
@@ -27,6 +27,7 @@ export interface UserProfile {
   status?: 'active' | 'blocked';
   loginCount?: number;
   sessionToken?: string;
+  canDownloadCertificate?: boolean;
 }
 
 export interface LessonPlanRequest {
@@ -51,6 +52,18 @@ export interface LessonPlanRequest {
   language: LanguageOption;
   format: PlanFormatOption;
   additionalNotes?: string;
+  // Remedial Learning Program (RLP) fields
+  remedialCount?: string;
+  consolidationCount?: string;
+  extensionCount?: string;
+  remedialGroup1Category?: string;
+  remedialGroup2Category?: string;
+  remedialGroup3Category?: string;
+  remedialGroup4Category?: string;
+  district?: string;
+  mainProblemCategory?: string;
+  specificChallenges?: string;
+  teachingLearningAids?: string;
 }
 
 export interface LessonPlanStep {
@@ -87,10 +100,42 @@ export interface LessonPlanData {
     location: string;
     learningMaterials: string;
     references: string;
+    remedialCount?: string;
+    consolidationCount?: string;
+    extensionCount?: string;
+    remedialGroup1Category?: string;
+    remedialGroup2Category?: string;
+    remedialGroup3Category?: string;
+    remedialGroup4Category?: string;
+    district?: string;
+    mainProblemCategory?: string;
+    specificChallenges?: string;
+    teachingLearningAids?: string;
+    // Section B Objectives
+    group1Objective?: string;
+    group2Objective?: string;
+    group3Objective?: string;
+    // Section C
+    identifiedProblems?: string;
+    remedialActivitiesGroup1?: string;
+    remedialActivitiesGroup2?: string;
+    remedialActivitiesGroup3?: string;
+    usedStepsAssessment?: string;
+    remedialAids?: string;
+    // Section D
+    consolidationCategory?: string;
+    consolidationActivities?: string;
+    consolidationMethodology?: string;
+    consolidationAids?: string;
+    extensionCategory?: string;
+    extensionActivities?: string;
+    extensionMethodology?: string;
+    extensionAids?: string;
   };
   steps: LessonPlanStep[];
   selfEvaluation: string;
   openFormatContent?: string;
+  tags?: string[];
 }
 
 export interface PaymentSubmission {
@@ -122,4 +167,198 @@ export interface LessonPlanLog {
   schoolName?: string;
   instructionalObjective?: string;
 }
+
+// Exercises / Homework / Classwork / Quiz types
+export type ExerciseType = 'homework' | 'classwork' | 'quiz';
+
+export type QuestionCategory = 
+  | 'multiple_choice'
+  | 'true_false'
+  | 'fill_blank'
+  | 'short_answer'
+  | 'long_answer'
+  | 'matching'
+  | 'calculation'
+  | 'essay';
+
+export interface ExerciseSectionConfig {
+  id: string;
+  title: string;
+  category: QuestionCategory;
+  questionCount: number;
+  marksPerQuestion: number;
+}
+
+export interface ExerciseFormRequest {
+  creationType: ExerciseType;
+  curriculumType: 'REB' | 'RTB';
+  subject: string;
+  grade: string;
+  topic: string;
+  unit?: string;
+  country: string;
+  curriculumStandard: string;
+  language: LanguageOption;
+  timeAllowed: string;
+  useSections: boolean;
+  sections: ExerciseSectionConfig[];
+  sourceContent?: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard' | 'Mixed';
+  includeAnswerKey: boolean;
+  includeMarkingScheme: boolean;
+  includeHints: boolean;
+  searchCurriculum: boolean;
+}
+
+export interface ExerciseQuestion {
+  number: number;
+  sectionTitle?: string;
+  type: QuestionCategory;
+  questionText: string;
+  options?: string[];
+  correctAnswer?: string;
+  explanation?: string;
+  markingGuide?: string;
+  hint?: string;
+  marks: number;
+}
+
+export interface ExerciseOutputData {
+  id: string;
+  createdAt: string;
+  creationType: ExerciseType;
+  title: string;
+  subject: string;
+  grade: string;
+  topic: string;
+  unit?: string;
+  timeAllowed: string;
+  totalQuestions: number;
+  totalMarks: number;
+  language: LanguageOption;
+  instructions: string[];
+  sections: {
+    title: string;
+    instructions?: string;
+    questions: ExerciseQuestion[];
+  }[];
+  answerKey?: {
+    questionNumber: number;
+    answer: string;
+    explanation?: string;
+  }[];
+  markingScheme?: {
+    questionNumber: number;
+    criteria: string;
+    maxMarks: number;
+  }[];
+}
+
+// Worksheet Generation types
+export interface WorksheetRequest {
+  subject: string;
+  gradeLevel: string;
+  topic: string;
+  worksheetType: string;
+  difficulty: string;
+  questionCount: number;
+  marksPerQuestion: number;
+  language: string;
+  curriculum?: string;
+  country?: string;
+  customInstructions?: string;
+  additionalDetails?: string;
+  webSearch: boolean;
+  includeAnswerKey: boolean;
+}
+
+export interface WorksheetQuestion {
+  number: number;
+  questionText: string;
+  options?: string[];
+  marks: number;
+}
+
+export interface WorksheetData {
+  id: string;
+  createdAt: string;
+  subject: string;
+  gradeLevel: string;
+  topic: string;
+  worksheetType: string;
+  difficulty: string;
+  questionCount: number;
+  marksPerQuestion: number;
+  totalMarks: number;
+  language: string;
+  curriculum?: string;
+  country?: string;
+  customInstructions?: string;
+  additionalDetails?: string;
+  title: string;
+  instructions: string[];
+  questions: WorksheetQuestion[];
+  answerKey?: {
+    questionNumber: number;
+    answer: string;
+    explanation?: string;
+  }[];
+}
+
+// Class Diary (Cahier de Textes) types
+export interface ClassDiaryRequest {
+  subject: string;
+  classGrade: string;
+  date: string;
+  period: string;
+  lessonTitle: string;
+  language: LanguageOption;
+  additionalInfo?: string;
+}
+
+export interface ClassDiaryData {
+  id: string;
+  createdAt: string;
+  userEmail: string;
+  subject: string;
+  classGrade: string;
+  date: string;
+  period: string;
+  lessonTitle: string;
+  workCoveredSummary: string; // Ibyakozwe / Résumé du cours
+  skillsCompetencesTargeted: string; // Ubushobozi bwifuzwa / Compétences visées
+  homeworkAssigned: string; // Umukoro watanzwe / Devoirs donnés
+  attendanceNotes: string; // Abasibye / Présence
+  remarksObservations: string; // Ibyagaragaye / Remarques
+  language: LanguageOption;
+}
+
+// AI Certificate Generator types
+export interface CertificateRequest {
+  recipientName: string;
+  recipientRole: string;
+  schoolName: string;
+  certificateTitle: string;
+  category: 'student_academic' | 'student_discipline' | 'remedial_progress' | 'teacher_cpd' | 'stem_award' | 'special_coach' | 'custom';
+  citationText: string;
+  issueDate: string;
+  issuer1Name: string;
+  issuer1Title: string;
+  issuer2Name?: string;
+  issuer2Title?: string;
+  borderStyle: 'lime_gold_luxury' | 'reb_academic' | 'modern_emerald_lime';
+  language: LanguageOption;
+  gender?: 'male' | 'female' | 'auto';
+  recipientPhoto?: string;
+}
+
+export interface CertificateData extends CertificateRequest {
+  id: string;
+  createdAt: string;
+  certificateNumber: string;
+  userEmail?: string;
+}
+
+
+
 
