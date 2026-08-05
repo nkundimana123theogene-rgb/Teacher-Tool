@@ -30,7 +30,9 @@ import {
   ChevronDown,
   ChevronUp,
   Lightbulb,
-  Star
+  Star,
+  Globe,
+  Languages
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -270,6 +272,120 @@ export const LessonPlanView: React.FC<LessonPlanViewProps> = ({ plan, onBack }) 
     } else if (type === 'down' && starRating === 0) {
       setStarRating(2);
     }
+  };
+
+  const handleTranslatePlanLanguage = (targetLang: string) => {
+    const isKiny = targetLang.toLowerCase().includes('kiny') || targetLang.toLowerCase().includes('rwanda');
+    const isFrench = targetLang.toLowerCase().includes('fren') || targetLang.toLowerCase().includes('fran');
+    const isSwahili = targetLang.toLowerCase().includes('swah') || targetLang.toLowerCase().includes('kisw');
+
+    const lessonTitle = editedPlan.header.lessonTitle || 'Lesson Topic';
+    const duration = editedPlan.header.duration || '40 minutes';
+
+    let newObjective = editedPlan.header.instructionalObjective;
+    if (isKiny) {
+      newObjective = `Mu gusoza isomo, bahawe imfashanyigisho n'inyandiko zikwiye [Condition], abanyeshuri [Who] bazaba bashoboye gusobanura no gukoresha [Action/Behavior] umutwe wa ${lessonTitle} [Content] mu buryo bw'ukuri no kumpamo [Degree of Performance].`;
+    } else if (isFrench) {
+      newObjective = `À la fin de la leçon, à l'aide des supports pédagogiques fournis [Condition], les apprenants [Who] seront capables d'expliquer et d'appliquer [Action/Behavior] le sujet ${lessonTitle} [Content] avec précision [Degree of Performance].`;
+    } else if (isSwahili) {
+      newObjective = `Fikia mwisho wa somo, kwa kutumia vifaa vya kufundishia [Condition], wanafunzi [Who] wataweza kufafanua na kutumia [Action/Behavior] mada ya ${lessonTitle} [Content] kwa usahihi kabisa [Degree of Performance].`;
+    } else {
+      newObjective = `By the end of the lesson, given illustrative charts and exercise sheets [Condition], learners [Who] will be able to explain, construct, and apply [Action/Behavior] ${lessonTitle} [Content] accurately within ${duration} [Degree of Performance].`;
+    }
+
+    const newSteps = editedPlan.steps.map((step, idx) => {
+      let stepName = step.stepName;
+      let teacherActivities = step.teacherActivities;
+      let learnerActivities = step.learnerActivities;
+      let competencesAndCrossCutting = step.competencesAndCrossCutting;
+
+      if (idx === 0) {
+        if (isKiny) {
+          stepName = '1. IRIBURIRO (INTRODUCTION)';
+          teacherActivities = `Mwarimu asaba abanyeshuri kwibuka isomo ryatambutse, ababaza ibibazo bitanga icyerekezo ku topic ya "${lessonTitle}". Ahanika intego y'isomo ku kibaho.`;
+          learnerActivities = `Abanyeshuri barasubiza ibibazo by'isomo rya kera, barategera amatwi intego nshya kandi bakandika umutwe w'isomo muri kaye zabo.`;
+          competencesAndCrossCutting = 'Itumanaho (Communication) & Ubushobozi bwo gutekereza cyane (Critical thinking).';
+        } else if (isFrench) {
+          stepName = '1. INTRODUCTION';
+          teacherActivities = `L'enseignant révise les prérequis par des questions relatives au sujet "${lessonTitle}". Présente l'objectif de la leçon au tableau.`;
+          learnerActivities = `Les apprenants répondent aux questions de rappel, écoutent attentivement l'objectif et notent le titre de la leçon dans leurs cahiers.`;
+          competencesAndCrossCutting = 'Communication et pensée critique.';
+        } else if (isSwahili) {
+          stepName = '1. UTANGULIZI';
+          teacherActivities = `Mwalimu anakumbusha somo lililopita kwa kuuliza maswali yanayohusiana na mada ya "${lessonTitle}". Anaandika lengo la somo ubaoni.`;
+          learnerActivities = `Wanafunzi wanajibu maswali, wanasikiliza kwa makini lengo la somo na kuandika mada kwenye daftari zao.`;
+          competencesAndCrossCutting = 'Uwasilishaji na fikra tunduizi.';
+        } else {
+          stepName = '1. INTRODUCTION';
+          teacherActivities = `Teacher reviews prerequisite knowledge by asking key questions related to previous topics. Introduces the new lesson topic: "${lessonTitle}" and states the instructional objective clearly on the board.`;
+          learnerActivities = `Learners actively respond to recap questions, pay close attention to the introduced objective, and write down the lesson title in their notebooks.`;
+          competencesAndCrossCutting = 'Communication skills & Critical thinking through guided recap questions.';
+        }
+      } else if (idx === 1) {
+        if (isKiny) {
+          stepName = '2. INYIGISHO NYIRIZINA (DEVELOPMENT)';
+          teacherActivities = `Mwarimu asobanura neza amategeko n'ibice by'isomo rya "${lessonTitle}". Agaba abanyeshuri mu matsinda macheya (group work), akabahera ibikorwa (tasks) no gukora imyitozo. Mwarimu agendagenda mu matsinda afasha abafite ingorane.`;
+          learnerActivities = `Abanyeshuri bakorera mu matsinda, baraganira ku ngingo za ${lessonTitle}, bakora imyitozo bayobowe n'amatsinda, bakandika imyanzuro yabo bafite ubusabane. Abahagarariye amatsinda barasobanurira ibyo bagezeho imbere y'ishuri.`;
+          competencesAndCrossCutting = 'Ubusabane (Cooperation) & Uburinganire (Gender education in group leadership).';
+        } else if (isFrench) {
+          stepName = '2. DÉVELOPPEMENT';
+          teacherActivities = `L'enseignant explique le contenu de "${lessonTitle}". Organise les travaux de groupe, guide les exercices et soutient les apprenants en difficulté.`;
+          learnerActivities = `Les apprenants travaillent en petits groupes, discutent des concepts, résolvent les exercices et présentent leurs réponses à la classe.`;
+          competencesAndCrossCutting = 'Coopération et égalité des genres.';
+        } else if (isSwahili) {
+          stepName = '2. MAENDELEO YA SOMO';
+          teacherActivities = `Mwalimu anafafanua dhana kuu za "${lessonTitle}". Anagawanya wanafunzi katika makundi na kusimamia mazoezi.`;
+          learnerActivities = `Wanafunzi wanafanya kazi katika makundi, wanajadili na kusawazisha majibu, kisha wanawasilisha mbele ya darasa.`;
+          competencesAndCrossCutting = 'Ushirikiano na usawa wa kijinsia.';
+        } else {
+          stepName = '2. DEVELOPMENT (BODY OF LESSON)';
+          teacherActivities = `Teacher presents core concepts of "${lessonTitle}" using learning materials. Facilitates small group activities and practical exercises. Moves around the classroom providing targeted guidance, checking understanding, and encouraging active peer collaboration.`;
+          learnerActivities = `Learners work collaboratively in small groups to examine ${lessonTitle}, solve exercise problems, discuss key solutions, and present group findings to the class.`;
+          competencesAndCrossCutting = 'Cooperation and Interpersonal relations & Gender equality in team roles.';
+        }
+      } else if (idx === 2) {
+        if (isKiny) {
+          stepName = '3. UMWANZURO N\'ISUZUMA (CONCLUSION & EVALUATION)';
+          teacherActivities = `Mwarimu afatanyije n'abanyeshuri basoza incamake y'isomo. Mwarimu abaza ibibazo 2 byo gupima ubumenyi (formative assessment) kandi agahera abanyeshuri umukoro w'o murugo (homework).`;
+          learnerActivities = `Abanyeshuri baravuga incamake y'ibyo basobanukiwe, barasubiza ibibazo by'isuzuma, bakandika umukoro wo mu rugo mu makaye zabo.`;
+          competencesAndCrossCutting = 'Gukemura ibibazo (Problem solving) & Kwigira no kwiyemerera.';
+        } else if (isFrench) {
+          stepName = '3. CONCLUSION ET ÉVALUATION';
+          teacherActivities = `L'enseignant résume la leçon avec la participation des apprenants, pose des questions d'évaluation et donne les devoirs à domicile.`;
+          learnerActivities = `Les apprenants formulent la synthèse de ce qu'ils ont appris, répondent aux questions d'évaluation et notent les devoirs.`;
+          competencesAndCrossCutting = 'Résolution de problèmes et apprentissage autonome.';
+        } else if (isSwahili) {
+          stepName = '3. HITIMISHO NA TATHMINI';
+          teacherActivities = `Mwalimu anaongoza muhtasari wa somo, anauliza maswali ya tathmini na kutoa kazi ya nyumbani.`;
+          learnerActivities = `Wanafunzi wanatoa muhtasari wa kile walichojifunza, wanajibu maswali na kuandika kazi ya nyumbani.`;
+          competencesAndCrossCutting = 'Utatuzi wa matatizo na kujifunza maisha yote.';
+        } else {
+          stepName = '3. CONCLUSION & ASSESSMENT';
+          teacherActivities = `Teacher guides learners to summarize the main lesson takeaways. Administers quick formative assessment questions to check mastery, and assigns homework exercises.`;
+          learnerActivities = `Learners articulate key takeaways, answer assessment questions individually, and write down the assigned homework in their notebooks.`;
+          competencesAndCrossCutting = 'Metacognition & Problem solving.';
+        }
+      }
+
+      return {
+        stepName,
+        timing: step.timing || (idx === 0 ? '5 min' : idx === 1 ? '25 min' : '10 min'),
+        teacherActivities,
+        learnerActivities,
+        competencesAndCrossCutting,
+      };
+    });
+
+    setEditedPlan((prev) => ({
+      ...prev,
+      language: targetLang,
+      header: {
+        ...prev.header,
+        instructionalObjective: newObjective,
+        specialNeeds: isKiny ? 'Abafite ubumuga buzwi bazahabwa imfashanyigisho zihariye.' : 'Visual and auditory support provided as needed.',
+      },
+      steps: newSteps,
+    }));
   };
 
   const handleCommentSubmit = (e: React.FormEvent) => {
@@ -817,6 +933,36 @@ export const LessonPlanView: React.FC<LessonPlanViewProps> = ({ plan, onBack }) 
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* Quick Language Translator / Switcher */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <Globe className="w-3.5 h-3.5 text-emerald-600 ml-1.5 shrink-0" />
+            <span className="text-[11px] font-bold text-slate-700 mr-1 hidden sm:inline">Ururimi / Lang:</span>
+            {[
+              { code: 'English', label: 'EN', flag: '🇬🇧' },
+              { code: 'Kinyarwanda', label: 'KINY', flag: '🇷🇼' },
+              { code: 'French', label: 'FR', flag: '🇫🇷' },
+              { code: 'Swahili', label: 'SWA', flag: '🇹ℤ' },
+            ].map((l) => {
+              const isActive = editedPlan.language === l.code;
+              return (
+                <button
+                  key={l.code}
+                  type="button"
+                  onClick={() => handleTranslatePlanLanguage(l.code)}
+                  title={`Translate lesson plan to ${l.code}`}
+                  className={`px-2 py-1 text-[11px] font-extrabold rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                    isActive
+                      ? 'bg-emerald-600 text-white shadow-xs scale-105'
+                      : 'bg-white hover:bg-slate-200 text-slate-700 border border-slate-200'
+                  }`}
+                >
+                  <span>{l.flag}</span>
+                  <span>{l.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
           {/* Toggle Live Edit Mode */}
           <button
             onClick={() => setIsEditMode(!isEditMode)}

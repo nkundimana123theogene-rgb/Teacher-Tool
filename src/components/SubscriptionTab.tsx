@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { SubscriptionPlan, UserProfile } from '../types';
 import { SUBSCRIPTION_PLANS, OWNER_INFO } from '../data/plans';
+import { AntiScamBanner } from './AntiScamBanner';
 
 interface SubscriptionTabProps {
   user: UserProfile | null;
@@ -80,6 +81,9 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
+      {/* System Anti-Scam Protection Banner */}
+      <AntiScamBanner />
+
       {/* Hero Header */}
       <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
         <div className="relative z-10 max-w-3xl space-y-3">
@@ -88,10 +92,10 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
             <span>Teacher Tool • AI Lesson Plans</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
-            Hitamo Plan Yagufasha Gukora Lesson Plans Buri Kwezi
+            Select the Best Plan for Your Teaching Needs
           </h1>
           <p className="text-emerald-100 text-sm leading-relaxed">
-            Lesson Plans ku mwarimu n'amashuri. Hitamo plan ikubereye maze wishyure ukoresheje telefone yawe direct via Mobile Money (MTN / Airtel Code <strong className="text-amber-300 font-mono">{OWNER_INFO.momoCode}</strong>).
+            Instant lesson plan generation for teachers and schools. Choose your plan and pay directly using Mobile Money (MTN / Airtel Code <strong className="text-amber-300 font-mono">{OWNER_INFO.momoCode}</strong>).
           </p>
 
           <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-semibold text-emerald-200">
@@ -111,6 +115,234 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Imikoreshereze n'Ifatabuguzi (User Usage & Subscription Status Section) */}
+      {user && (
+        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div>
+              <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-500 fill-amber-300" />
+                <span>Imiterere n'Imikoreshereze ya Konti (Account & Usage Status)</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Kurikirana umubare w'imfashanyigisho wemerewe gukora kuri uku kwezi (Track your monthly generation quotas)
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-600">Plan:</span>
+              <span className="px-3 py-1 bg-amber-400 text-slate-950 text-xs font-black rounded-lg border border-amber-500 shadow-xs flex items-center gap-1">
+                <Zap className="w-3.5 h-3.5 fill-slate-950" />
+                <span>{user.currentPlan || 'Free Plan'}</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {/* 1. Lesson Plans Quota Card */}
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Lesson Plans</span>
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-md">
+                  Active
+                </span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-end justify-between text-xs font-black">
+                  <span className="text-slate-600">Izisigaye (Remaining):</span>
+                  <span className="text-emerald-700 font-mono text-base">{user.isAdmin ? 'Unlimited' : user.remainingPlans}</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div 
+                    className="bg-emerald-600 h-2 rounded-full transition-all" 
+                    style={{ width: user.isAdmin ? '100%' : `${Math.min(100, Math.max(10, (user.remainingPlans / 10) * 100))}%` }}
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-500 leading-tight">
+                * Lesson plans zihita zigabanuka iyo ugize isomo rishya utegura na AI.
+              </p>
+            </div>
+
+            {/* 2. Presentation Slides Quota Card */}
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Presentation Slides</span>
+                {user.isAdmin || user.hasPremiumToolsSub ? (
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-black rounded-md flex items-center gap-0.5">
+                    <Sparkles className="w-3 h-3 fill-amber-500 text-amber-500" />
+                    <span>Premium</span>
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 bg-slate-200 text-slate-700 text-[10px] font-black rounded-md">
+                    Free (Limit: 5)
+                  </span>
+                )}
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-end justify-between text-xs font-black">
+                  <span className="text-slate-600">Izakozwe (Created):</span>
+                  <span className="text-slate-900 font-mono text-base">
+                    {user.isAdmin || user.hasPremiumToolsSub ? `${user.monthlySlidesCount || 0} / ∞` : `${user.monthlySlidesCount || 0} / 5`}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all ${user.hasPremiumToolsSub ? 'bg-amber-500' : 'bg-orange-500'}`}
+                    style={{ width: user.isAdmin || user.hasPremiumToolsSub ? '100%' : `${Math.min(100, ((user.monthlySlidesCount || 0) / 5) * 100)}%` }}
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-500 leading-tight">
+                {user.hasPremiumToolsSub ? '✓ Unlimited access active for slides!' : "* Ushobora gukora slides 5 z'ubuntu buri kwezi."}
+              </p>
+            </div>
+
+            {/* 3. Exercises & Quizzes Quota Card */}
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Exercises & Exams</span>
+                {user.isAdmin || user.hasPremiumToolsSub ? (
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-black rounded-md flex items-center gap-0.5">
+                    <Sparkles className="w-3 h-3 fill-amber-500 text-amber-500" />
+                    <span>Premium</span>
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 bg-slate-200 text-slate-700 text-[10px] font-black rounded-md">
+                    Free (Limit: 5)
+                  </span>
+                )}
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-end justify-between text-xs font-black">
+                  <span className="text-slate-600">Izakozwe (Created):</span>
+                  <span className="text-slate-900 font-mono text-base">
+                    {user.isAdmin || user.hasPremiumToolsSub ? `${user.monthlyExercisesCount || 0} / ∞` : `${user.monthlyExercisesCount || 0} / 5`}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all ${user.hasPremiumToolsSub ? 'bg-amber-500' : 'bg-cyan-600'}`}
+                    style={{ width: user.isAdmin || user.hasPremiumToolsSub ? '100%' : `${Math.min(100, ((user.monthlyExercisesCount || 0) / 5) * 100)}%` }}
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-500 leading-tight">
+                {user.hasPremiumToolsSub ? '✓ Unlimited access active for assessments!' : "* Ushobora gukora assessments 5 z'ubuntu buri kwezi."}
+              </p>
+            </div>
+
+            {/* 4. Worksheets Quota Card */}
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Worksheets</span>
+                {user.isAdmin || user.hasPremiumToolsSub ? (
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-black rounded-md flex items-center gap-0.5">
+                    <Sparkles className="w-3 h-3 fill-amber-500 text-amber-500" />
+                    <span>Premium</span>
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 bg-slate-200 text-slate-700 text-[10px] font-black rounded-md">
+                    Free (Limit: 5)
+                  </span>
+                )}
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-end justify-between text-xs font-black">
+                  <span className="text-slate-600">Izakozwe (Created):</span>
+                  <span className="text-slate-900 font-mono text-base">
+                    {user.isAdmin || user.hasPremiumToolsSub ? `${user.monthlyWorksheetsCount || 0} / ∞` : `${user.monthlyWorksheetsCount || 0} / 5`}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all ${user.hasPremiumToolsSub ? 'bg-amber-500' : 'bg-emerald-600'}`}
+                    style={{ width: user.isAdmin || user.hasPremiumToolsSub ? '100%' : `${Math.min(100, ((user.monthlyWorksheetsCount || 0) / 5) * 100)}%` }}
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-500 leading-tight">
+                {user.hasPremiumToolsSub ? '✓ Unlimited access active for worksheets!' : "* Ushobora gukora worksheets 5 z'ubuntu buri kwezi."}
+              </p>
+            </div>
+
+            {/* 5. Class Diary (Cahier de Textes) Card */}
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Cahier de Textes</span>
+                {user.isAdmin || user.hasPremiumToolsSub ? (
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-black rounded-md flex items-center gap-0.5">
+                    <Sparkles className="w-3 h-3 fill-amber-500 text-amber-500" />
+                    <span>Premium</span>
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 bg-slate-200 text-slate-700 text-[10px] font-black rounded-md">
+                    Free (Limit: 5)
+                  </span>
+                )}
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-end justify-between text-xs font-black">
+                  <span className="text-slate-600">Izakozwe (Created):</span>
+                  <span className="text-slate-900 font-mono text-base">
+                    {user.isAdmin || user.hasPremiumToolsSub ? `${user.monthlyDiaryCount || 0} / ∞` : `${user.monthlyDiaryCount || 0} / 5`}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all ${user.hasPremiumToolsSub ? 'bg-amber-500' : 'bg-teal-600'}`}
+                    style={{ width: user.isAdmin || user.hasPremiumToolsSub ? '100%' : `${Math.min(100, ((user.monthlyDiaryCount || 0) / 5) * 100)}%` }}
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-500 leading-tight">
+                {user.hasPremiumToolsSub ? '✓ Unlimited access active for class diary!' : "* Ushobora gukora diaries 5 z'ubuntu buri kwezi."}
+              </p>
+            </div>
+
+            {/* Premium Tools Sub Info Banner */}
+            {!user.isAdmin && !user.hasPremiumToolsSub && (
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-4 border-2 border-dashed border-orange-300 flex flex-col justify-between space-y-3 shadow-xs">
+                <div>
+                  <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-orange-500 fill-amber-300 animate-pulse" />
+                    <span>Ukeneye izitemewe umubare (Unlimited)?</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-600 mt-1 leading-snug">
+                    Gura Premium Tools Sub rya <strong>2,500 Frw/kwezi</strong> kugira ngo ukureho imipaka yose kuri Slides, Worksheets, Imyitozo, na Class Diary!
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const plan = SUBSCRIPTION_PLANS.find(p => p.id === 'plan_25') || SUBSCRIPTION_PLANS[3];
+                    handleSelectUpgrade(plan);
+                  }}
+                  className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-slate-950 text-xs font-extrabold rounded-xl shadow-xs border border-orange-600 shrink-0 flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-slate-950 fill-amber-200" />
+                  <span>GURA IFATABUGUZI (2,500 RWF)</span>
+                </button>
+              </div>
+            )}
+
+            {user.hasPremiumToolsSub && (
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 border border-emerald-200 flex flex-col justify-center items-center text-center p-5 space-y-2">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <h4 className="text-xs font-black text-emerald-950">Premium Tools Active 👑</h4>
+                <p className="text-[11px] text-emerald-800 leading-snug">
+                  Imfashanyigisho zose za Slides, Worksheets, Assessments, na Class Diary zitemewe umubare (Unlimited) kugeza ku:
+                </p>
+                <div className="text-xs font-black font-mono text-emerald-900 bg-white px-2 py-0.5 rounded-md border border-emerald-200">
+                  {user.premiumToolsExpiryDate ? new Date(user.premiumToolsExpiryDate).toLocaleDateString() : 'Active'}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 3 Free Plans Policy & Monthly Expiration Policy Notice */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -192,22 +424,53 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
                   </div>
 
                   <ul className="mt-4 space-y-2 text-xs text-slate-600">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>{plan.plansCount} AI Generated Lesson Plans</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>1-Page REB & CBC Grid Format</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>All Languages (Kinyarwanda, English, etc.)</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>Instant PDF Export & Printing</span>
-                    </li>
+                    {plan.id === 'plan_premium_tools' ? (
+                      <>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0 animate-pulse" />
+                          <span className="font-extrabold text-amber-700">UNLIMITED Premium Tools</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Presentation Slides Creator</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Exercises & Quizzes Creator</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Printable Worksheets Generator</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Schemes of Work (SOW) Generator</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span className="font-bold">Class Diary (Cahier de Textes)</span>
+                        </li>
+                      </>
+                    ) : (
+                      <>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>{plan.plansCount} AI Generated Lesson Plans</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>1-Page REB & CBC Grid Format</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>All Languages (Kinyarwanda, English, etc.)</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Instant PDF Export & Printing</span>
+                        </li>
+                      </>
+                    )}
                   </ul>
                 </div>
 
@@ -264,13 +527,13 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
             <div className="w-7 h-7 bg-emerald-100 text-emerald-800 font-black rounded-full flex items-center justify-center text-xs">
               1
             </div>
-            <h4 className="font-bold text-slate-900 text-sm">Ohereza Amafaranga (Send MoMo)</h4>
+            <h4 className="font-bold text-slate-900 text-sm">Send Payment via MoMo</h4>
             <p className="text-slate-600 text-[11px] leading-snug">
-              Kanda <code className="bg-slate-100 px-1 py-0.5 rounded text-emerald-800 font-mono font-bold">*182*1*1#</code> maze wohereze kuri:
+              Dial <code className="bg-slate-100 px-1 py-0.5 rounded text-emerald-800 font-mono font-bold">*182*1*1#</code> or use MoMo Code:
             </p>
             <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
               <div className="text-sm font-black text-emerald-900">0781339530 / 0724038043</div>
-              <div className="text-[11px] text-slate-600 font-semibold">Izina: {OWNER_INFO.accountHolder}</div>
+              <div className="text-[11px] text-slate-600 font-semibold">Account Holder: {OWNER_INFO.accountHolder}</div>
             </div>
           </div>
 
@@ -279,12 +542,12 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
             <div className="w-7 h-7 bg-amber-100 text-amber-800 font-black rounded-full flex items-center justify-center text-xs">
               2
             </div>
-            <h4 className="font-bold text-slate-900 text-sm">Injiza Code ya SMS (Submit TxRef)</h4>
+            <h4 className="font-bold text-slate-900 text-sm">Submit SMS Transaction Code</h4>
             <p className="text-slate-600 text-[11px] leading-snug">
-              Kanda ubuto bwa <span className="font-bold text-emerald-700">SELECT UPGRADE</span> kuri plan wihitiyemo, maze winjize numero ya telefone na Code ya SMS.
+              Click <span className="font-bold text-emerald-700">SELECT UPGRADE</span> on your desired plan, then enter your phone number and SMS Transaction ID.
             </p>
             <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-200 text-[11px] font-semibold text-amber-900">
-              ⚡ Account yawe ihita yiyongeraho plans waguze!
+              ⚡ Your quota plan will update automatically!
             </div>
           </div>
 
@@ -293,18 +556,18 @@ export const SubscriptionTab: React.FC<SubscriptionTabProps> = ({
             <div className="w-7 h-7 bg-purple-100 text-purple-800 font-black rounded-full flex items-center justify-center text-xs">
               3
             </div>
-            <h4 className="font-bold text-slate-900 text-sm">Cyangwa Vugana na Nyir'urubuga</h4>
+            <h4 className="font-bold text-slate-900 text-sm">Or Contact Direct Support</h4>
             <p className="text-slate-600 text-[11px] leading-snug">
-              Ushobora no kohereza gihamya kuri WhatsApp k'ubufatanye bwihuse:
+              You can also send your payment receipt via WhatsApp for instant manual activation:
             </p>
             <a
-              href={`https://wa.me/250781339530?text=${encodeURIComponent(`Hello NKUNDIMANA Theogene, nishyuriye kuri Teacher Pedagogy. Mfasha gukora activation.`)}`}
+              href={`https://wa.me/250781339530?text=${encodeURIComponent(`Hello NKUNDIMANA Theogene, I made a payment on Teacher Tool. Please assist with my account activation.`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
             >
               <MessageSquare className="w-4 h-4" />
-              <span>Vugana n'Umuyobozi (0781339530)</span>
+              <span>Contact Support (0781339530)</span>
             </a>
           </div>
         </div>

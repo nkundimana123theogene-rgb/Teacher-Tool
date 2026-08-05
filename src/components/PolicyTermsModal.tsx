@@ -11,7 +11,7 @@ interface PolicyTermsModalProps {
 
 export function PolicyTermsModal({ isOpen, onClose }: PolicyTermsModalProps) {
   const [activeSection, setActiveSection] = useState<'terms' | 'privacy' | 'payments' | 'copyright' | 'faq'>('terms');
-  const [selectedLang, setSelectedLang] = useState<LanguageKey>('rw');
+  const [selectedLang, setSelectedLang] = useState<LanguageKey>('en');
 
   if (!isOpen) return null;
 
@@ -442,39 +442,39 @@ export function PolicyTermsModal({ isOpen, onClose }: PolicyTermsModalProps) {
             <div className="space-y-4">
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-950 text-xs">
                 <span className="font-extrabold uppercase tracking-wide block mb-1">
-                  ❓ Ibibazo Bikunze Kubazwa / Frequently Asked Questions (FAQ)
+                  ❓ Frequently Asked Questions (FAQ)
                 </span>
-                Igice cy'ibibazo mwarimu akunda kwibaza kuri Teachers Quickly Tools Platform, uburyo kigora, ibiciro na Lesson plans.
+                Common questions about Teacher Tool, subscriptions, features, and generating lesson plans.
               </div>
 
               <h3 className="text-base font-black text-slate-900 flex items-center gap-2 border-b pb-2">
-                5. Ibibazo Bikunze Kubazwa (FAQ)
+                5. Frequently Asked Questions (FAQ)
               </h3>
 
               <div className="space-y-4 text-xs sm:text-sm">
                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
-                  <h4 className="font-black text-slate-900">Q1. Ni gute platform ifasha mwarimu gutegura Lesson Plan?</h4>
-                  <p className="text-slate-700">A: Wandikamo isomo, umwaka w'amashuri (Grade/Level), intego y'isomo (Topic & Key Unit Competence), AI ikagukorera Lesson plan yuzuye nk'uko REB (CBC) ibisaba mu amasegonda macye.</p>
+                  <h4 className="font-black text-slate-900">Q1. How does the platform help teachers prepare lesson plans?</h4>
+                  <p className="text-slate-700">A: Enter the subject, grade level, unit topic, and lesson objective. The AI engine automatically generates a full CBC REB-compliant lesson plan in seconds.</p>
                 </div>
 
                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
-                  <h4 className="font-black text-slate-900">Q2. Ni gute ngura ifatabuguzi (Subscription)?</h4>
-                  <p className="text-slate-700">A: Kanda kuri tab ya **Subscription** mu menu, ugure kureba MoMo Code (MTN: 0781339530 / NKUNDIMANA Theogene), wishyure hanyuma uhite ukomeza gukora lesson plans.</p>
+                  <h4 className="font-black text-slate-900">Q2. How do I purchase or renew a subscription?</h4>
+                  <p className="text-slate-700">A: Go to the **Subscription** tab in the top navigation, view the MoMo payment options (MTN: 0781339530 / NKUNDIMANA Theogene), submit your payment code, and your quota updates automatically.</p>
                 </div>
 
                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
-                  <h4 className="font-black text-slate-900">Q3. Nshobora kubika cyangwa kuprinting Lesson Plan?</h4>
-                  <p className="text-slate-700">A: Yego, ushobora kuyidownload mu buryo bwa Word (.docx), PDF cyangwa ukaba wayiprinting moja kwa moja, kandi Lesson plans zose ziba zibitse muri **Saved Plans (History)**.</p>
+                  <h4 className="font-black text-slate-900">Q3. Can I save, download, or print my lesson plans?</h4>
+                  <p className="text-slate-700">A: Yes! You can download your lesson plans as Word (.docx), PDF, or print them directly. All plans are also saved in your **Saved Plans** history.</p>
                 </div>
 
                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
-                  <h4 className="font-black text-slate-900">Q4. Niba mfite ikibazo cyangwa nkeneye ubufasha nabariza he?</h4>
-                  <p className="text-slate-700">A: Hamagara cyangwa wandikire IT/Developer wetu **NKUNDIMANA Theogene** kuri WhatsApp: **0781339530** cyangwa ukoreshe Robotics & AI Support Assistant iri mu mfuruka yo hamasi.</p>
+                  <h4 className="font-black text-slate-900">Q4. Who can I contact if I need support?</h4>
+                  <p className="text-slate-700">A: You can reach the Developer **NKUNDIMANA Theogene** on WhatsApp: **0781339530** or use our built-in AI Support Assistant.</p>
                 </div>
 
                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
-                  <h4 className="font-black text-slate-900">Q5. Ni ubuhe ikoranabuhanga (Technology Stack) ryakoreshejwe gukora iyi platform?</h4>
-                  <p className="text-slate-700">A: Urubuga rwubatswe hakoreshejwe ikoranabuhanga rya <strong>Frontend</strong> (HTML, CSS, JavaScript / React), <strong>Backend</strong> (Node.js / Express API), <strong>Database</strong> (MySQL / PostgreSQL persistence) hamwe n'ubwenge buhanitse bwa <strong>AI</strong> (OpenAI API & Gemini AI Engine) bwo gutegura Lesson Plans z'uburezi.</p>
+                  <h4 className="font-black text-slate-900">Q5. What technology stack powers this platform?</h4>
+                  <p className="text-slate-700">A: Built using a modern full-stack architecture: <strong>Frontend</strong> (React, TypeScript, Tailwind CSS), <strong>Backend</strong> (Node.js & Express API), <strong>Database</strong> (Firestore / Cloud persistence), and advanced <strong>AI Engines</strong> for educational content generation.</p>
                 </div>
               </div>
             </div>

@@ -6,6 +6,7 @@ import {
   MoreVertical,
   User,
   Shield,
+  ShieldCheck,
   Zap,
   LogOut,
   Sparkles,
@@ -25,7 +26,16 @@ import {
   CreditCard,
   Activity,
   Check,
-  Bot
+  Bot,
+  HelpCircle,
+  Bell,
+  BellRing,
+  Trash2,
+  Filter,
+  Megaphone,
+  Menu,
+  Search,
+  MessageSquare
 } from 'lucide-react';
 import { UserProfile, LanguageOption, PlanFormatOption, PaymentSubmission } from '../types';
 import { OWNER_INFO } from '../data/plans';
@@ -42,6 +52,7 @@ interface HeaderProps {
   onOpenSubscription: () => void;
   onOpenAdmin: () => void;
   onOpenPolicy?: () => void;
+  onOpenHelpCenter?: () => void;
   onSignOut: () => void;
   activeTab: 'dashboard' | 'generator' | 'remedial' | 'nursery' | 'slides' | 'exercises' | 'worksheets' | 'library' | 'history' | 'subscription' | 'admin' | 'founder' | 'class-diary' | 'certificates';
   onTabChange: (tab: 'dashboard' | 'generator' | 'remedial' | 'nursery' | 'slides' | 'exercises' | 'worksheets' | 'library' | 'history' | 'subscription' | 'admin' | 'founder' | 'class-diary' | 'certificates') => void;
@@ -50,6 +61,8 @@ interface HeaderProps {
   isNetworkOnline?: boolean;
   onSyncCloudData?: () => void;
   isSyncing?: boolean;
+  notifications?: NotificationItem[];
+  onNotificationsChange?: (notifs: NotificationItem[]) => void;
 }
 
 const COUNTRIES = [
@@ -64,6 +77,65 @@ const COUNTRIES = [
 
 const LANGUAGES: LanguageOption[] = ['Kinyarwanda', 'English', 'French', 'Swahili'];
 
+export interface NotificationItem {
+  id: string;
+  title: string;
+  titleKiny: string;
+  message: string;
+  messageKiny: string;
+  category: 'feature' | 'subscription' | 'maintenance' | 'system';
+  timestamp: string;
+  read: boolean;
+  actionTab?: string;
+  actionHelpCenter?: boolean;
+}
+
+export const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
+  {
+    id: 'notif_tutorials_site',
+    title: '🎥 System Structure & Tutorials Website Launched',
+    titleKiny: '🎥 Inyigisho nshya z\'Imyubakire n\'Imikorere ya System Zashyizweho',
+    message: 'Explore full-stack architecture docs, video scripts, printable guides, and AI assistant in the Help Center.',
+    messageKiny: 'Fungura Tutorials & System Structure mu Help Center urebe amakuru yose kuri system n\'inyigisho za video.',
+    category: 'feature',
+    timestamp: 'Just now',
+    read: false,
+    actionHelpCenter: true,
+  },
+  {
+    id: 'notif_momo_payment',
+    title: '⚡ Fast MoMo Payment & Units Approval (0781339530)',
+    titleKiny: '⚡ Kwishyura no Kugura Units via MoMo byihuse',
+    message: 'Send MoMo to 0781339530 (Nkundimana Theogene) and submit Tx Reference to receive instant units.',
+    messageKiny: 'Kwishyura units bishya kuri Mobile Money 0781339530 biba approved mu sekondi chache.',
+    category: 'subscription',
+    timestamp: 'August 2026',
+    read: false,
+    actionTab: 'subscription',
+  },
+  {
+    id: 'notif_certificates_dual',
+    title: '📜 Official Certificates with Dual Signatories',
+    titleKiny: '📜 Gukora Ibyemezo by\'Abanyeshuri by\'Umwuga',
+    message: 'Generate official school certificates with Headteacher & Teacher signatures plus verification numbers.',
+    messageKiny: 'Capisha Certificate y\'umunyeshuri ifite ibirango no gusinywaho na Headteacher & Teacher.',
+    category: 'feature',
+    timestamp: 'August 2026',
+    read: false,
+    actionTab: 'certificates',
+  },
+  {
+    id: 'notif_cloud_sync',
+    title: '🌐 Real-time Firebase Firestore Cloud Sync',
+    titleKiny: '🌐 Ububiko bw\'Amakuru kuri Firestore Cloud Database',
+    message: 'All your lesson plans, diaries, and subscriptions automatically back up securely to the cloud.',
+    messageKiny: 'Amakuru yawe yose abikwa mu mutekano wo mu rwego rwo hejuru kuri Cloud Firestore.',
+    category: 'maintenance',
+    timestamp: 'August 2026',
+    read: false,
+  },
+];
+
 export const Header: React.FC<HeaderProps> = ({
   user,
   selectedLanguage,
@@ -74,6 +146,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSubscription,
   onOpenAdmin,
   onOpenPolicy,
+  onOpenHelpCenter,
   onSignOut,
   activeTab,
   onTabChange,
@@ -82,11 +155,74 @@ export const Header: React.FC<HeaderProps> = ({
   isNetworkOnline = true,
   onSyncCloudData,
   isSyncing = false,
+  notifications: propNotifications,
+  onNotificationsChange,
 }) => {
-  const labels = getLessonPlanLabels(selectedLanguage);
+  const labels = getLessonPlanLabels('English');
   const [showCountryMenu, setShowCountryMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotifMenu, setShowNotifMenu] = useState(false);
+  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
+  const [mobileSearchQuery, setMobileSearchQuery] = useState('');
+  const [notifFilter, setNotifFilter] = useState<'all' | 'unread' | 'feature' | 'subscription' | 'maintenance'>('all');
+
+  // Notifications state persisted in localStorage
+  const [localNotifications, setLocalNotifications] = useState<NotificationItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('teacher_tool_notifications');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Error loading notifications:', e);
+    }
+    return DEFAULT_NOTIFICATIONS;
+  });
+
+  const notifications = propNotifications !== undefined ? propNotifications : localNotifications;
+
+  const setNotifications = (update: NotificationItem[] | ((prev: NotificationItem[]) => NotificationItem[])) => {
+    if (onNotificationsChange) {
+      if (typeof update === 'function') {
+        onNotificationsChange(update(notifications));
+      } else {
+        onNotificationsChange(update);
+      }
+    } else {
+      if (typeof update === 'function') {
+        setLocalNotifications(update);
+      } else {
+        setLocalNotifications(update);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (propNotifications === undefined) {
+      try {
+        localStorage.setItem('teacher_tool_notifications', JSON.stringify(localNotifications));
+      } catch (e) {
+        console.error('Error saving notifications:', e);
+      }
+    }
+  }, [localNotifications, propNotifications]);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const toggleNotifRead = (id: string) => {
+    setNotifications(prev =>
+      prev.map(n => (n.id === id ? { ...n, read: !n.read } : n))
+    );
+  };
+
+  const markAllNotifsAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  const clearAllNotifications = () => {
+    setNotifications([]);
+  };
 
   // Real-time Payment Status Polling state
   const [userPayments, setUserPayments] = useState<PaymentSubmission[]>([]);
@@ -218,6 +354,18 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-black rounded-md border border-amber-500 shadow-xs">
                     <span>IT/Developer: Nkundimana Theogene</span>
                   </span>
+                  <span className="text-slate-300">•</span>
+                  <a
+                    href="https://teacherlessonplans.ai.studio"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black rounded-md border border-blue-400 shadow-xs transition-transform hover:scale-105 active:scale-95"
+                    title="Click here to open app in Chrome / browser: https://teacherlessonplans.ai.studio"
+                  >
+                    <Globe className="w-3 h-3 text-cyan-200 stroke-[2.5]" />
+                    <span>teacherlessonplans.ai.studio 🌐</span>
+                  </a>
                   <span className="text-slate-300">•</span>
                   {isConnected ? (
                     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-800 text-[10px] font-black rounded-md border border-emerald-300 shadow-2xs" title="Internet active & system is in Online Mode">
@@ -387,6 +535,8 @@ export const Header: React.FC<HeaderProps> = ({
               <Award className="w-3.5 h-3.5 text-slate-950 shrink-0 stroke-[2.5]" />
               <span className="font-black text-slate-950">{labels.navCertificates || 'AI Certificate'}</span>
             </button>
+
+
             <button
               onClick={() => onTabChange('subscription')}
               className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
@@ -434,13 +584,13 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             <button
-              onClick={() => window.dispatchEvent(new CustomEvent('open-robotics-assistant'))}
-              className="px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black text-xs shadow-sm hover:scale-105 active:scale-95"
-              title="Fungura Robotics & AI Assistant Chat"
-              id="header-open-robotics-chat-btn"
+              onClick={() => onOpenHelpCenter?.()}
+              className="px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-950 font-black text-xs shadow-md border border-amber-500 hover:scale-105 active:scale-95"
+              title="Help Center: Tutorials, Video Scripts, Guides & AI Chat Assistant"
+              id="header-help-center-btn"
             >
-              <Bot className="w-4 h-4 text-amber-300 animate-bounce" />
-              <span>Robotics AI Chat 🤖</span>
+              <HelpCircle className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+              <span>Help Center 🎥📄💬</span>
             </button>
 
             <a
@@ -455,25 +605,27 @@ export const Header: React.FC<HeaderProps> = ({
               <span>WhatsApp Group (0781339530)</span>
             </a>
 
-            <button
-              onClick={() => onTabChange('admin')}
-              className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                activeTab === 'admin'
-                  ? 'bg-purple-700 text-white font-bold shadow-xs'
-                  : 'bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold border border-purple-300/80'
-              }`}
-              id="nav-admin-btn"
-              title="Analytics, Usage Statistics & Subscriber Payment Management"
-            >
-              <Shield className="w-4 h-4 text-purple-800" />
-              <span>Admin Panel</span>
-            </button>
+            {user?.isAdmin && (
+              <button
+                onClick={() => onTabChange('admin')}
+                className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                  activeTab === 'admin'
+                    ? 'bg-purple-700 text-white font-bold shadow-xs'
+                    : 'bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold border border-purple-300/80'
+                }`}
+                id="nav-admin-btn"
+                title="Analytics, Usage Statistics & Subscriber Payment Management"
+              >
+                <Shield className="w-4 h-4 text-purple-800" />
+                <span>Admin Panel</span>
+              </button>
+            )}
           </nav>
 
           {/* Controls Right */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Real-Time Payment Status Indicator Badge */}
-            {user && pendingPayments.length > 0 && (
+            {user && !user.isAdmin && pendingPayments.length > 0 && (
               <button
                 type="button"
                 onClick={() => setShowPaymentModal(true)}
@@ -495,7 +647,7 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
-            {user && pendingPayments.length === 0 && userPayments.length > 0 && (
+            {user && !user.isAdmin && pendingPayments.length === 0 && userPayments.length > 0 && (
               <button
                 type="button"
                 onClick={() => setShowPaymentModal(true)}
@@ -553,54 +705,224 @@ export const Header: React.FC<HeaderProps> = ({
                 }
               }}
               disabled={isSyncing}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-600 text-white rounded-xl shadow-sm border border-emerald-800 transition-all hover:scale-105"
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-xl shadow-sm border transition-all ${
+                isSyncing
+                  ? 'bg-emerald-800 text-lime-200 border-emerald-600 ring-2 ring-lime-400/50 cursor-wait'
+                  : 'bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-600 text-white border-emerald-800 hover:scale-105 active:scale-95'
+              }`}
               title="Sync All System Data (Cloud Firestore & Cache Update)"
               id="header-sync-data-btn"
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-lime-300 stroke-[2.5] ${isSyncing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 text-lime-300 stroke-[2.5] transition-transform ${isSyncing ? 'animate-spin' : ''}`} />
               <span className="hidden md:inline">{isSyncing ? 'Syncing...' : 'Sync Data 🔄'}</span>
               <span className="md:hidden">{isSyncing ? 'Sync...' : 'Sync 🔄'}</span>
             </button>
 
-            {/* Language Selector Dropdown */}
+            {/* Notification System Bell Button & Popover */}
             <div className="relative">
               <button
+                type="button"
                 onClick={() => {
-                  setShowLangMenu(!showLangMenu);
+                  setShowNotifMenu(!showNotifMenu);
+                  setShowLangMenu(false);
                   setShowCountryMenu(false);
+                  setShowUserMenu(false);
                 }}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200/80 hover:bg-emerald-100/80 transition-colors"
-                title="Select Language"
-                id="language-selector-button"
+                className={`relative flex items-center justify-center p-2 text-xs font-black rounded-xl shadow-sm border transition-all ${
+                  showNotifMenu
+                    ? 'bg-amber-400 text-slate-950 border-amber-500 ring-2 ring-amber-300'
+                    : 'bg-emerald-900/80 hover:bg-emerald-800 text-amber-300 border-emerald-700 hover:scale-105 active:scale-95'
+                }`}
+                title="System Notifications & Updates (Amakuru n'Amavugurura)"
+                id="header-notifications-bell-btn"
               >
-                <Globe className="w-3.5 h-3.5 text-emerald-600" />
-                <span>{selectedLanguage}</span>
-                <ChevronDown className="w-3 h-3 text-emerald-600" />
+                {unreadCount > 0 ? (
+                  <BellRing className="w-4 h-4 text-amber-300 stroke-[2.5] animate-bounce" />
+                ) : (
+                  <Bell className="w-4 h-4 text-slate-200 stroke-[2]" />
+                )}
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-red-600 text-white font-extrabold text-[10px] rounded-full flex items-center justify-center border-2 border-emerald-950 shadow-md animate-pulse">
+                    {unreadCount}
+                  </span>
+                )}
               </button>
 
-              {showLangMenu && (
-                <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
-                  <div className="px-3 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                    Select Language
+              {showNotifMenu && (
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 py-3 z-50 animate-in fade-in zoom-in-95 duration-150 text-slate-900">
+                  {/* Header */}
+                  <div className="px-4 pb-2 border-b border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-amber-100 text-amber-800 rounded-lg">
+                        <Bell className="w-4 h-4 stroke-[2.5]" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black text-slate-900">Notifications & Updates</h4>
+                        <p className="text-[10px] font-semibold text-slate-500">{unreadCount} unread message(s)</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={markAllNotifsAsRead}
+                          className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 hover:underline px-2 py-1 rounded-md"
+                          title="Mark all as read"
+                        >
+                          Mark read
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setShowNotifMenu(false)}
+                        className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  {LANGUAGES.map((lang) => (
+
+                  {/* Filter Tabs */}
+                  <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-1 overflow-x-auto">
                     <button
-                      key={lang}
-                      onClick={() => {
-                        onLanguageChange(lang);
-                        setShowLangMenu(false);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between hover:bg-emerald-50 ${
-                        selectedLanguage === lang ? 'font-bold text-emerald-700 bg-emerald-50/60' : 'text-slate-700'
+                      onClick={() => setNotifFilter('all')}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all ${
+                        notifFilter === 'all' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-slate-200'
                       }`}
                     >
-                      <span>{lang}</span>
-                      {selectedLanguage === lang && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                      All ({notifications.length})
                     </button>
-                  ))}
+                    <button
+                      onClick={() => setNotifFilter('unread')}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all ${
+                        notifFilter === 'unread' ? 'bg-amber-500 text-slate-950' : 'bg-white text-slate-700 border border-slate-200'
+                      }`}
+                    >
+                      Unread ({unreadCount})
+                    </button>
+                    <button
+                      onClick={() => setNotifFilter('feature')}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all ${
+                        notifFilter === 'feature' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700 border border-slate-200'
+                      }`}
+                    >
+                      Features 🚀
+                    </button>
+                    <button
+                      onClick={() => setNotifFilter('subscription')}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all ${
+                        notifFilter === 'subscription' ? 'bg-purple-600 text-white' : 'bg-white text-slate-700 border border-slate-200'
+                      }`}
+                    >
+                      Subscription ⚡
+                    </button>
+                  </div>
+
+                  {/* Notification Items List */}
+                  <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
+                    {notifications.filter(n => {
+                      if (notifFilter === 'unread') return !n.read;
+                      if (notifFilter !== 'all') return n.category === notifFilter;
+                      return true;
+                    }).length === 0 ? (
+                      <div className="p-6 text-center space-y-2">
+                        <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
+                        <p className="text-xs font-bold text-slate-600">Nta nkurumugabo nshya ziri hano (No notifications)</p>
+                      </div>
+                    ) : (
+                      notifications
+                        .filter(n => {
+                          if (notifFilter === 'unread') return !n.read;
+                          if (notifFilter !== 'all') return n.category === notifFilter;
+                          return true;
+                        })
+                        .map(n => (
+                          <div
+                            key={n.id}
+                            className={`p-3 transition-all hover:bg-slate-50 flex items-start gap-3 ${
+                              !n.read ? 'bg-amber-50/60 border-l-4 border-l-amber-500' : ''
+                            }`}
+                          >
+                            <div className="mt-0.5 shrink-0">
+                              {n.category === 'feature' && <Sparkles className="w-4 h-4 text-emerald-600" />}
+                              {n.category === 'subscription' && <Zap className="w-4 h-4 text-amber-500 fill-amber-300" />}
+                              {n.category === 'maintenance' && <RefreshCw className="w-4 h-4 text-blue-500" />}
+                              {n.category === 'system' && <Megaphone className="w-4 h-4 text-purple-600" />}
+                            </div>
+
+                            <div className="flex-1 space-y-1">
+                              <div className="flex items-center justify-between">
+                                <h5 className="text-xs font-black text-slate-900 leading-tight">
+                                  {selectedLanguage === 'Kinyarwanda' ? n.titleKiny : n.title}
+                                </h5>
+                                <span className="text-[9px] font-bold text-slate-400">{n.timestamp}</span>
+                              </div>
+
+                              <p className="text-[11px] font-medium text-slate-600 leading-relaxed">
+                                {selectedLanguage === 'Kinyarwanda' ? n.messageKiny : n.message}
+                              </p>
+
+                              <div className="pt-1 flex items-center justify-between">
+                                {n.actionHelpCenter && (
+                                  <button
+                                    onClick={() => {
+                                      toggleNotifRead(n.id);
+                                      setShowNotifMenu(false);
+                                      onOpenHelpCenter?.();
+                                    }}
+                                    className="text-[10px] font-black text-amber-700 hover:text-amber-950 underline flex items-center gap-1"
+                                  >
+                                    <span>Fungura Help Center & Tutorials 🎥</span>
+                                  </button>
+                                )}
+
+                                {n.actionTab && (
+                                  <button
+                                    onClick={() => {
+                                      toggleNotifRead(n.id);
+                                      setShowNotifMenu(false);
+                                      onTabChange(n.actionTab as any);
+                                    }}
+                                    className="text-[10px] font-black text-emerald-700 hover:text-emerald-950 underline flex items-center gap-1"
+                                  >
+                                    <span>Fungura Igice ({n.actionTab}) 🚀</span>
+                                  </button>
+                                )}
+
+                                {!n.actionHelpCenter && !n.actionTab && (
+                                  <span className="text-[10px] text-slate-400 font-bold">Teacher Tool Alert</span>
+                                )}
+
+                                <button
+                                  onClick={() => toggleNotifRead(n.id)}
+                                  className="text-[10px] font-bold text-slate-400 hover:text-slate-700 ml-auto"
+                                >
+                                  {n.read ? 'Mark Unread' : 'Mark Read'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  {notifications.length > 0 && (
+                    <div className="px-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-400">
+                      <span>System Updates & Alerts</span>
+                      <button
+                        onClick={clearAllNotifications}
+                        className="text-red-600 hover:text-red-800 flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Clear All</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
+
+
 
             {/* Three dots (⋮) Menu for Country selection */}
             <div className="relative">
@@ -647,6 +969,18 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Mobile Menu Button Drawer Toggle */}
+            <button
+              type="button"
+              onClick={() => setShowMobileDrawer(true)}
+              className="md:hidden flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-md border border-amber-500 transition-all active:scale-95"
+              title="Fungura Menu Yuzuye ya System (Full Mobile Menu)"
+              id="header-mobile-drawer-toggle-btn"
+            >
+              <Menu className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+              <span className="font-black">Menu ☰</span>
+            </button>
 
             {/* User Profile / Sign In */}
             {user ? (
@@ -699,6 +1033,17 @@ export const Header: React.FC<HeaderProps> = ({
 
                     <button
                       onClick={() => {
+                        onTabChange('pricing');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full px-4 py-2 text-xs text-left text-amber-950 bg-amber-50 hover:bg-amber-100 flex items-center gap-2 font-bold border-y border-amber-200"
+                    >
+                      <ShieldCheck className="w-4 h-4 text-amber-600" />
+                      <span>🛡️ Anti-Scam & Channel Verifier</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
                         if (onSyncCloudData) {
                           onSyncCloudData();
                         } else {
@@ -710,30 +1055,45 @@ export const Header: React.FC<HeaderProps> = ({
                       className="w-full px-4 py-2 text-xs text-left text-slate-700 hover:bg-emerald-50 hover:text-emerald-950 flex items-center gap-2 font-bold disabled:opacity-50"
                     >
                       <RefreshCw className={`w-4 h-4 text-emerald-600 ${isSyncing ? 'animate-spin' : ''}`} />
-                      <span>🔄 {isSyncing ? 'Syncing System...' : 'Sync System Data (Vugurura)'}</span>
+                      <span>🔄 {isSyncing ? 'Syncing System...' : 'Sync System Data'}</span>
                     </button>
 
-                    <button
-                      onClick={() => {
-                        setShowPaymentModal(true);
-                        setShowUserMenu(false);
-                      }}
-                      className="w-full px-4 py-2 text-xs text-left text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 flex items-center justify-between font-medium"
-                    >
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-emerald-600" />
-                        <span>💳 Payment Status & MoMo</span>
-                      </div>
-                      {pendingPayments.length > 0 ? (
-                        <span className="px-2 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-black rounded-full animate-pulse">
-                          {pendingPayments.length} Pending
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-bold text-slate-400">
-                          {userPayments.length} logged
-                        </span>
-                      )}
-                    </button>
+                    {user?.isAdmin && (
+                      <button
+                        onClick={() => {
+                          onOpenAdmin();
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full px-4 py-2 text-xs text-left text-purple-950 bg-purple-100/80 hover:bg-purple-200 flex items-center gap-2 font-black border-y border-purple-300"
+                      >
+                        <Shield className="w-4 h-4 text-purple-700" />
+                        <span>🛡️ System Admin Panel</span>
+                      </button>
+                    )}
+
+                    {!user.isAdmin && (
+                      <button
+                        onClick={() => {
+                          setShowPaymentModal(true);
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full px-4 py-2 text-xs text-left text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 flex items-center justify-between font-medium"
+                      >
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="w-4 h-4 text-emerald-600" />
+                          <span>💳 Payment Status & MoMo</span>
+                        </div>
+                        {pendingPayments.length > 0 ? (
+                          <span className="px-2 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-black rounded-full animate-pulse">
+                            {pendingPayments.length} Pending
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-400">
+                            {userPayments.length} logged
+                          </span>
+                        )}
+                      </button>
+                    )}
 
                     <button
                       onClick={() => {
@@ -745,19 +1105,6 @@ export const Header: React.FC<HeaderProps> = ({
                       <Shield className="w-4 h-4 text-emerald-600" />
                       📜 Policy, Terms & Conditions
                     </button>
-
-                    {user.isAdmin && (
-                      <button
-                        onClick={() => {
-                          onOpenAdmin();
-                          setShowUserMenu(false);
-                        }}
-                        className="w-full px-4 py-2 text-xs text-left text-slate-700 hover:bg-purple-50 hover:text-purple-900 flex items-center gap-2 font-medium"
-                      >
-                        <Shield className="w-4 h-4 text-purple-600" />
-                        Admin Dashboard
-                      </button>
-                    )}
 
                     <div className="border-t border-slate-100 mt-1 pt-1">
                       <button
@@ -788,7 +1135,15 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Mobile Navigation Tabs */}
-        <div className="md:hidden flex items-center justify-around border-t border-slate-100 py-2 text-xs font-semibold overflow-x-auto gap-1">
+        <div className="md:hidden flex items-center justify-start border-t border-slate-100 py-2 text-xs font-semibold overflow-x-auto gap-1 px-2 scrollbar-none snap-x">
+          <button
+            onClick={() => setShowMobileDrawer(true)}
+            className="px-3 py-1.5 rounded-lg shrink-0 font-black bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-slate-950 border border-amber-500 shadow-md flex items-center gap-1 hover:scale-105 active:scale-95"
+            id="mobile-nav-bar-open-drawer-btn"
+          >
+            <Menu className="w-3.5 h-3.5 text-slate-950 stroke-[2.5]" />
+            <span>Full Menu ☰</span>
+          </button>
           <button
             onClick={() => onTabChange('dashboard')}
             className={`px-2.5 py-1.5 rounded-lg shrink-0 font-black ${
@@ -914,23 +1269,25 @@ export const Header: React.FC<HeaderProps> = ({
             <Shield className="w-3.5 h-3.5 text-slate-600" />
             <span>Policy</span>
           </button>
-          <button
-            onClick={() => onTabChange('admin')}
-            className={`px-2.5 py-1.5 rounded-lg shrink-0 flex items-center gap-1 font-bold ${
-              activeTab === 'admin'
-                ? 'bg-purple-700 text-white shadow-xs'
-                : 'bg-purple-100 text-purple-900 border border-purple-300'
-            }`}
-          >
-            <Shield className="w-3.5 h-3.5 text-purple-700" />
-            <span>Admin Panel</span>
-          </button>
+          {user?.isAdmin && (
+            <button
+              onClick={() => onTabChange('admin')}
+              className={`px-2.5 py-1.5 rounded-lg shrink-0 flex items-center gap-1 font-bold ${
+                activeTab === 'admin'
+                  ? 'bg-purple-700 text-white shadow-xs'
+                  : 'bg-purple-100 text-purple-900 border border-purple-300'
+              }`}
+            >
+              <Shield className="w-3.5 h-3.5 text-purple-700" />
+              <span>Admin Panel</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* REAL-TIME FLOATING TOAST ALERT */}
       {paymentToast && (
-        <div className={`fixed top-20 right-4 z-50 max-w-sm w-full p-4 rounded-2xl shadow-2xl border-2 animate-in slide-in-from-top-4 duration-300 ${
+        <div className={`fixed bottom-6 left-6 z-50 max-w-sm w-full p-4 rounded-2xl shadow-2xl border-2 animate-in slide-in-from-bottom-4 duration-300 ${
           paymentToast.type === 'approved'
             ? 'bg-slate-950/95 border-emerald-400 text-white'
             : 'bg-slate-950/95 border-rose-400 text-white'
@@ -1127,6 +1484,589 @@ export const Header: React.FC<HeaderProps> = ({
                 <Sparkles className="w-4 h-4" />
                 <span>Chat Admin on WhatsApp (0781339530)</span>
               </a>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* FULL SYSTEM MOBILE & TABLET NAVIGATION DRAWER MODAL */}
+      {showMobileDrawer && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex justify-end animate-in fade-in duration-200">
+          <div className="w-full sm:max-w-md bg-white text-slate-900 h-full overflow-y-auto flex flex-col shadow-2xl border-l border-slate-200 animate-in slide-in-from-right duration-250">
+            {/* Drawer Header */}
+            <div className="p-4 bg-slate-950 text-white flex items-center justify-between border-b border-slate-800 sticky top-0 z-20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shadow-md">
+                  <BookOpen className="w-5 h-5 stroke-[2.5]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white flex items-center gap-1.5">
+                    <span>System Mobile Menu</span>
+                    <span className="px-2 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-black rounded-full uppercase">
+                      Phone & Tablet 📱
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-300 font-medium">
+                    Amabuto n'ibice byose bya Nkorera Education
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowMobileDrawer(false)}
+                className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl transition-all border border-slate-800"
+                id="close-mobile-drawer-btn"
+              >
+                <X className="w-5 h-5 stroke-[2.5]" />
+              </button>
+            </div>
+
+            {/* Quick Mobile Search Input */}
+            <div className="p-3 bg-slate-900 border-b border-slate-800 sticky top-[65px] z-10">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  value={mobileSearchQuery}
+                  onChange={(e) => setMobileSearchQuery(e.target.value)}
+                  placeholder="Shakisha igice cyose (Search tools, e.g. RLP, Certificate, MoMo)..."
+                  className="w-full pl-9 pr-3 py-2 bg-slate-950 text-white placeholder-slate-400 text-xs font-semibold rounded-xl border border-slate-800 focus:outline-none focus:border-amber-400"
+                />
+                {mobileSearchQuery && (
+                  <button
+                    onClick={() => setMobileSearchQuery('')}
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Action Cards Bar inside Drawer */}
+            <div className="p-3 bg-amber-50 border-b border-amber-200/80 grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  setShowMobileDrawer(false);
+                  onOpenHelpCenter?.();
+                }}
+                className="p-2.5 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-xs border border-amber-500 flex items-center justify-center gap-1.5"
+              >
+                <HelpCircle className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+                <span>Tutorials 🎥📄</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowMobileDrawer(false);
+                  onTabChange('subscription');
+                }}
+                className="p-2.5 bg-slate-950 text-amber-300 font-black text-xs rounded-xl shadow-xs border border-slate-800 flex items-center justify-center gap-1.5"
+              >
+                <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
+                <span>Kugura Units ⚡</span>
+              </button>
+            </div>
+
+            {/* Categorized Menu Options */}
+            <div className="p-4 space-y-6 flex-1 overflow-y-auto">
+
+              {/* Category 1: Lesson Planning & Teaching */}
+              {(!mobileSearchQuery || 'dashboard lesson plan remedial nursery slides'.includes(mobileSearchQuery.toLowerCase())) && (
+                <div className="space-y-2">
+                  <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5 px-1">
+                    <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>📘 Imuteguro n'Amasomo (Lesson Planning)</span>
+                  </h4>
+
+                  <div className="space-y-1.5">
+                    <button
+                      onClick={() => {
+                        onTabChange('dashboard');
+                        setShowMobileDrawer(false);
+                      }}
+                      className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                        activeTab === 'dashboard'
+                          ? 'bg-cyan-600 text-white border-cyan-700 shadow-md font-black'
+                          : 'bg-slate-50 hover:bg-cyan-50 text-slate-900 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-cyan-100 text-cyan-800 rounded-xl font-bold">
+                          📊
+                        </div>
+                        <div>
+                          <div className="text-xs font-black">Dashboard & Overview</div>
+                          <div className="text-[10px] opacity-80">Reba inshoberamahanga no kumenya imiterere</div>
+                        </div>
+                      </div>
+                      <span className="text-xs">➔</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        onSelectFormat?.('reb_grid');
+                        onTabChange('generator');
+                        setShowMobileDrawer(false);
+                      }}
+                      className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                        activeTab === 'generator'
+                          ? 'bg-emerald-700 text-white border-emerald-800 shadow-md font-black'
+                          : 'bg-slate-50 hover:bg-emerald-50 text-slate-900 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl font-bold">
+                          📝
+                        </div>
+                        <div>
+                          <div className="text-xs font-black">{labels.navLessonPlans}</div>
+                          <div className="text-[10px] opacity-80">Standard REB CBC Weekly Grid Lesson Plan</div>
+                        </div>
+                      </div>
+                      <span className="text-xs">➔</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        onTabChange('remedial');
+                        setShowMobileDrawer(false);
+                      }}
+                      className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                        activeTab === 'remedial'
+                          ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-md font-black'
+                          : 'bg-amber-50/70 hover:bg-amber-100/70 text-slate-900 border-amber-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-amber-200 text-amber-900 rounded-xl font-bold">
+                          ✨
+                        </div>
+                        <div>
+                          <div className="text-xs font-black">{labels.navRemedialPlans}</div>
+                          <div className="text-[10px] opacity-80">Isomo ryo Kungoza no Kuzahura (RLP Levels 1-4)</div>
+                        </div>
+                      </div>
+                      <span className="text-xs">➔</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        onTabChange('nursery');
+                        setShowMobileDrawer(false);
+                      }}
+                      className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                        activeTab === 'nursery'
+                          ? 'bg-orange-500 text-slate-950 border-orange-600 shadow-md font-black'
+                          : 'bg-orange-50/70 hover:bg-orange-100/70 text-slate-900 border-orange-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-orange-200 text-orange-900 rounded-xl font-bold">
+                          🧸
+                        </div>
+                        <div>
+                          <div className="text-xs font-black">{labels.navNurseryPlans}</div>
+                          <div className="text-[10px] opacity-80">Imuteguro y'Inshuke n'Amashuri y'Inshuke</div>
+                        </div>
+                      </div>
+                      <span className="text-xs">➔</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        onTabChange('slides');
+                        setShowMobileDrawer(false);
+                      }}
+                      className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                        activeTab === 'slides'
+                          ? 'bg-purple-600 text-white border-purple-700 shadow-md font-black'
+                          : 'bg-purple-50/70 hover:bg-purple-100/70 text-slate-900 border-purple-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-purple-200 text-purple-900 rounded-xl font-bold">
+                          🖥️
+                        </div>
+                        <div>
+                          <div className="text-xs font-black">{labels.navSlides}</div>
+                          <div className="text-[10px] opacity-80">Gukora Presentations & Inyigisho kuri Screen</div>
+                        </div>
+                      </div>
+                      <span className="text-xs">➔</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Category 2: Assessments & Cahier de Textes */}
+              {(!mobileSearchQuery || 'exercise worksheet quiz cahier diary'.includes(mobileSearchQuery.toLowerCase())) && (
+                <div className="space-y-2">
+                  <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5 px-1">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
+                    <span>📝 Imyitozo & Cahier de Textes (Assessments)</span>
+                  </h4>
+
+                  <div className="space-y-1.5">
+                    <button
+                      onClick={() => {
+                        onTabChange('exercises');
+                        setShowMobileDrawer(false);
+                      }}
+                      className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                        activeTab === 'exercises'
+                          ? 'bg-cyan-600 text-white border-cyan-700 shadow-md font-black'
+                          : 'bg-slate-50 hover:bg-cyan-50 text-slate-900 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-cyan-100 text-cyan-900 rounded-xl font-bold">
+                          🧪
+                        </div>
+                        <div>
+                          <div className="text-xs font-black">{labels.navExercises}</div>
+                          <div className="text-[10px] opacity-80">Classwork, Homework, Quizzes & Marking Schemes</div>
+                        </div>
+                      </div>
+                      <span className="text-xs">➔</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        onTabChange('worksheets');
+                        setShowMobileDrawer(false);
+                      }}
+                      className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                        activeTab === 'worksheets'
+                          ? 'bg-emerald-600 text-white border-emerald-700 shadow-md font-black'
+                          : 'bg-slate-50 hover:bg-emerald-50 text-slate-900 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-emerald-100 text-emerald-900 rounded-xl font-bold">
+                          📄
+                        </div>
+                        <div>
+                          <div className="text-xs font-black">{labels.navWorksheets}</div>
+                          <div className="text-[10px] opacity-80">Printable Student Worksheets with Illustrations</div>
+                        </div>
+                      </div>
+                      <span className="text-xs">➔</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        onTabChange('class-diary');
+                        setShowMobileDrawer(false);
+                      }}
+                      className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                        activeTab === 'class-diary'
+                          ? 'bg-teal-600 text-white border-teal-700 shadow-md font-black'
+                          : 'bg-slate-50 hover:bg-teal-50 text-slate-900 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-teal-100 text-teal-900 rounded-xl font-bold">
+                          📖
+                        </div>
+                        <div>
+                          <div className="text-xs font-black">Cahier de Textes (Class Diary)</div>
+                          <div className="text-[10px] opacity-80">Gukora no kubika ikayi y'ibarura ry'amasomo</div>
+                        </div>
+                      </div>
+                      <span className="text-xs">➔</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Category 3: Certificates & Library */}
+              {(!mobileSearchQuery || 'certificate library saved history'.includes(mobileSearchQuery.toLowerCase())) && (
+                <div className="space-y-2">
+                  <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5 px-1">
+                    <Award className="w-3.5 h-3.5 text-lime-600" />
+                    <span>📜 Ibyemezo & Ububiko (Certificates & Library)</span>
+                  </h4>
+
+                  <div className="space-y-1.5">
+                    <button
+                      onClick={() => {
+                        onTabChange('certificates');
+                        setShowMobileDrawer(false);
+                      }}
+                      className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                        activeTab === 'certificates'
+                          ? 'bg-lime-400 text-slate-950 border-lime-500 shadow-md font-black ring-2 ring-lime-400/50'
+                          : 'bg-lime-50 hover:bg-lime-100 text-slate-900 border-lime-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-lime-200 text-slate-950 rounded-xl font-bold">
+                          🎓
+                        </div>
+                        <div>
+                          <div className="text-xs font-black">{labels.navCertificates || 'AI Certificate'}</div>
+                          <div className="text-[10px] opacity-80">Dual Signatures (Headteacher & Teacher)</div>
+                        </div>
+                      </div>
+                      <span className="text-xs">➔</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        onTabChange('library');
+                        setShowMobileDrawer(false);
+                      }}
+                      className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                        activeTab === 'library'
+                          ? 'bg-blue-600 text-white border-blue-700 shadow-md font-black'
+                          : 'bg-slate-50 hover:bg-blue-50 text-slate-900 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-blue-100 text-blue-900 rounded-xl font-bold">
+                          📚
+                        </div>
+                        <div>
+                          <div className="text-xs font-black">{labels.navLibrary}</div>
+                          <div className="text-[10px] opacity-80">Schemes of Work, Syllabi & Sample Lessons</div>
+                        </div>
+                      </div>
+                      <span className="text-xs">➔</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        onTabChange('history');
+                        setShowMobileDrawer(false);
+                      }}
+                      className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                        activeTab === 'history'
+                          ? 'bg-purple-600 text-white border-purple-700 shadow-md font-black'
+                          : 'bg-slate-50 hover:bg-purple-50 text-slate-900 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-purple-100 text-purple-900 rounded-xl font-bold">
+                          💾
+                        </div>
+                        <div>
+                          <div className="text-xs font-black">{labels.navSavedPlans}</div>
+                          <div className="text-[10px] opacity-80">Imuteguro yose wabitse mu bubiko bwawe</div>
+                        </div>
+                      </div>
+                      <span className="text-xs">➔</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Category 4: Platform & Settings */}
+              {(!mobileSearchQuery || 'subscription momo founder admin policy sync tutorial'.includes(mobileSearchQuery.toLowerCase())) && (
+                <div className="space-y-2">
+                  <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5 px-1">
+                    <Zap className="w-3.5 h-3.5 text-amber-500" />
+                    <span>⚙️ Kwishyura & System Settings</span>
+                  </h4>
+
+                  <div className="space-y-1.5">
+                    <button
+                      onClick={() => {
+                        onTabChange('subscription');
+                        setShowMobileDrawer(false);
+                      }}
+                      className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                        activeTab === 'subscription'
+                          ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-md font-black'
+                          : 'bg-slate-50 hover:bg-amber-50 text-slate-900 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-amber-100 text-amber-900 rounded-xl font-bold">
+                          ⚡
+                        </div>
+                        <div>
+                          <div className="text-xs font-black">{labels.navSubscription}</div>
+                          <div className="text-[10px] opacity-80">Kugura Units via Mobile Money (0781339530)</div>
+                        </div>
+                      </div>
+                      <span className="text-xs">➔</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const isInIframe = typeof window !== 'undefined' && window.self !== window.top;
+                        if (isInIframe) {
+                          window.open(window.location.href, '_blank', 'noopener,noreferrer');
+                        } else {
+                          window.dispatchEvent(new CustomEvent('open-pwa-install-guide'));
+                        }
+                        setShowMobileDrawer(false);
+                      }}
+                      className="w-full text-left p-3 rounded-2xl border border-lime-400 bg-lime-100 hover:bg-lime-200 text-slate-950 transition-all flex items-center justify-between font-black"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-lime-400 text-slate-950 rounded-xl font-bold">
+                          📱
+                        </div>
+                        <div>
+                          <div className="text-xs font-black">Manura / Install App 📱💻</div>
+                          <div className="text-[10px] text-slate-800 font-medium">Android APK & PWA Fast Install</div>
+                        </div>
+                      </div>
+                      <span className="text-xs font-black bg-lime-400 px-2 py-0.5 rounded-lg border border-lime-600">Install</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        if (onSyncCloudData) {
+                          onSyncCloudData();
+                        } else {
+                          window.dispatchEvent(new CustomEvent('trigger-pwa-sync'));
+                        }
+                        setShowMobileDrawer(false);
+                      }}
+                      disabled={isSyncing}
+                      className="w-full text-left p-3 rounded-2xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 transition-all flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-emerald-200 text-emerald-900 rounded-xl font-bold">
+                          <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                        </div>
+                        <div>
+                          <div className="text-xs font-black">
+                            {isSyncing ? 'Syncing System Cloud...' : 'Sync System Data'}
+                          </div>
+                          <div className="text-[10px] text-emerald-800">Backup and synchronize data with Cloud</div>
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold text-emerald-700">Sync</span>
+                    </button>
+
+                    {user?.isAdmin && (
+                      <button
+                        onClick={() => {
+                          onOpenAdmin?.();
+                          setShowMobileDrawer(false);
+                        }}
+                        className="w-full text-left p-3 rounded-2xl border border-purple-300 bg-purple-100 hover:bg-purple-200 text-purple-950 transition-all flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-2 bg-purple-200 text-purple-900 rounded-xl font-bold">
+                            🛡️
+                          </div>
+                          <div>
+                            <div className="text-xs font-black">System Admin Panel</div>
+                            <div className="text-[10px] text-purple-800 font-medium">Owner Management & Approvals</div>
+                          </div>
+                        </div>
+                        <span className="text-xs font-bold text-purple-800">Admin 🛡️</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        onTabChange('founder');
+                        setShowMobileDrawer(false);
+                      }}
+                      className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                        activeTab === 'founder'
+                          ? 'bg-slate-900 text-white border-slate-950 shadow-md font-black'
+                          : 'bg-slate-50 hover:bg-slate-100 text-slate-900 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-slate-200 text-slate-900 rounded-xl font-bold">
+                          👑
+                        </div>
+                        <div>
+                          <div className="text-xs font-black">{labels.navFounder}</div>
+                          <div className="text-[10px] opacity-80">Nkundimana Theogene & Platform Contacts</div>
+                        </div>
+                      </div>
+                      <span className="text-xs">➔</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        onOpenPolicy?.();
+                        setShowMobileDrawer(false);
+                      }}
+                      className="w-full text-left p-3 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-900 transition-all flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-slate-200 text-slate-900 rounded-xl font-bold">
+                          📜
+                        </div>
+                        <div>
+                          <div className="text-xs font-black">Policy & Terms</div>
+                          <div className="text-[10px] opacity-80">Amategeko n'amabwiriza y'ikoreshwa ry'urubuga</div>
+                        </div>
+                      </div>
+                      <span className="text-xs">➔</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Drawer Bottom Bar: Language, Country, User status */}
+            <div className="p-4 bg-slate-900 text-white border-t border-slate-800 space-y-3 shrink-0">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs font-bold">Language:</span>
+                  <span className="text-xs font-bold text-slate-300">English</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold">Country:</span>
+                  <select
+                    value={selectedCountry}
+                    onChange={(e) => onCountryChange(e.target.value)}
+                    className="bg-slate-800 text-white text-xs font-bold px-2 py-1 rounded-lg border border-slate-700"
+                  >
+                    {COUNTRIES.map(c => (
+                      <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {user ? (
+                <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-emerald-500 text-slate-950 font-black text-xs flex items-center justify-center">
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="text-xs">
+                      <div className="font-bold text-white truncate max-w-[140px]">{user.name}</div>
+                      <div className="text-[10px] text-emerald-400 font-bold">{user.remainingPlans} units</div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      onSignOut();
+                      setShowMobileDrawer(false);
+                    }}
+                    className="px-3 py-1 bg-rose-900/60 hover:bg-rose-800 text-rose-200 text-xs font-bold rounded-lg border border-rose-700 flex items-center gap-1"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    onOpenSignIn();
+                    setShowMobileDrawer(false);
+                  }}
+                  className="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-2"
+                >
+                  <User className="w-4 h-4" />
+                  <span>🔐 Register / Sign In</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

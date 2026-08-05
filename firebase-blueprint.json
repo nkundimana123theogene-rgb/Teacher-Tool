@@ -98,7 +98,12 @@
         "issuer2Title": { "type": "string" },
         "borderStyle": { "type": "string" },
         "language": { "type": "string" },
-        "gender": { "type": "string" }
+        "gender": { "type": "string" },
+        "courseName": { "type": "string" },
+        "schoolLogo": { "type": "string" },
+        "issuer1Signature": { "type": "string" },
+        "issuer2Signature": { "type": "string" },
+        "useCursiveSignatures": { "type": "boolean" }
       },
       "required": ["id", "createdAt", "certificateNumber", "recipientName", "schoolName", "certificateTitle", "category", "citationText", "issueDate", "issuer1Name", "issuer1Title", "borderStyle", "language"]
     },
@@ -123,6 +128,25 @@
         "language": { "type": "string" }
       },
       "required": ["id", "createdAt", "userEmail", "subject", "classGrade", "date", "period", "lessonTitle", "workCoveredSummary", "skillsCompetencesTargeted", "language"]
+    },
+    "Tutorial": {
+      "title": "Tutorial",
+      "description": "System video tutorial and module guide item.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "module": { "type": "string" },
+        "description": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "pdfUrl": { "type": "string" },
+        "version": { "type": "string" },
+        "videoScript": { "type": "string" },
+        "guideContent": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "title", "module", "description"]
     }
   },
   "firestore": {
@@ -149,6 +173,10 @@
     "classDiaries/{diaryId}": {
       "schema": "ClassDiary",
       "description": "Class diary records for lesson monitoring."
+    },
+    "tutorials/{tutorialId}": {
+      "schema": "Tutorial",
+      "description": "System video tutorials and module documentation guides."
     }
   }
 }

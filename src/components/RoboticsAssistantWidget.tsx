@@ -50,7 +50,7 @@ export const RoboticsAssistantWidget: React.FC = () => {
     const defaultGreeting: Message = {
       id: '1',
       sender: 'bot',
-      text: "Muraho! Ndi Teacher Tool AI Assistant 🤖. Mfite ubumenyi bwo kugufasha ku birebana n'imikoreshereze ya Teacher Tool, kwishyura no gukora Lesson Plans.",
+      text: "Hello! I am Teacher Tool AI Assistant 🤖. I am here to help you navigate Teacher Tool, manage subscriptions, and generate lesson plans.",
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
@@ -117,12 +117,12 @@ export const RoboticsAssistantWidget: React.FC = () => {
   };
 
   const handleClearHistory = () => {
-    if (window.confirm('Ese urashaka gusiba amateka yose y\'ibibazo wabajije?')) {
+    if (window.confirm('Do you want to clear your conversation history?')) {
       setHistoryItems([]);
       const defaultGreeting: Message = {
         id: '1',
         sender: 'bot',
-        text: "Muraho! Ndi Teacher Tool AI Assistant 🤖. Mfite ubumenyi bwo kugufasha ku birebana n'imikoreshereze ya Teacher Tool, kwishyura no gukora Lesson Plans.",
+        text: "Hello! I am Teacher Tool's AI Assistant 🤖. How can I assist you today with lesson planning, subscriptions, or app navigation?",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages([defaultGreeting]);
@@ -209,22 +209,22 @@ export const RoboticsAssistantWidget: React.FC = () => {
       console.error('Error fetching AI response, falling back to local system:', err);
       
       // Simple local fallback in case of connection failure or server error
-      let botResponse = `Urakoze ku kibazo cyawe! Teacher Tool AI Assistant ifite amakuru arambuye ku rwego rwa Mwarimu. Twagufasha kuri MoMo Code (${OWNER_INFO.momoCode}), gukora Lesson Plan kuri urubuga rwacu https://teacherlessonplans.ai.studio, cyangwa ukadusanga mu muryango wa WhatsApp Group kuri ${OWNER_INFO.whatsapp}.`;
+      let botResponse = `Thank you for your question! Teacher Tool AI Assistant is ready to help you. You can make payments using MoMo Code (${OWNER_INFO.momoCode}), generate lesson plans on our platform, or reach support on WhatsApp at ${OWNER_INFO.whatsapp}.`;
       let showWhatsapp = false;
 
       const lower = userText.toLowerCase();
 
-      if (lower.includes('link') || lower.includes('website') || lower.includes('site') || lower.includes('url') || lower.includes('urubuga') || lower.includes('web')) {
-        botResponse = `Urubuga rwacu rw'Ikoranabuhanga ruzwi nka Nkorera Education rushobora kuboneka kuri link: https://teacherlessonplans.ai.studio - Aha niho ushobora gukorera no gukura (download) Lesson Plans, Schemes of Work, na Worksheets zigezweho!`;
-      } else if (lower.includes('momo') || lower.includes('kwishyura') || lower.includes('pay') || lower.includes('igiciro') || lower.includes('code')) {
-        botResponse = `Kwishyura biroroshye cyane!\n\n1. Kanda Code ya Mobile Money: ${OWNER_INFO.momoCode}\n2. Shyiramo amafaranga y'ifatabuguzi wahisemo (Single Plan: 1,000 RWF, Teacher Monthly: 5,000 RWF, Unlimited: 15,000 RWF).\n3. Izina rizazaho: ${OWNER_INFO.accountHolder}.\n4. Umaze kwishyura, kanda kuri 'Admin Panel' cyangwa ukoreshe WhatsApp ${OWNER_INFO.whatsapp} kugira ngo bakwegukane konti yawe! Ushobora no gusura urubuga rwacu: https://teacherlessonplans.ai.studio`;
-      } else if (lower.includes('free') || lower.includes('ubuntu') || lower.includes(' quota')) {
-        botResponse = `Buri mwarimu n'umukiriya ahabwa LESSON PLANS 3 Z'UBUNTU buri ntangiriro z'ukwezi kuri https://teacherlessonplans.ai.studio! Umaze kuzirangiza, ushobora kugura ifatabuguzi ry'ukwezi gukomeza gukora amasomo ahanitse.`;
-      } else if (lower.includes('whatsapp') || lower.includes('group') || lower.includes('kwinjira') || lower.includes('ubufasha') || lower.includes('phone') || lower.includes('nimero')) {
-        botResponse = `Ushobora kwinjira mu muryango wacu wa WhatsApp no kubona ubufasha bw'ako kanya kuri nimero ${OWNER_INFO.whatsapp} (${OWNER_INFO.accountHolder}). Link y'urubuga rwacu ni https://teacherlessonplans.ai.studio`;
+      if (lower.includes('link') || lower.includes('website') || lower.includes('site') || lower.includes('url') || lower.includes('web')) {
+        botResponse = `Our platform is accessible at: https://teacherlessonplans.ai.studio - Here you can create and download lesson plans, schemes of work, worksheets, and more!`;
+      } else if (lower.includes('momo') || lower.includes('pay') || lower.includes('price') || lower.includes('code') || lower.includes('cost')) {
+        botResponse = `Payment is simple!\n\n1. Dial MoMo Code: ${OWNER_INFO.momoCode}\n2. Enter the amount for your chosen plan (Single Plan: 1,000 RWF, Monthly: 5,000 RWF, Unlimited: 15,000 RWF).\n3. Account name: ${OWNER_INFO.accountHolder}.\n4. Once paid, click 'Admin Panel' or contact WhatsApp ${OWNER_INFO.whatsapp} to activate your account!`;
+      } else if (lower.includes('free') || lower.includes('quota')) {
+        botResponse = `Every teacher receives 3 FREE Lesson Plans every month at https://teacherlessonplans.ai.studio! Once used, you can upgrade to a monthly plan for unlimited access.`;
+      } else if (lower.includes('whatsapp') || lower.includes('group') || lower.includes('help') || lower.includes('phone') || lower.includes('support')) {
+        botResponse = `You can join our WhatsApp support group and get direct assistance at ${OWNER_INFO.whatsapp} (${OWNER_INFO.accountHolder}). Our web platform is https://teacherlessonplans.ai.studio`;
         showWhatsapp = true;
-      } else if (lower.includes('lesson plan') || lower.includes('reb') || lower.includes('gukora') || lower.includes('generate')) {
-        botResponse = `Kugira ngo ukore Lesson Plan nshya kuri https://teacherlessonplans.ai.studio :\n1. Kanda 'Generate Lesson Plan'\n2. Uzuza ibintu by'isomo ry icyigwa (Subject, Grade, Lesson Title, Unit, Learning Materials)\n3. AI izaguha Instructional Objective yakozwe neza n'imigendekere yose y'isomo mu rurimi wahisemo!`;
+      } else if (lower.includes('lesson plan') || lower.includes('reb') || lower.includes('generate')) {
+        botResponse = `To generate a new Lesson Plan:\n1. Click 'Generate Lesson Plan'\n2. Fill in subject, grade, title, unit, and learning materials\n3. Select your preferred lesson language and AI will generate a complete CBC plan in seconds!`;
       }
 
       const botMsg: Message = {
@@ -258,34 +258,62 @@ export const RoboticsAssistantWidget: React.FC = () => {
 
   return (
     <>
-      {/* Floating Robot Badge Button */}
-      <div className="fixed bottom-5 right-5 z-50 print:hidden">
+      {/* Floating Buttons: WhatsApp on top, Robotics AI Chat on bottom */}
+      <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-2.5 print:hidden">
         {!isOpen && (
-          <button
-            onClick={() => setIsOpen(true)}
-            className="group relative flex items-center gap-3 bg-gradient-to-r from-emerald-700 via-teal-700 to-slate-900 text-white p-3.5 sm:px-5 sm:py-3.5 rounded-full shadow-2xl hover:shadow-emerald-900/40 hover:scale-105 transition-all duration-300 border-2 border-emerald-400/60"
-            id="robotics-assistant-badge-btn"
-          >
-            {/* Pulsing Robot Icon Badge */}
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-emerald-500/30 flex items-center justify-center animate-ping absolute inset-0" />
-              <div className="w-10 h-10 rounded-full bg-emerald-600 border border-emerald-300 flex items-center justify-center text-amber-300 relative z-10 shadow-inner">
-                <Bot className="w-6 h-6 animate-bounce" />
+          <>
+            {/* WhatsApp Floating Button */}
+            <a
+              href={OWNER_INFO.whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative flex items-center gap-2.5 bg-gradient-to-r from-emerald-600 via-green-600 to-teal-700 hover:from-emerald-700 hover:to-green-800 text-white p-3 sm:px-4 sm:py-2.5 rounded-full shadow-2xl hover:shadow-emerald-900/40 hover:scale-105 transition-all duration-300 border-2 border-emerald-300"
+              id="floating-whatsapp-btn"
+              title="Vugana na Support kuri WhatsApp (0781339530)"
+            >
+              <div className="relative">
+                <div className="w-8 h-8 rounded-full bg-emerald-400/30 flex items-center justify-center animate-ping absolute inset-0" />
+                <div className="w-8 h-8 rounded-full bg-emerald-500 border border-emerald-200 flex items-center justify-center text-white relative z-10 shadow-sm">
+                  <MessageSquare className="w-4 h-4 text-white fill-white" />
+                </div>
               </div>
-            </div>
+              <div className="text-left hidden sm:block pr-1">
+                <div className="text-[10px] font-black uppercase tracking-wider text-emerald-100 flex items-center gap-1">
+                  <span>WHATSAPP SUPPORT</span>
+                </div>
+                <div className="text-xs font-black text-white">
+                  <span>0781339530</span>
+                </div>
+              </div>
+            </a>
 
-            <div className="text-left hidden sm:block pr-1">
-              <div className="flex items-center gap-1.5">
-                <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-200">
-                  ROBOTICS AI ASSISTANT
-                </span>
+            {/* Robotics AI Chat Floating Button */}
+            <button
+              onClick={() => setIsOpen(true)}
+              className="group relative flex items-center gap-3 bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 text-white p-3.5 sm:px-5 sm:py-3.5 rounded-full shadow-2xl hover:shadow-emerald-900/40 hover:scale-105 transition-all duration-300 border-2 border-emerald-400/60"
+              id="robotics-assistant-badge-btn"
+            >
+              {/* Pulsing Robot Icon Badge */}
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/30 flex items-center justify-center animate-ping absolute inset-0" />
+                <div className="w-10 h-10 rounded-full bg-emerald-600 border border-emerald-300 flex items-center justify-center text-amber-300 relative z-10 shadow-inner">
+                  <Bot className="w-6 h-6 animate-bounce" />
+                </div>
               </div>
-              <div className="text-xs font-black text-white flex items-center gap-1">
-                <span>Ubufasha bwa Robot & WhatsApp</span>
+
+              <div className="text-left hidden sm:block pr-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-200">
+                    ROBOTICS AI ASSISTANT
+                  </span>
+                </div>
+                <div className="text-xs font-black text-white flex items-center gap-1">
+                  <span>Robotics AI Assistant</span>
+                </div>
               </div>
-            </div>
-          </button>
+            </button>
+          </>
         )}
       </div>
 
@@ -306,7 +334,7 @@ export const RoboticsAssistantWidget: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-[11px] text-emerald-200">
-                  Ubufasha Bwihuse • WhatsApp 0781339530
+                  Instant Support • WhatsApp 0781339530
                 </p>
               </div>
             </div>
@@ -314,7 +342,7 @@ export const RoboticsAssistantWidget: React.FC = () => {
             <button
               onClick={() => setIsOpen(false)}
               className="p-2 hover:bg-white/10 rounded-full text-emerald-200 hover:text-white transition-colors"
-              title="Funga / Close"
+              title="Close"
             >
               <X className="w-5 h-5" />
             </button>
@@ -359,8 +387,8 @@ export const RoboticsAssistantWidget: React.FC = () => {
                 <button
                   onClick={() =>
                     handleSendQuickQuery(
-                      "Nkoza nte kwishyura kuri MoMo Code?",
-                      `Kanda Code ya MoMo: ${OWNER_INFO.momoCode} (Izina: ${OWNER_INFO.accountHolder}). Shyiramo amafaranga y'ifatabuguzi ryawe, hanyuma wuzuze kwishyura!`
+                      "How do I pay using MoMo Code?",
+                      `Dial MoMo Code: ${OWNER_INFO.momoCode} (Account: ${OWNER_INFO.accountHolder}). Enter your plan amount to complete payment!`
                     )
                   }
                   className="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 rounded-lg border border-slate-200 text-[11px] font-bold shrink-0 transition-colors flex items-center gap-1"
@@ -371,8 +399,8 @@ export const RoboticsAssistantWidget: React.FC = () => {
                 <button
                   onClick={() =>
                     handleSendQuickQuery(
-                      "Ese Lesson Plans 3 z'ubuntu zikora zite?",
-                      `Buri mwarimu n'umukiriya wese ahabwa Lesson Plans 3 z'UBUNTU buri ntangiriro z'ukwezi! Zikoreshe gukora n'isesengura ry'amasomo yawe.`
+                      "How do the 3 free monthly plans work?",
+                      `Every teacher receives 3 FREE Lesson Plans at the start of each month! Use them to generate comprehensive lesson plans.`
                     )
                   }
                   className="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 rounded-lg border border-slate-200 text-[11px] font-bold shrink-0 transition-colors flex items-center gap-1"
@@ -383,8 +411,8 @@ export const RoboticsAssistantWidget: React.FC = () => {
                 <button
                   onClick={() =>
                     handleSendQuickQuery(
-                      "Nshaka kwinjira mu muryango wa WhatsApp!",
-                      `Ushobora kwinjira mu muryango wa WhatsApp ukoresheje nimero 0781339530 cyangwa ukanda buto y'icyobere yo kwinjira kumpapuro!`,
+                      "How do I join the WhatsApp Support Group?",
+                      `You can join our WhatsApp community for instant support at 0781339530 or by clicking the WhatsApp group link in the app!`,
                       true
                     )
                   }
@@ -435,7 +463,7 @@ export const RoboticsAssistantWidget: React.FC = () => {
                       <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                       <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                       <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                      <span className="text-[10px] font-semibold text-slate-400 ml-1">AI Assistant ariko gutegura igisubizo...</span>
+                      <span className="text-[10px] font-semibold text-slate-400 ml-1">AI Assistant is typing a response...</span>
                     </div>
                   </div>
                 )}
@@ -449,7 +477,7 @@ export const RoboticsAssistantWidget: React.FC = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   disabled={isLoading}
-                  placeholder={isLoading ? "Tegereza igisubizo..." : "Baza Robotic cyangwa wandike ikibazo..."}
+                  placeholder={isLoading ? "Waiting for response..." : "Ask AI Assistant any question..."}
                   className="flex-1 px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white text-slate-800 disabled:opacity-60"
                 />
                 <button

@@ -151,7 +151,9 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
       term: type === 'reb' ? rebTerm : rtbTerm,
       numberOfWeeks: type === 'reb' ? rebWeeks : rtbWeeks,
       language: selectedLanguage,
-      additionalInfo: type === 'reb' ? rebNotes : rtbNotes
+      additionalInfo: type === 'reb' ? rebNotes : rtbNotes,
+      userEmail: user?.email,
+      sessionToken: user?.sessionToken
     };
 
     try {
@@ -162,6 +164,14 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
       });
 
       if (!response.ok) {
+        if (response.status === 403) {
+          const errData = await response.json().catch(() => ({}));
+          if (errData.code === 'PREMIUM_LIMIT_EXCEEDED') {
+            setErrorMsg(errData.error || "Ntabwo wemerewe gukora Schemes of Work zirenga 5 ku kwezi z'ubuntu. Koresha izo wakoze cyangwa ugure ifatabuguzi (Premium Tools Sub) rya 2,500 Rwf muri Subscription page!");
+            setIsGenerating(false);
+            return;
+          }
+        }
         throw new Error('Failed to communicate with Scheme generator api.');
       }
 
@@ -773,7 +783,7 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
                 </div>
                 <h2 className="text-xl font-black text-slate-900">{activeScheme.title}</h2>
                 <p className="text-xs text-slate-500 font-bold">
-                  {activeScheme.subtitle} • {getLabel("Double-click cells to customize content", "Kanda kabiri kuri buri gice kugira ngo uvugurure amagambo")}
+                  {activeScheme.subtitle} • Double-click cells to customize content
                 </p>
               </div>
 

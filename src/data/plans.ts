@@ -76,6 +76,13 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     priceFrw: 7000,
     label: '120 Lesson Plans',
   },
+  {
+    id: 'plan_premium_tools',
+    plansCount: 0,
+    priceFrw: 2500,
+    label: 'Premium Tools (Slides, Exercises, Worksheets, SOW, Class Diary) - 2,500 Rwf/mo',
+    popular: true,
+  },
 ];
 
 export const OWNER_INFO = {

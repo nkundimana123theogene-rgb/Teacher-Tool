@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Header } from './components/Header';
+import { Header, NotificationItem, DEFAULT_NOTIFICATIONS } from './components/Header';
 import { SignInModal } from './components/SignInModal';
 import { PolicyTermsModal } from './components/PolicyTermsModal';
 import { LessonPlanView } from './components/LessonPlanView';
@@ -21,9 +21,13 @@ import { ClassDiaryCreator } from './components/ClassDiaryCreator';
 import { CertificateCreator } from './components/CertificateCreator';
 import { CertificateVerification } from './components/CertificateVerification';
 import { InstallPwaPrompt } from './components/InstallPwaPrompt';
+import { OfflineOverlay } from './components/OfflineOverlay';
+import { HelpCenter } from './components/HelpCenter';
+import { FeedbackModal } from './components/FeedbackModal';
+import { NotificationsModal } from './components/NotificationsModal';
 import { UserProfile, LanguageOption, PlanFormatOption, LessonPlanRequest, LessonPlanData } from './types';
 import { OWNER_INFO } from './data/plans';
-import { Sparkles, BookOpen, CheckCircle2, AlertCircle, X, Check } from 'lucide-react';
+import { Sparkles, BookOpen, CheckCircle2, AlertCircle, X, Check, HelpCircle, MessageSquare, Search, Globe, Share2, ExternalLink, Bell, BellRing } from 'lucide-react';
 import { getTimeBasedGreeting } from './utils/greeting';
 import { generateClientLessonPlan, processLessonPlanStreamSafely } from './utils/lessonPlanGenerator';
 
@@ -50,9 +54,46 @@ export default function App() {
 
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const [showHelpCenterModal, setShowHelpCenterModal] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+
+  useEffect(() => {
+    const handleOpenHelpCenter = () => setShowHelpCenterModal(true);
+    const handleOpenFeedback = () => setShowFeedbackModal(true);
+    window.addEventListener('open-help-center', handleOpenHelpCenter);
+    window.addEventListener('open-feedback-modal', handleOpenFeedback);
+    return () => {
+      window.removeEventListener('open-help-center', handleOpenHelpCenter);
+      window.removeEventListener('open-feedback-modal', handleOpenFeedback);
+    };
+  }, []);
   const [welcomeBanner, setWelcomeBanner] = useState<{ title: string; subtext: string } | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncToast, setSyncToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  
+  // Notifications state persisted in localStorage
+  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('teacher_tool_notifications');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Error loading notifications:', e);
+    }
+    return DEFAULT_NOTIFICATIONS;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('teacher_tool_notifications', JSON.stringify(notifications));
+    } catch (e) {
+      console.error('Error saving notifications:', e);
+    }
+  }, [notifications]);
+
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
@@ -90,8 +131,8 @@ export default function App() {
       setApiStatus('online');
       setConnectionAlert({
         type: 'online',
-        title: '🟢 Muri Online Mode (Ufite Connection)',
-        message: 'Internet yahujwe neza! Ushobora gukomeza gukoresha Teacher Tool no kugeneratinga amaso (Lesson plans) udafite ikibazo.'
+        title: '🟢 Online Mode (Connected)',
+        message: 'Internet connection re-established! You can continue generating lesson plans and using all tools seamlessly.'
       });
       checkHealth();
     };
@@ -102,8 +143,8 @@ export default function App() {
       setApiStatus('offline');
       setConnectionAlert({
         type: 'offline',
-        title: '🔴 No Connection? Please! Connect Your Device',
-        message: 'Nta connection ya internet iri kuboneka. Banza uhuze mudasobwa cyangwa telephone yawe n\'internet (Wi-Fi/Data) ugakomeza gukoresha platform.'
+        title: '🔴 No Connection Detected',
+        message: 'No internet connection detected. Please connect your device to Wi-Fi or mobile data to continue.'
       });
     };
 
@@ -165,11 +206,10 @@ export default function App() {
   // Helper to construct a local default profile if offline or loading
   const getFallbackUser = (email: string, name?: string): UserProfile => {
     const isOwner = email.toLowerCase() === 'nkundimana123theogene@gmail.com';
-    const hasToken = !!(localStorage.getItem('tegura_session_token') || localStorage.getItem('nkorera_session_token'));
-    const isAdmin = isOwner && hasToken;
+    const isAdmin = isOwner;
     return {
       id: "usr_" + Math.random().toString(36).substring(2, 9),
-      name: name || (isOwner ? 'NKUNDIMANA Theogene' : (email.includes('@') ? email.split("@")[0] : 'Mwarimu')),
+      name: name || (isOwner ? 'NKUNDIMANA Theogene' : (email.includes('@') ? email.split("@")[0] : 'Teacher')),
       email: email,
       phone: isOwner ? '0781339530' : '',
       country: 'Rwanda',
@@ -385,12 +425,12 @@ export default function App() {
     window.addEventListener('online', handleAutoSync);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Periodic background sync every 25 seconds for real-time consistency
+    // Periodic background sync every 5 minutes for real-time consistency
     const syncInterval = setInterval(() => {
       if (navigator.onLine && user?.email) {
         handleSyncCloudData(true);
       }
-    }, 25000);
+    }, 300000);
 
     return () => {
       window.removeEventListener('trigger-pwa-sync', handleExplicitSync);
@@ -459,6 +499,17 @@ export default function App() {
     localStorage.removeItem('nkorera_user_name');
     localStorage.removeItem('nkorera_session_token');
     setUser(null);
+    setActiveTab('dashboard');
+    setSyncToast({
+      message: selectedLanguage === 'Kinyarwanda' 
+        ? 'Usohotse neza muri konti yawe! Byakozwe vuba cyane kandi neza.' 
+        : 'Logged out successfully and instantly!',
+      type: 'success'
+    });
+    // Show login/register form immediately so they can log in/register under a new account easily
+    setTimeout(() => {
+      setShowSignInModal(true);
+    }, 400);
   };
 
   const handleCountryChange = async (country: string) => {
@@ -529,6 +580,10 @@ export default function App() {
           return;
         } else if (data.code === 'ACCOUNT_BLOCKED') {
           setErrorMsg('Konti yawe yahagaritswe.');
+          setIsGenerating(false);
+          return;
+        } else if (data.code === 'DAILY_LIMIT_EXCEEDED') {
+          setErrorMsg(data.error || 'Ntabwo wemerewe gukora lesson plans zirenga 3 ku munsi. Koresha izo wakoze cyangwa utegereze ejo.');
           setIsGenerating(false);
           return;
         }
@@ -631,47 +686,54 @@ export default function App() {
     );
   }
 
+  const handleGoogleSearchShortcut = () => {
+    try {
+      navigator.clipboard.writeText('nkorera.education');
+      setSyncToast({
+        message: "Successfully copied 'nkorera.education'! Opening Google Search now...",
+        type: 'success'
+      });
+      setTimeout(() => setSyncToast(null), 4000);
+      window.open('https://www.google.com/search?q=Nkorera+Education', '_blank');
+    } catch {
+      window.open('https://www.google.com/search?q=Nkorera+Education', '_blank');
+    }
+  };
+
+  const handleCopyWebsiteAddress = () => {
+    try {
+      navigator.clipboard.writeText('https://nkorera.education');
+      setSyncToast({
+        message: "Successfully copied 'https://nkorera.education'! Share or save it easily.",
+        type: 'success'
+      });
+      setTimeout(() => setSyncToast(null), 4000);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col selection:bg-emerald-200">
-      <InstallPwaPrompt />
+      <OfflineOverlay
+        isNetworkOnline={isNetworkOnline}
+        selectedLanguage={selectedLanguage}
+        onRetry={() => {
+          setIsNetworkOnline(true);
+          setApiStatus('online');
+        }}
+      />
+      <InstallPwaPrompt selectedLanguage={selectedLanguage} />
       
-      {/* Absolute Fullscreen Blocking Overlay when offline */}
+      {/* Non-blocking Offline Banner */}
       {!isNetworkOnline && (
-        <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
-          <div className="bg-slate-900 border-2 border-rose-500 text-white p-6 sm:p-8 rounded-3xl max-w-md w-full shadow-2xl text-center space-y-6 animate-in fade-in duration-200">
-            <div className="w-16 h-16 bg-rose-500/20 border-2 border-rose-500 text-rose-500 rounded-3xl flex items-center justify-center mx-auto text-3xl shadow-lg shadow-rose-500/20 animate-pulse">
-              📶
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-black text-rose-400 tracking-wide">
-                Nta Connection ya Internet Iriyo! 🔴
-              </h3>
-              <p className="text-sm font-bold text-white">
-                Ubu uri Offline. Gukoresha iyi App bisaba kuba ufite Network.
-              </p>
-              <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                Nkorera Educational Tools isaba internet ihoraho (Wi-Fi cyangwa Mobile Data) kugira ngo ukomeze gukora. Banza ufungure connection yawe ngo uhite ukomeza!
-              </p>
-            </div>
-
-            <div className="bg-slate-800/80 border border-slate-700 p-4 rounded-2xl space-y-2 text-xs text-left">
-              <div className="font-extrabold text-amber-400 flex items-center gap-1.5">
-                <span>💡 Icyo ugomba gukora:</span>
-              </div>
-              <ul className="list-disc list-inside space-y-1 text-slate-300 font-medium">
-                <li>Fungura Data (MTN / Airtel) cyangwa Wi-Fi</li>
-                <li>Kora refresh cyangwa utegereze ko byikora</li>
-                <li>Ufite ikibazo? Baza Admin: 0781339530</li>
-              </ul>
-            </div>
-
-            <div className="pt-2 border-t border-slate-800 flex flex-col gap-2">
-              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider animate-pulse flex items-center justify-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
-                <span>Irimo gutegereza Network... (Waiting for Connection...)</span>
-              </div>
-            </div>
-          </div>
+        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 text-white px-4 py-3 text-center text-xs font-black tracking-wide flex items-center justify-center gap-2 shadow-2xl animate-in slide-in-from-bottom duration-300 print:hidden z-[9999] border-t border-rose-500/30">
+          <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0"></span>
+          <span>
+            {selectedLanguage === 'Kinyarwanda' 
+              ? "🔴 Uri Gukora Offline (Nta Internet) — Ushobora gusoma no gukoresha ibyabitswe byose muri memory cyangwa guhindura amadosiye yakorewe kuri iyi telephone, ariko gukoresha AI bisaba internet!" 
+              : "🔴 Working Offline (No Internet) — You can view, read, and manage all locally cached plans, but generating new plans with AI requires active connection!"}
+          </span>
         </div>
       )}
 
@@ -685,6 +747,7 @@ export default function App() {
         onOpenSubscription={() => setActiveTab('subscription')}
         onOpenAdmin={() => setActiveTab('admin')}
         onOpenPolicy={() => setShowPolicyModal(true)}
+        onOpenHelpCenter={() => setShowHelpCenterModal(true)}
         onSignOut={handleSignOut}
         activeTab={activeTab}
         apiStatus={apiStatus}
@@ -692,6 +755,8 @@ export default function App() {
         onSyncCloudData={handleSyncCloudData}
         isSyncing={isSyncing}
         onSelectFormat={(fmt) => setSelectedFormat(fmt)}
+        notifications={notifications}
+        onNotificationsChange={setNotifications}
         onTabChange={(tab) => {
           setActiveTab(tab);
           if (tab === 'generator') {
@@ -701,93 +766,96 @@ export default function App() {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Connection Online / Offline Alert Toast */}
-        {connectionAlert && (
-          <div
-            className={`mb-6 p-4 rounded-2xl shadow-xl border flex items-center justify-between gap-4 animate-in slide-in-from-top-3 duration-300 ${
-              connectionAlert.type === 'online'
-                ? 'bg-emerald-950 text-white border-emerald-500/40'
-                : 'bg-rose-950 text-rose-100 border-rose-500/40'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center font-black shrink-0 border ${
-                  connectionAlert.type === 'online'
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
-                    : 'bg-rose-500/20 text-rose-300 border-rose-400/30'
-                }`}
+        {/* Floating Notification Stack at Bottom Left */}
+        <div className="fixed bottom-6 left-6 z-50 max-w-sm sm:max-w-md w-full flex flex-col gap-3 pointer-events-auto print:hidden">
+          {/* Connection Online / Offline Alert Toast */}
+          {connectionAlert && (
+            <div
+              className={`p-4 rounded-2xl shadow-2xl border flex items-center justify-between gap-4 animate-in slide-in-from-bottom-3 duration-300 ${
+                connectionAlert.type === 'online'
+                  ? 'bg-emerald-950 text-white border-emerald-500/60'
+                  : 'bg-rose-950 text-rose-100 border-rose-500/60'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center font-black shrink-0 border ${
+                    connectionAlert.type === 'online'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                      : 'bg-rose-500/20 text-rose-300 border-rose-400/30'
+                  }`}
+                >
+                  {connectionAlert.type === 'online' ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-rose-400" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                    <span>{connectionAlert.title}</span>
+                  </h3>
+                  <p className="text-[11px] font-medium mt-0.5 opacity-90 leading-tight">
+                    {connectionAlert.message}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setConnectionAlert(null)}
+                className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors shrink-0"
+                title="Close notification"
               >
-                {connectionAlert.type === 'online' ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-rose-400" />
-                )}
-              </div>
-              <div>
-                <h3 className="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
-                  <span>{connectionAlert.title}</span>
-                </h3>
-                <p className="text-xs font-medium mt-0.5 opacity-90">
-                  {connectionAlert.message}
-                </p>
-              </div>
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <button
-              onClick={() => setConnectionAlert(null)}
-              className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors shrink-0"
-              title="Close notification"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+          )}
 
-        {/* Welcome Toast Banner */}
-        {welcomeBanner && (
-          <div className="mb-6 bg-gradient-to-r from-emerald-900 via-teal-800 to-emerald-950 text-white p-4 rounded-2xl shadow-xl border border-emerald-500/30 flex items-center justify-between gap-4 animate-in slide-in-from-top-3 duration-300">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center font-black shrink-0 border border-amber-300/30">
-                <Sparkles className="w-5 h-5 text-amber-300" />
+          {/* Welcome Toast Banner */}
+          {welcomeBanner && (
+            <div className="bg-gradient-to-r from-emerald-900 via-teal-800 to-emerald-950 text-white p-4 rounded-2xl shadow-2xl border border-emerald-500/40 flex items-center justify-between gap-4 animate-in slide-in-from-bottom-3 duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center font-black shrink-0 border border-amber-300/30">
+                  <Sparkles className="w-5 h-5 text-amber-300" />
+                </div>
+                <div>
+                  <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                    <span>{welcomeBanner.title}</span>
+                  </h3>
+                  <p className="text-[11px] text-emerald-100 font-medium mt-0.5 leading-tight">
+                    {welcomeBanner.subtext}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
-                  <span>{welcomeBanner.title}</span>
-                </h3>
-                <p className="text-xs text-emerald-100 font-medium mt-0.5">
-                  {welcomeBanner.subtext}
-                </p>
-              </div>
+              <button
+                onClick={() => setWelcomeBanner(null)}
+                className="p-1.5 text-emerald-200 hover:text-white hover:bg-white/10 rounded-xl transition-colors shrink-0"
+                title="Close notification"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <button
-              onClick={() => setWelcomeBanner(null)}
-              className="p-1.5 text-emerald-200 hover:text-white hover:bg-white/10 rounded-xl transition-colors shrink-0"
-              title="Close notification"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+          )}
 
-        {/* Sync Status Banner */}
-        {syncToast && (
-          <div className={`mb-6 p-4 rounded-2xl flex items-center justify-between text-xs font-semibold shadow-md transition-all ${
-            syncToast.type === 'success' 
-              ? 'bg-emerald-950 text-emerald-100 border-2 border-emerald-500/60 shadow-emerald-900/30' 
-              : 'bg-rose-950 text-rose-100 border-2 border-rose-500/60'
-          }`}>
-            <div className="flex items-center gap-2.5">
-              <Check className="w-4 h-4 text-emerald-400 shrink-0 stroke-[3]" />
-              <span className="font-bold">{syncToast.message}</span>
+          {/* Sync Status Banner */}
+          {syncToast && (
+            <div className={`p-4 rounded-2xl flex items-center justify-between text-xs font-semibold shadow-2xl transition-all animate-in slide-in-from-bottom-3 duration-300 ${
+              syncToast.type === 'success' 
+                ? 'bg-emerald-950 text-emerald-100 border-2 border-emerald-500/60 shadow-emerald-900/30' 
+                : 'bg-rose-950 text-rose-100 border-2 border-rose-500/60'
+            }`}>
+              <div className="flex items-center gap-2.5">
+                <Check className="w-4 h-4 text-emerald-400 shrink-0 stroke-[3]" />
+                <span className="font-bold">{syncToast.message}</span>
+              </div>
+              <button
+                onClick={() => setSyncToast(null)}
+                className="p-1 hover:bg-white/10 rounded-lg text-emerald-300 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <button
-              onClick={() => setSyncToast(null)}
-              className="p-1 hover:bg-white/10 rounded-lg text-emerald-300 hover:text-white transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Error Alert */}
         {errorMsg && (
@@ -870,6 +938,7 @@ export default function App() {
                   <RemedialPlanCreator
                     user={user}
                     selectedLanguage={selectedLanguage}
+                    onLanguageChange={setSelectedLanguage}
                     onOpenSubscription={() => setActiveTab('subscription')}
                     onOpenSignIn={() => setShowSignInModal(true)}
                     onSavePlan={(plan) => {
@@ -921,6 +990,7 @@ export default function App() {
                 selectedLanguage={selectedLanguage}
                 onOpenSignIn={() => setShowSignInModal(true)}
                 onBackToDashboard={() => setActiveTab('dashboard')}
+                onOpenSubscription={() => setActiveTab('subscription')}
               />
             )}
 
@@ -955,6 +1025,7 @@ export default function App() {
                   setCurrentPlan(null);
                   setActiveTab('generator');
                 }}
+                onOpenSubscription={() => setActiveTab('subscription')}
               />
             )}
 
@@ -979,6 +1050,7 @@ export default function App() {
                 selectedLanguage={selectedLanguage}
                 onOpenSignIn={() => setShowSignInModal(true)}
                 onBackToDashboard={() => setActiveTab('dashboard')}
+                onOpenSubscription={() => setActiveTab('subscription')}
               />
             )}
 
@@ -1077,18 +1149,92 @@ export default function App() {
         </div>
 
         {/* Footer Sub-Bar */}
-        <div className="max-w-7xl mx-auto px-4 py-4 space-y-2 text-center text-xs">
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <span className="font-extrabold text-white">Teachers Quickly Tools Platform</span>
-            <span className="text-slate-600">•</span>
+        <div className="max-w-7xl mx-auto px-4 py-4 space-y-3 text-center text-xs">
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <button
+              onClick={() => setShowHelpCenterModal(true)}
+              className="px-4 py-2 rounded-xl transition-all font-black text-xs flex items-center gap-1.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-950 shadow-md border border-amber-500 hover:scale-105 active:scale-95"
+              title="Help Center: Tutorials, Video Scripts, Guides & System Structure"
+              id="footer-tutorials-btn"
+            >
+              <HelpCircle className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+              <span>Tutorials & System Structure 🎥📄</span>
+            </button>
+
+            <button
+              onClick={() => setShowFeedbackModal(true)}
+              className="px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 bg-amber-100 hover:bg-amber-200 text-amber-950 font-black text-xs border border-amber-300 shadow-sm hover:scale-105 active:scale-95"
+              title="Send Feedback & Suggestions"
+              id="footer-feedback-btn"
+            >
+              <MessageSquare className="w-4 h-4 text-amber-700 stroke-[2.5]" />
+              <span>Send Feedback 💬</span>
+            </button>
+
+            <button
+              onClick={() => setShowNotificationsModal(true)}
+              className="px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 bg-slate-850 hover:bg-slate-800 text-amber-300 font-bold text-xs border border-slate-700 hover:scale-105 active:scale-95 relative cursor-pointer"
+              id="footer-notifications-btn"
+              title={selectedLanguage === 'Kinyarwanda' ? "Ubutumwa n'Amakuru Mashya" : "System Notifications & Updates"}
+            >
+              {notifications.filter(n => !n.read).length > 0 ? (
+                <BellRing className="w-4 h-4 text-amber-300 stroke-[2.5] animate-bounce" />
+              ) : (
+                <Bell className="w-4 h-4 text-slate-400 stroke-[2]" />
+              )}
+              <span>{selectedLanguage === 'Kinyarwanda' ? "Ubutumwa & Amakuru 🔔" : "Notifications & Updates 🔔"}</span>
+              {notifications.filter(n => !n.read).length > 0 && (
+                <span className="min-w-[18px] h-[18px] px-1.5 bg-red-600 text-white font-extrabold text-[10px] rounded-full flex items-center justify-center border border-slate-900 shadow-md">
+                  {notifications.filter(n => !n.read).length}
+                </span>
+              )}
+            </button>
+
             <button
               onClick={() => setShowPolicyModal(true)}
-              className="text-emerald-400 hover:text-emerald-300 hover:underline font-bold"
+              className="px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold text-xs border border-slate-700"
+              id="footer-policy-btn"
             >
-              📜 Amabwiriza n'Amategeko (Policy, Terms & Conditions)
+              <span>📜 Policy, Terms & FAQ</span>
             </button>
           </div>
-          <p className="text-[10px] text-slate-400">
+
+          {/* Google / Chrome Search & Discovery Shortcut Card */}
+          <div className="max-w-xl mx-auto bg-slate-950/50 border border-emerald-900/35 p-4 rounded-2xl space-y-3 shadow-xl my-4 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+              <h4 className="font-extrabold text-slate-100 text-xs tracking-wide">
+                Search "Nkorera Education" on Google or Chrome 🔍
+              </h4>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+            </div>
+            
+            <p className="text-[11px] text-slate-300 leading-relaxed max-w-lg mx-auto">
+              To easily find our platform on Google or Chrome in the future, click the search button below. It will automatically copy the domain name and direct you to the Google Search results!
+            </p>
+
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+              <button
+                onClick={handleGoogleSearchShortcut}
+                className="px-4 py-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white text-[11px] font-black rounded-xl transition-all shadow-md flex items-center gap-2 hover:scale-105 active:scale-95 border border-emerald-500/20 cursor-pointer"
+                title="Search Nkorera Education on Google"
+              >
+                <Search className="w-3.5 h-3.5 text-white" />
+                <span>Search on Google</span>
+              </button>
+
+              <button
+                onClick={handleCopyWebsiteAddress}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-emerald-300 text-[11px] font-black rounded-xl transition-all flex items-center gap-2 hover:scale-105 active:scale-95 border border-slate-800 cursor-pointer"
+                title="Copy website URL"
+              >
+                <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Copy URL (nkorera.education)</span>
+              </button>
+            </div>
+          </div>
+
+          <p className="text-[10px] text-slate-400 pt-1">
             © {new Date().getFullYear()} Nkorera Educational Tools. All Rights Reserved. REB Competence-Based Curriculum Compliant Platform.
           </p>
         </div>
@@ -1111,6 +1257,31 @@ export default function App() {
       <PolicyTermsModal
         isOpen={showPolicyModal}
         onClose={() => setShowPolicyModal(false)}
+      />
+
+      <HelpCenter
+        isOpen={showHelpCenterModal}
+        onClose={() => setShowHelpCenterModal(false)}
+        user={user}
+        currentModule={activeTab}
+        selectedLanguage={selectedLanguage}
+        onNavigateTab={(tab) => setActiveTab(tab)}
+      />
+
+      <FeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+        user={user}
+      />
+
+      <NotificationsModal
+        isOpen={showNotificationsModal}
+        onClose={() => setShowNotificationsModal(false)}
+        notifications={notifications}
+        onNotificationsChange={setNotifications}
+        selectedLanguage={selectedLanguage}
+        onNavigateTab={(tab) => setActiveTab(tab)}
+        onOpenHelpCenter={() => setShowHelpCenterModal(true)}
       />
     </div>
   );

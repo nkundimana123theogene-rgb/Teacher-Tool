@@ -39,7 +39,9 @@ import {
   RefreshCw,
   Trash2,
   Target,
-  Plus
+  Plus,
+  Globe,
+  ExternalLink
 } from 'lucide-react';
 import { UserProfile, LessonPlanData, LanguageOption, ClassDiaryData } from '../types';
 import { OWNER_INFO } from '../data/plans';
@@ -521,11 +523,11 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   const [certVerifiedSim, setCertVerifiedSim] = useState(false);
   const [pwaInstallSim, setPwaInstallSim] = useState(false);
 
-  const labels = getLessonPlanLabels(selectedLanguage);
+  const labels = getLessonPlanLabels('English');
   const recentPlans = savedPlans.slice(0, 3);
-  const timeGreeting = getTimeBasedGreeting(user?.name, selectedLanguage, selectedCountry);
+  const timeGreeting = getTimeBasedGreeting(user?.name, 'English', selectedCountry);
 
-  const guideLang = CAROUSEL_I18N[selectedLanguage] || CAROUSEL_I18N.English;
+  const guideLang = CAROUSEL_I18N.English;
   const currentSlide = guideLang.slides[carouselIndex];
 
   // Today's progress calculation
@@ -760,6 +762,8 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </div>
       )}
 
+
+
       {/* Dedicated Download / Install App Banner Card */}
       <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-emerald-950 text-white p-5 sm:p-6 rounded-3xl border-2 border-lime-400/80 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-lime-400/20 rounded-full blur-2xl pointer-events-none" />
@@ -795,33 +799,120 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             <button
               type="button"
               onClick={() => {
-                const isInIframe = typeof window !== 'undefined' && window.self !== window.top;
-                if (isInIframe) {
-                  window.open(window.location.href, '_blank', 'noopener,noreferrer');
-                } else {
-                  window.dispatchEvent(new CustomEvent('trigger-pwa-install'));
-                  window.dispatchEvent(new CustomEvent('open-pwa-install-guide'));
-                }
+                window.dispatchEvent(new CustomEvent('open-pwa-install-guide'));
               }}
               className="px-5 py-3 bg-gradient-to-r from-lime-400 to-emerald-400 hover:from-lime-300 hover:to-emerald-300 text-slate-950 font-black text-xs rounded-2xl shadow-lg shadow-lime-400/30 transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
               id="dashboard-download-app-btn"
             >
               <Download className="w-4 h-4 stroke-[2.5]" />
-              <span>Gukurura / Install App 📱💻</span>
+              <span>Download & Install App (.APK & PWA) 📱💻</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('open-pwa-install-guide'));
-              }}
-              className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-black text-xs rounded-2xl border border-slate-700 transition-all flex items-center justify-center gap-2"
-              id="dashboard-app-guide-btn"
+            <a
+              href="/api/download-app"
+              download="Nkorera_Education_App_v5.apk"
+              className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-lime-300 font-black text-xs rounded-2xl border border-slate-700 transition-all flex items-center justify-center gap-2 shrink-0"
+              id="dashboard-direct-apk-btn"
+              title="Download Direct Android APK File"
             >
-              <HelpCircle className="w-4 h-4 text-lime-400" />
-              <span>Amabwiriza y'Inzira ℹ️</span>
-            </button>
+              <Download className="w-4 h-4 text-lime-400" />
+              <span>Direct .APK 📥</span>
+            </a>
           </div>
+        </div>
+      </div>
+
+      {/* Official Chrome & Web Search Link Card */}
+      <div className="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 text-white p-5 sm:p-6 rounded-3xl border-2 border-cyan-400/60 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-56 h-56 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+          <div className="flex items-start gap-3.5">
+            <div className="p-3 bg-cyan-500/20 text-cyan-300 rounded-2xl font-black shrink-0 border border-cyan-400/40 shadow-lg">
+              <Globe className="w-7 h-7 stroke-[2.5]" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-black text-cyan-300 uppercase tracking-wide flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-300 fill-cyan-300" />
+                  <span>Link y'Urubuga kuri Chrome & Browsers zose 🌐</span>
+                </span>
+                <span className="px-2.5 py-0.5 bg-emerald-500 text-slate-950 text-[10px] font-black rounded-full uppercase">
+                  Direct System & Account Link
+                </span>
+              </div>
+              <h3 className="text-lg font-black text-white">
+                Sacinga cyangwa ufungure urubuga rwa Nkorera Education
+              </h3>
+              <p className="text-xs text-slate-200 font-bold leading-relaxed max-w-2xl">
+                Koresha iyi link idasanzwe yo gusacinga muri Google Chrome, Safari, cyangwa ukoreshe browser yose y'ifone cyangwa computer ikuguishe kuri account yawe ya Nkorera Education vuba na bwangu:
+              </p>
+              <div className="pt-1">
+                <a
+                  href="https://teacherlessonplans.ai.studio"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-slate-950/90 text-cyan-300 font-mono font-bold text-xs rounded-xl border border-cyan-500/40 hover:border-cyan-400 transition-all hover:bg-slate-900"
+                >
+                  <span>https://teacherlessonplans.ai.studio</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <a
+            href="https://teacherlessonplans.ai.studio"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-5 py-3 bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-slate-950 font-black text-xs rounded-2xl shadow-lg shadow-cyan-400/30 transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 shrink-0 w-full md:w-auto"
+            id="dashboard-open-chromelink-btn"
+          >
+            <ExternalLink className="w-4 h-4 stroke-[2.5]" />
+            <span>Open App in Browser 🚀</span>
+          </a>
+        </div>
+      </div>
+
+      {/* Dedicated System Tutorial & Help Center Website Card */}
+      <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 text-slate-950 p-5 sm:p-6 rounded-3xl border-2 border-amber-300 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-56 h-56 bg-white/20 rounded-full blur-2xl pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+          <div className="flex items-start gap-3.5">
+            <div className="p-3 bg-slate-950 text-amber-400 rounded-2xl font-black shrink-0 shadow-lg">
+              <HelpCircle className="w-7 h-7 stroke-[2.5]" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-black text-slate-950 uppercase tracking-wide flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-slate-950 fill-slate-950" />
+                  <span>System Tutorials & Help Center 🎥📄💬</span>
+                </span>
+                <span className="px-2.5 py-0.5 bg-slate-950 text-amber-300 text-[10px] font-black rounded-full uppercase">
+                  System Architecture & Video Guides
+                </span>
+              </div>
+              <h3 className="text-lg font-black text-slate-950">
+                Explore System Tutorials & Architecture Guides
+              </h3>
+              <p className="text-xs text-slate-900 font-bold leading-relaxed max-w-2xl">
+                Access video scripts, downloadable PDF guides, system architecture documentation, and our interactive AI Support Assistant!
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('open-help-center'));
+            }}
+            className="px-6 py-3.5 bg-slate-950 hover:bg-slate-900 text-amber-300 font-black text-xs rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shrink-0 border border-amber-400/40"
+            id="dashboard-open-system-tutorials-btn"
+          >
+            <HelpCircle className="w-4 h-4 text-amber-400 stroke-[2.5]" />
+            <span>Fungura System Tutorials 🎥📄💬</span>
+          </button>
         </div>
       </div>
 
@@ -869,6 +960,195 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             <p className="text-sm font-bold text-slate-800">{selectedCountry}</p>
             <p className="text-xs text-slate-500 font-medium">Inyigisho watoranyije</p>
           </div>
+        </div>
+      </div>
+
+      {/* Monthly Usage Statistics (5 Free Uses for Slides, Exercises, Worksheets, Diary) */}
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-md p-6 sm:p-8 space-y-6 relative overflow-hidden" id="monthly-usage-statistics">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+        
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-xl bg-emerald-100 text-emerald-950">
+                <Zap className="w-5 h-5 stroke-[2.2] text-emerald-600 fill-emerald-100" />
+              </span>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                {selectedLanguage === 'Kinyarwanda' ? "Imikoreshereze y'Imfashanyigisho (Ukwezi)" : 
+                 selectedLanguage === 'French' ? "Statistiques d'Utilisation Mensuelle" :
+                 selectedLanguage === 'Swahili' ? "Takwimu za Matumizi ya Kila Mwezi" : "Monthly Usage Statistics"}
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+              {selectedLanguage === 'Kinyarwanda' ? "Kurikirana umubare w'ibyo wemerewe gukora ku buntu (bigeze kuri 5 kuri buri gikoresho)." : 
+               selectedLanguage === 'French' ? "Suivez votre consommation mensuelle des 5 utilisations gratuites pour chaque service." :
+               selectedLanguage === 'Swahili' ? "Fuatilia matumizi yako ya sasa ya matumizi 5 ya bure kwa kila huduma." : "Track your current monthly consumption of the 5 free uses allowed for each service."}
+            </p>
+          </div>
+
+          {user && !(user.isAdmin || user.hasPremiumToolsSub) && (
+            <button
+              onClick={() => onNavigate('subscription')}
+              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 text-xs font-black rounded-xl shrink-0 shadow-xs hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 fill-slate-950 text-slate-950" />
+              <span>{selectedLanguage === 'Kinyarwanda' ? "Gura Premium ntiyihagarare" : 
+                    selectedLanguage === 'French' ? "Passer à l'Abonnement Illimité" :
+                    selectedLanguage === 'Swahili' ? "Pata Premium ya Bila Kikomo" : "Upgrade to Unlimited Premium"}</span>
+            </button>
+          )}
+        </div>
+
+        {/* Usage Progress Bars Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[
+            {
+              id: 'slides',
+              name: selectedLanguage === 'Kinyarwanda' ? "Presentation Slides" : 
+                    selectedLanguage === 'French' ? "Présentations de Diapositives" :
+                    selectedLanguage === 'Swahili' ? "Slaidi za Wasilisho" : "Presentation Slides",
+              count: user ? (user.monthlySlidesCount || 0) : 0,
+              icon: <Monitor className="w-4 h-4 text-indigo-600" />,
+              bgIcon: "bg-indigo-50",
+              color: "bg-indigo-600"
+            },
+            {
+              id: 'exercises',
+              name: selectedLanguage === 'Kinyarwanda' ? "Exercises & Exams (Ibizami)" : 
+                    selectedLanguage === 'French' ? "Exercices & Examens" :
+                    selectedLanguage === 'Swahili' ? "Mazoezi na Mitihani" : "Exercises & Exams",
+              count: user ? (user.monthlyExercisesCount || 0) : 0,
+              icon: <GraduationCap className="w-4 h-4 text-emerald-600" />,
+              bgIcon: "bg-emerald-50",
+              color: "bg-emerald-600"
+            },
+            {
+              id: 'worksheets',
+              name: selectedLanguage === 'Kinyarwanda' ? "Worksheets (Impapuro z'Imyitozo)" : 
+                    selectedLanguage === 'French' ? "Feuilles d'Exercices" :
+                    selectedLanguage === 'Swahili' ? "Karatasi za Kazi" : "Worksheets",
+              count: user ? (user.monthlyWorksheetsCount || 0) : 0,
+              icon: <FileText className="w-4 h-4 text-cyan-600" />,
+              bgIcon: "bg-cyan-50",
+              color: "bg-cyan-600"
+            },
+            {
+              id: 'diary',
+              name: selectedLanguage === 'Kinyarwanda' ? "Class Diary (Cahier de Textes)" : 
+                    selectedLanguage === 'French' ? "Cahier de Textes de Classe" :
+                    selectedLanguage === 'Swahili' ? "Kumbukumbu za Darasa (Diary)" : "Class Diary",
+              count: user ? (user.monthlyDiaryCount || 0) : 0,
+              icon: <Clock className="w-4 h-4 text-amber-600" />,
+              bgIcon: "bg-amber-50",
+              color: "bg-amber-600"
+            }
+          ].map((service) => {
+            const limit = 5;
+            const hasPremium = user?.isAdmin || user?.hasPremiumToolsSub;
+            const percent = hasPremium ? 100 : Math.min(100, (service.count / limit) * 100);
+            const remaining = Math.max(0, limit - service.count);
+            const isNearingLimit = !hasPremium && service.count >= 4;
+            const isExceeded = !hasPremium && service.count >= 5;
+
+            return (
+              <div key={service.id} className="space-y-2.5 p-4 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:bg-white hover:shadow-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`p-2 rounded-xl ${service.bgIcon}`}>
+                      {service.icon}
+                    </span>
+                    <span className="text-xs font-extrabold text-slate-800">
+                      {service.name}
+                    </span>
+                  </div>
+                  
+                  <div className="text-right">
+                    {hasPremium ? (
+                      <span className="px-2 py-0.5 text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-200 rounded-md uppercase tracking-wide flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 fill-amber-500 text-amber-500" />
+                        <span>{selectedLanguage === 'Kinyarwanda' ? "Ntarengwa" : 
+                              selectedLanguage === 'French' ? "Illimité" :
+                              selectedLanguage === 'Swahili' ? "Bila Kikomo" : "Unlimited"}</span>
+                      </span>
+                    ) : (
+                      <span className={`text-xs font-black ${isExceeded ? 'text-rose-600' : isNearingLimit ? 'text-amber-600' : 'text-slate-600'}`}>
+                        {service.count} / {limit} {selectedLanguage === 'Kinyarwanda' ? "Zikoreshejwe" : 
+                                                 selectedLanguage === 'French' ? "utilisés" :
+                                                 selectedLanguage === 'Swahili' ? "imetumika" : "used"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Progress Bar Container */}
+                <div className="relative w-full h-3 bg-slate-200 rounded-full overflow-hidden border border-slate-300/40">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ease-out ${
+                      hasPremium 
+                        ? 'bg-gradient-to-r from-amber-500 to-emerald-500' 
+                        : isExceeded 
+                        ? 'bg-rose-500' 
+                        : isNearingLimit 
+                        ? 'bg-amber-500' 
+                        : service.color
+                    }`}
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+
+                {/* Subtext info */}
+                <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 px-0.5">
+                  {!hasPremium ? (
+                    <>
+                      <span>
+                        {remaining} {selectedLanguage === 'Kinyarwanda' ? "Zisigaye" : 
+                                     selectedLanguage === 'French' ? "restants" :
+                                     selectedLanguage === 'Swahili' ? "imesalia" : "remaining"}
+                      </span>
+                      {isExceeded && (
+                        <span className="text-rose-600 font-black animate-pulse flex items-center gap-0.5">
+                          ⚠️ {selectedLanguage === 'Kinyarwanda' ? "Emeza ifatabuguzi ry'igikoresho" : 
+                              selectedLanguage === 'French' ? "Quota gratuit épuisé" :
+                              selectedLanguage === 'Swahili' ? "Kikomo kimefikiwa" : "Quota Exceeded"}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-emerald-600 flex items-center gap-1">
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>{selectedLanguage === 'Kinyarwanda' ? "Gukoresha Premium Birakora" : 
+                            selectedLanguage === 'French' ? "Usage Premium Activé" :
+                            selectedLanguage === 'Swahili' ? "Matumizi ya Premium Yanafunguliwa" : "Premium usage unlocked"} ({service.count} total)</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer Note or Login Prompt */}
+        <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 font-semibold">
+          <div className="flex items-center gap-1.5">
+            <Info className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>
+              {selectedLanguage === 'Kinyarwanda' ? "Ibi bipimo bikorwa mu rwego rwo kugabanya imikoreshereze idakenewe. Bihindurwa ku buntu buri kwezi." : 
+               selectedLanguage === 'French' ? "Ces compteurs sont remis à zéro gratuitement le premier jour de chaque mois." :
+               selectedLanguage === 'Swahili' ? "Vipimo hivi huwekwa upya bila malipo siku ya kwanza ya kila mwezi." : "These free counters automatically reset at the start of each month."}
+            </span>
+          </div>
+          
+          {!user && (
+            <button
+              onClick={onOpenSignIn}
+              className="text-emerald-700 hover:text-emerald-800 font-extrabold flex items-center gap-1 underline transition-colors"
+            >
+              🔐 {selectedLanguage === 'Kinyarwanda' ? "Yinjire muri konti ngo ubibone neza" : 
+                  selectedLanguage === 'French' ? "Connectez-vous pour suivre votre consommation" :
+                  selectedLanguage === 'Swahili' ? "Ingia ili kufuatilia matumizi yako" : "Sign in to track your usage history"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -1659,12 +1939,25 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
               }}
               disabled={isSyncing}
               className="px-5 py-3.5 bg-slate-850 hover:bg-slate-800 text-lime-400 font-black text-xs rounded-2xl border border-lime-400/40 shadow-lg transition-all hover:scale-[1.03] flex items-center justify-center gap-2 w-full sm:w-auto disabled:opacity-50"
-              title="Vugurura / Sync App data and features"
+              title="Sync App data and features"
               id="dashboard-sync-app-btn"
             >
               <RefreshCw className={`w-4 h-4 stroke-[2.5] ${isSyncing ? 'animate-spin text-lime-300' : ''}`} />
-              <span>{isSyncing ? 'Kuvugurura...' : 'VUGURURA APP (SYNC NOW) 🔄'}</span>
+              <span>{isSyncing ? 'Syncing System...' : 'SYNC APP SYSTEM NOW 🔄'}</span>
             </button>
+
+            {user?.isAdmin && (
+              <button
+                type="button"
+                onClick={() => onNavigate('admin')}
+                className="px-5 py-3.5 bg-purple-900 hover:bg-purple-800 text-white font-black text-xs rounded-2xl border border-purple-400 shadow-lg transition-all hover:scale-[1.03] flex items-center justify-center gap-2 w-full sm:w-auto"
+                title="System Admin Panel"
+                id="dashboard-admin-panel-btn"
+              >
+                <Shield className="w-4 h-4 text-purple-200" />
+                <span>SYSTEM ADMIN PANEL 🛡️</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -1682,10 +1975,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             </div>
             <div className="space-y-1">
               <p className="text-xs text-slate-200 font-bold">
-                Muri Chrome cyangwa Edge browser:
+                On Chrome or Edge browser:
               </p>
               <p className="text-[11px] text-slate-400 font-semibold leading-relaxed">
-                Kanda utudomo dutatu hejuru hejuru <span className="text-lime-400">(⋮)</span>, hanyuma uhitemo <strong className="text-white">"Install app"</strong> cyangwa <strong className="text-white">"Add to Home Screen"</strong>.
+                Click the three dots menu icon <span className="text-lime-400">(⋮)</span> in top right, then select <strong className="text-white">"Install app"</strong> or <strong className="text-white">"Add to Home Screen"</strong>.
               </p>
             </div>
           </div>
@@ -1702,10 +1995,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             </div>
             <div className="space-y-1">
               <p className="text-xs text-slate-200 font-bold">
-                Muri Safari Browser ku iPhone:
+                On Safari Browser for iPhone:
               </p>
               <p className="text-[11px] text-slate-400 font-semibold leading-relaxed">
-                Kanda buto ya <strong className="text-white">"Share"</strong> (uruziga rufite akambi), shengura hasi hanyuma ukande <strong className="text-white">"Add to Home Screen"</strong>.
+                Tap the <strong className="text-white">"Share"</strong> icon (square with arrow), scroll down and tap <strong className="text-white">"Add to Home Screen"</strong>.
               </p>
             </div>
           </div>
@@ -1722,10 +2015,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             </div>
             <div className="space-y-1">
               <p className="text-xs text-slate-200 font-bold">
-                Muri Chrome cyangwa Edge kuri PC:
+                On Chrome or Edge for PC:
               </p>
               <p className="text-[11px] text-slate-400 font-semibold leading-relaxed">
-                Kanda akamenyetso k'akambi cyangwa monitor muri address bar hejuru, cyangwa ukande buto ya <strong className="text-white">"Install App"</strong> hejuru ku mutwe w'iyi mbuga.
+                Click the install icon or computer icon in the address bar at the top, or click <strong className="text-white">"Install App"</strong> in the top header menu.
               </p>
             </div>
           </div>
@@ -2027,31 +2320,33 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </button>
 
           {/* Card 3: Upgrade Subscription */}
-          <button
-            onClick={() => onNavigate('subscription')}
-            className="group text-left bg-gradient-to-br from-amber-50 to-orange-50 p-6 rounded-2xl border-2 border-amber-200 hover:border-amber-400 shadow-xs hover:shadow-xl transition-all duration-200 flex flex-col justify-between space-y-4"
-          >
-            <div className="flex items-start justify-between">
-              <div className="w-12 h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20">
-                <Zap className="w-6 h-6 fill-amber-200" />
+          {!user?.isAdmin && (
+            <button
+              onClick={() => onNavigate('subscription')}
+              className="group text-left bg-gradient-to-br from-amber-50 to-orange-50 p-6 rounded-2xl border-2 border-amber-200 hover:border-amber-400 shadow-xs hover:shadow-xl transition-all duration-200 flex flex-col justify-between space-y-4"
+            >
+              <div className="flex items-start justify-between">
+                <div className="w-12 h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20">
+                  <Zap className="w-6 h-6 fill-amber-200" />
+                </div>
+                <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-amber-200 text-amber-900">
+                  MoMo Pay
+                </span>
               </div>
-              <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-amber-200 text-amber-900">
-                MoMo Pay
-              </span>
-            </div>
-            <div>
-              <h3 className="text-base font-black text-slate-900 group-hover:text-amber-800 transition-colors">
-                6. Subscription Status (Kwiyandikisha)
-              </h3>
-              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                Gura ifatabuguzi ryo gukora amasomo menshi adafite umupaka ukoresheje Mobile Money (0781339530).
-              </p>
-            </div>
-            <div className="flex items-center gap-1 text-xs font-bold text-amber-800 group-hover:translate-x-1 transition-transform pt-2 border-t border-amber-200/60">
-              <span>Reba Subscription Status hano</span>
-              <ArrowRight className="w-4 h-4" />
-            </div>
-          </button>
+              <div>
+                <h3 className="text-base font-black text-slate-900 group-hover:text-amber-800 transition-colors">
+                  6. Subscription Status (Kwiyandikisha)
+                </h3>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  Gura ifatabuguzi ryo gukora amasomo menshi adafite umupaka ukoresheje Mobile Money (0781339530).
+                </p>
+              </div>
+              <div className="flex items-center gap-1 text-xs font-bold text-amber-800 group-hover:translate-x-1 transition-transform pt-2 border-t border-amber-200/60">
+                <span>Reba Subscription Status hano</span>
+                <ArrowRight className="w-4 h-4" />
+              </div>
+            </button>
+          )}
 
           {/* Card 4: WhatsApp Support Group */}
           <a
@@ -2070,14 +2365,14 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             </div>
             <div>
               <h3 className="text-base font-black text-slate-900 group-hover:text-emerald-700 transition-colors">
-                7. Itsinda rya WhatsApp (Community Support)
+                7. WhatsApp Support Community
               </h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Sanganira abandi mwarimu mu tsinda rya WhatsApp rya Robotics & AI ugishe inama n'ubufasha direct.
+                Join other teachers in our WhatsApp group for instant guidance, updates, and direct support.
               </p>
             </div>
             <div className="flex items-center gap-1 text-xs font-bold text-emerald-700 group-hover:translate-x-1 transition-transform pt-2 border-t border-slate-100">
-              <span>Kinjira mu Tsinda</span>
+              <span>Join Community Group</span>
               <ArrowRight className="w-4 h-4" />
             </div>
           </a>
@@ -2093,20 +2388,20 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
                 <Bot className="w-6 h-6 animate-bounce" />
               </div>
               <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-                Kanda Hano
+                Open Assistant
               </span>
             </div>
             <div>
               <h3 className="text-base font-black text-slate-900 group-hover:text-purple-700 transition-colors">
-                8. Umufasha wa AI na Robotics 🤖
+                8. AI & Robotics Assistant 🤖
               </h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Kanda hano uhite ufungura Robotic AI Assistant iguhe ibisubizo bitunganye, ubufasha mu gukora amasomo, no gukemura ibibazo byose waba ifite!
+                Open the AI Assistant widget for immediate guidance, automated lesson planning help, and instant answer queries!
               </p>
             </div>
             <div className="flex items-center gap-1.5 text-xs font-black text-purple-700 group-hover:translate-x-1 transition-transform pt-2 border-t border-slate-100">
               <Sparkles className="w-4 h-4 text-purple-600" />
-              <span>Fungura Robotic Assistant Ako Kanya ⚡</span>
+              <span>Launch AI Assistant ⚡</span>
             </div>
           </button>
 
@@ -2123,10 +2418,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             </div>
             <div>
               <h3 className="text-base font-black text-white flex items-center gap-2">
-                9. Service Iboneka Ibihe Byose (24/7 Availability)
+                9. 24/7 Cloud Service Uptime
               </h3>
               <p className="text-xs text-emerald-100 mt-1 leading-relaxed">
-                Urubuga rwa Teachers Quickly Tools Lesson Plans rukora amasaha 24/24 n'iminsi 7/7 mu mwaka wose (24/7/365). Tegura no kubika lesson plans zawe igihe cyose ubikoreye: Amanywa, Nimugoroba, cyangwa N'ijoro.
+                Teacher Tool operates 24/7/365 with high availability. Generate, customize, and print your pedagogical materials whenever you need them.
               </p>
             </div>
             <div className="flex items-center gap-2 text-[11px] font-bold text-emerald-300 pt-2 border-t border-emerald-800">
@@ -2154,7 +2449,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
                 <ArrowRight className="w-4 h-4 text-amber-400 group-hover:translate-x-1 transition-transform" />
               </h3>
               <p className="text-xs text-emerald-100 mt-1 leading-relaxed">
-                Kanda hano umenye amateka, intego n'amabwiriza ya IT/Developer: Nkundimana Theogene wakoze Teachers Quickly Tools system.
+                Learn more about the developer, mission, and system architecture of Teacher Tool built by Nkundimana Theogene.
               </p>
             </div>
             <div className="flex items-center gap-2 text-[11px] font-bold text-amber-300 pt-2 border-t border-emerald-800/80">
@@ -2164,32 +2459,34 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </button>
 
           {/* Card 8: Analytics & Subscriber Management */}
-          <button
-            onClick={() => onNavigate('admin')}
-            className="group text-left bg-gradient-to-br from-purple-900 via-slate-900 to-indigo-950 text-white p-6 rounded-2xl border-2 border-purple-500/40 hover:border-purple-400 shadow-xl transition-all duration-200 flex flex-col justify-between space-y-4"
-          >
-            <div className="flex items-start justify-between">
-              <div className="w-12 h-12 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-md">
-                <Shield className="w-6 h-6 text-purple-200" />
+          {user?.isAdmin && (
+            <button
+              onClick={() => onNavigate('admin')}
+              className="group text-left bg-gradient-to-br from-purple-900 via-slate-900 to-indigo-950 text-white p-6 rounded-2xl border-2 border-purple-500/40 hover:border-purple-400 shadow-xl transition-all duration-200 flex flex-col justify-between space-y-4"
+            >
+              <div className="flex items-start justify-between">
+                <div className="w-12 h-12 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-md">
+                  <Shield className="w-6 h-6 text-purple-200" />
+                </div>
+                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-purple-500 text-white shadow-xs">
+                  ADMIN PANEL
+                </span>
               </div>
-              <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-purple-500 text-white shadow-xs">
-                ADMIN PANEL
-              </span>
-            </div>
-            <div>
-              <h3 className="text-base font-black text-white group-hover:text-purple-300 transition-colors flex items-center gap-2">
-                <span>11. Admin Panel</span>
-                <ArrowRight className="w-4 h-4 text-purple-400 group-hover:translate-x-1 transition-transform" />
-              </h3>
-              <p className="text-xs text-purple-100 mt-1 leading-relaxed">
-                Reba imibare y'imikoreshwa y'urubuga (Usage Analytics), abakiriya baguze ifatabuguzi (Subscriptions), hamwe n'ibarura ry'amasomo arimo gukorwa mu Kinyarwanda, English, French & Swahili.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-[11px] font-bold text-purple-300 pt-2 border-t border-purple-800">
-              <UserCheck className="w-4 h-4 text-purple-400 shrink-0" />
-              <span>Fungura System Control & Admin Panel</span>
-            </div>
-          </button>
+              <div>
+                <h3 className="text-base font-black text-white group-hover:text-purple-300 transition-colors flex items-center gap-2">
+                  <span>11. Admin Panel</span>
+                  <ArrowRight className="w-4 h-4 text-purple-400 group-hover:translate-x-1 transition-transform" />
+                </h3>
+                <p className="text-xs text-purple-100 mt-1 leading-relaxed">
+                  Reba imibare y'imikoreshwa y'urubuga (Usage Analytics), abakiriya baguze ifatabuguzi (Subscriptions), hamwe n'ibarura ry'amasomo arimo gukorwa mu Kinyarwanda, English, French & Swahili.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-[11px] font-bold text-purple-300 pt-2 border-t border-purple-800">
+                <UserCheck className="w-4 h-4 text-purple-400 shrink-0" />
+                <span>Fungura System Control & Admin Panel</span>
+              </div>
+            </button>
+          )}
         </div>
       </div>
 

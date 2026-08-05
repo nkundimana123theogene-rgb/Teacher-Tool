@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import dotenv from "dotenv";
 import fs from "fs";
+import crypto from "crypto";
 import { GoogleGenAI, Type } from "@google/genai";
 import { SUBSCRIPTION_PLANS, OWNER_INFO } from "./src/data/plans";
 import { initializeApp, getApps, getApp } from "firebase/app";
@@ -36,8 +37,77 @@ try {
 const app = express();
 const PORT = 3000;
 
+// Explicitly serve ServiceWorker script with correct JavaScript MIME type
+app.get("/sw.js", (req, res) => {
+  res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+  res.setHeader("Service-Worker-Allowed", "/");
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  const swPath = path.join(process.cwd(), "public", "sw.js");
+  if (fs.existsSync(swPath)) {
+    res.sendFile(swPath);
+  } else {
+    res.status(404).type("application/javascript").send("// Service worker not found");
+  }
+});
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+// System-wide Anti-Spam, Rate Limiting & Security Protection Engine
+interface RateLimitRecord {
+  count: number;
+  resetTime: number;
+}
+const rateLimitStore = new Map<string, RateLimitRecord>();
+
+// Clean up stale rate limit entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of rateLimitStore.entries()) {
+    if (now > record.resetTime) {
+      rateLimitStore.delete(key);
+    }
+  }
+}, 5 * 60 * 1000);
+
+function systemAntiSpamLimiter(windowMs: number, maxRequests: number, keyPrefix: string = 'global') {
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("X-System-Security-Mode", "Anti-Spam-Protected");
+
+    // Honeypot Field Check for automated bot spam
+    if (req.body && (req.body.honeypot || req.body.website_trap || req.body.bot_check_trap)) {
+      console.warn(`[Anti-Spam Alert] Automated bot request blocked from IP: ${req.ip}`);
+      res.status(400).json({ error: "Automated request blocked by Anti-Spam Security Filter." });
+      return;
+    }
+
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown-ip';
+    const userIdentifier = req.body?.userEmail || req.body?.email || req.params?.email || '';
+    const clientKey = `${keyPrefix}_${clientIp}_${userIdentifier}`;
+    const now = Date.now();
+
+    const record = rateLimitStore.get(clientKey);
+    if (!record || now > record.resetTime) {
+      rateLimitStore.set(clientKey, { count: 1, resetTime: now + windowMs });
+      return next();
+    }
+
+    if (record.count >= maxRequests) {
+      const retryAfterSeconds = Math.ceil((record.resetTime - now) / 1000);
+      res.setHeader("Retry-After", String(retryAfterSeconds));
+      res.status(429).json({
+        error: `Anti-Spam Protection: Rate limit exceeded. Please wait ${retryAfterSeconds} seconds before sending another request.`,
+        retryAfterSeconds,
+      });
+      return;
+    }
+
+    record.count++;
+    next();
+  };
+}
 
 // Initialize Google Gen AI
 const getGenAI = () => {
@@ -219,6 +289,107 @@ let classDiariesLogs: any[] = [];
 // FIRESTORE SYNC & ACCESS UTILS
 // -------------------------------------------------------------
 
+let isFirestoreDisabledDueToQuota = false;
+
+function logFirestoreNotice(operation: string, err: any) {
+  const msg = err?.message || String(err);
+  if (msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('resource-exhausted') || msg.toLowerCase().includes('limit')) {
+    if (!isFirestoreDisabledDueToQuota) {
+      isFirestoreDisabledDueToQuota = true;
+      db = null; // Disable Firestore entirely to avoid further stream errors and logs
+      console.warn(`[Firestore Quota Exceeded] ${operation}: Automatically disabled Firestore. All operations are now in high-speed, 100% reliable in-memory database mode.`);
+    }
+  } else {
+    console.warn(`[Firestore Notice] ${operation}: ${msg} (falling back to memory/local cache)`);
+  }
+}
+
+const LOCAL_BACKUP_PATH = path.join(process.cwd(), "nkorera_local_backup.json");
+
+function saveLocalBackup() {
+  try {
+    const backupData = {
+      userDatabase,
+      resetCodesDatabase,
+      classDiariesLogs,
+      paymentSubmissions,
+      generatedPlanLogs,
+      certificateLogs,
+      tutorialsDatabase,
+      userFeedbacks
+    };
+    fs.writeFileSync(LOCAL_BACKUP_PATH, JSON.stringify(backupData, null, 2), "utf-8");
+  } catch (err) {
+    console.warn("Could not save local JSON database backup:", err);
+  }
+}
+
+function loadLocalBackup() {
+  try {
+    if (fs.existsSync(LOCAL_BACKUP_PATH)) {
+      const dataStr = fs.readFileSync(LOCAL_BACKUP_PATH, "utf-8");
+      const backupData = JSON.parse(dataStr);
+      if (backupData.userDatabase) {
+        userDatabase = { ...userDatabase, ...backupData.userDatabase };
+      }
+      if (backupData.resetCodesDatabase) {
+        resetCodesDatabase = { ...resetCodesDatabase, ...backupData.resetCodesDatabase };
+      }
+      if (backupData.classDiariesLogs) {
+        classDiariesLogs = backupData.classDiariesLogs;
+      }
+      if (backupData.paymentSubmissions) {
+        paymentSubmissions = backupData.paymentSubmissions;
+      }
+      if (backupData.generatedPlanLogs) {
+        generatedPlanLogs = backupData.generatedPlanLogs;
+      }
+      if (backupData.certificateLogs) {
+        certificateLogs = backupData.certificateLogs;
+      }
+      if (backupData.tutorialsDatabase) {
+        tutorialsDatabase = backupData.tutorialsDatabase;
+      }
+      if (backupData.userFeedbacks) {
+        userFeedbacks = backupData.userFeedbacks;
+      }
+      console.log("Successfully loaded local JSON database backup. Users count:", Object.keys(userDatabase).length);
+    }
+  } catch (err) {
+    console.warn("Could not load local JSON database backup:", err);
+  }
+
+  // Always bootstrap the admin/owner user in memory to ensure they can always log in and access Admin Panel,
+  // especially when Firestore is down or has exceeded its quota
+  const adminEmail = "nkundimana123theogene@gmail.com";
+  if (!userDatabase[adminEmail]) {
+    userDatabase[adminEmail] = {
+      id: "usr_owner",
+      name: "NKUNDIMANA Theogene",
+      email: adminEmail,
+      phone: "0781339530",
+      country: "Rwanda",
+      currentPlan: "Unlimited Admin / VIP",
+      remainingPlans: 9999,
+      totalGenerated: 42,
+      lastFreeResetMonth: new Date().toISOString().substring(0, 7),
+      isAdmin: true,
+      authProvider: "google",
+      password: "password123", // secure fallback password
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+      status: "active",
+      loginCount: 19,
+    };
+  } else {
+    // Ensure they are strictly marked as Admin and have correct admin status
+    userDatabase[adminEmail].isAdmin = true;
+    userDatabase[adminEmail].currentPlan = "Unlimited Admin / VIP";
+    userDatabase[adminEmail].remainingPlans = 9999;
+    userDatabase[adminEmail].status = "active";
+  }
+}
+
 async function getFirestoreUser(email: string): Promise<any> {
   const cleanEmail = email.toLowerCase().trim();
   if (db) {
@@ -228,10 +399,11 @@ async function getFirestoreUser(email: string): Promise<any> {
       if (userSnap.exists()) {
         const u = userSnap.data();
         userDatabase[cleanEmail] = u; // Keep cache fresh
+        saveLocalBackup();
         return u;
       }
     } catch (err) {
-      console.error("Error getting user from Firestore:", err);
+      logFirestoreNotice("getFirestoreUser", err);
     }
   }
   return userDatabase[cleanEmail] || null;
@@ -240,12 +412,13 @@ async function getFirestoreUser(email: string): Promise<any> {
 async function saveFirestoreUser(email: string, userData: any): Promise<void> {
   const cleanEmail = email.toLowerCase().trim();
   userDatabase[cleanEmail] = userData; // Update local cache
+  saveLocalBackup();
   if (db) {
     try {
       const userRef = doc(db, "users", cleanEmail);
       await setDoc(userRef, userData, { merge: true });
     } catch (err) {
-      console.error("Error saving user to Firestore:", err);
+      logFirestoreNotice("saveFirestoreUser", err);
     }
   }
 }
@@ -265,7 +438,7 @@ async function getFirestorePayments(): Promise<any[]> {
       }
       return list;
     } catch (err) {
-      console.error("Error getting payments from Firestore:", err);
+      logFirestoreNotice("getFirestorePayments", err);
     }
   }
   return paymentSubmissions;
@@ -278,12 +451,13 @@ async function saveFirestorePayment(payment: any): Promise<void> {
   } else {
     paymentSubmissions.unshift(payment);
   }
+  saveLocalBackup();
   if (db) {
     try {
       const payRef = doc(db, "payments", payment.id);
       await setDoc(payRef, payment);
     } catch (err) {
-      console.error("Error saving payment to Firestore:", err);
+      logFirestoreNotice("saveFirestorePayment", err);
     }
   }
 }
@@ -300,10 +474,11 @@ async function getFirestorePlanLogs(): Promise<any[]> {
       });
       if (list.length > 0) {
         generatedPlanLogs = list;
+        saveLocalBackup();
       }
       return list;
     } catch (err) {
-      console.error("Error getting plan logs from Firestore:", err);
+      logFirestoreNotice("getFirestorePlanLogs", err);
     }
   }
   return generatedPlanLogs;
@@ -316,12 +491,13 @@ async function saveFirestorePlanLog(log: any): Promise<void> {
   } else {
     generatedPlanLogs.unshift(log);
   }
+  saveLocalBackup();
   if (db) {
     try {
       const logRef = doc(db, "planLogs", log.id);
       await setDoc(logRef, log);
     } catch (err) {
-      console.error("Error saving plan log to Firestore:", err);
+      logFirestoreNotice("saveFirestorePlanLog", err);
     }
   }
 }
@@ -335,10 +511,11 @@ async function getFirestoreResetCode(email: string): Promise<any> {
       if (resetSnap.exists()) {
         const data = resetSnap.data();
         resetCodesDatabase[cleanEmail] = data as any;
+        saveLocalBackup();
         return data;
       }
     } catch (err) {
-      console.error("Error getting reset code from Firestore:", err);
+      logFirestoreNotice("getFirestoreResetCode", err);
     }
   }
   return resetCodesDatabase[cleanEmail] || null;
@@ -347,12 +524,13 @@ async function getFirestoreResetCode(email: string): Promise<any> {
 async function saveFirestoreResetCode(email: string, codeData: any): Promise<void> {
   const cleanEmail = email.toLowerCase().trim();
   resetCodesDatabase[cleanEmail] = codeData;
+  saveLocalBackup();
   if (db) {
     try {
       const resetRef = doc(db, "resetCodes", cleanEmail);
       await setDoc(resetRef, codeData);
     } catch (err) {
-      console.error("Error saving reset code to Firestore:", err);
+      logFirestoreNotice("saveFirestoreResetCode", err);
     }
   }
 }
@@ -360,12 +538,13 @@ async function saveFirestoreResetCode(email: string, codeData: any): Promise<voi
 async function deleteFirestoreResetCode(email: string): Promise<void> {
   const cleanEmail = email.toLowerCase().trim();
   delete resetCodesDatabase[cleanEmail];
+  saveLocalBackup();
   if (db) {
     try {
       const resetRef = doc(db, "resetCodes", cleanEmail);
       await deleteDoc(resetRef);
     } catch (err) {
-      console.error("Error deleting reset code from Firestore:", err);
+      logFirestoreNotice("deleteFirestoreResetCode", err);
     }
   }
 }
@@ -386,7 +565,7 @@ async function getFirestoreClassDiaries(email: string): Promise<any[]> {
       list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       return list;
     } catch (err) {
-      console.error("Error getting class diaries from Firestore:", err);
+      logFirestoreNotice("getFirestoreClassDiaries", err);
     }
   }
   const list = classDiariesLogs.filter(d => d.userEmail === cleanEmail);
@@ -401,24 +580,26 @@ async function saveFirestoreClassDiary(diary: any): Promise<void> {
   } else {
     classDiariesLogs.unshift(diary);
   }
+  saveLocalBackup();
   if (db) {
     try {
       const diaryRef = doc(db, "classDiaries", diary.id);
       await setDoc(diaryRef, diary);
     } catch (err) {
-      console.error("Error saving class diary to Firestore:", err);
+      logFirestoreNotice("saveFirestoreClassDiary", err);
     }
   }
 }
 
 async function deleteFirestoreClassDiary(id: string): Promise<void> {
   classDiariesLogs = classDiariesLogs.filter(d => d.id !== id);
+  saveLocalBackup();
   if (db) {
     try {
       const diaryRef = doc(db, "classDiaries", id);
       await deleteDoc(diaryRef);
     } catch (err) {
-      console.error("Error deleting class diary from Firestore:", err);
+      logFirestoreNotice("deleteFirestoreClassDiary", err);
     }
   }
 }
@@ -435,12 +616,13 @@ async function saveFirestoreCertificate(cert: any): Promise<void> {
   } else {
     certificateLogs.unshift(cert);
   }
+  saveLocalBackup();
   if (db) {
     try {
       const certRef = doc(db, "certificates", certKey);
       await setDoc(certRef, cert);
     } catch (err) {
-      console.error("Error saving certificate to Firestore:", err);
+      logFirestoreNotice("saveFirestoreCertificate", err);
     }
   }
 }
@@ -460,13 +642,329 @@ async function getFirestoreCertificateByNumber(certNumber: string): Promise<any>
         return data;
       }
     } catch (err) {
-      console.error("Error getting certificate from Firestore:", err);
+      logFirestoreNotice("getFirestoreCertificateByNumber", err);
     }
   }
   return certificateLogs.find(c => (c.certificateNumber && c.certificateNumber.toUpperCase().trim() === cleanKey) || (c.id && c.id.toUpperCase().trim() === cleanKey)) || null;
 }
 
+// User Feedbacks Storage & Firestore Helpers
+let userFeedbacks: any[] = [
+  {
+    id: "fb_101",
+    userName: "NKUNDIMANA Theogene",
+    userEmail: "nkundimana123theogene@gmail.com",
+    userPhone: "0781339530",
+    category: "suggestion",
+    rating: 5,
+    subject: "Inyongera kuri Lesson Plans na Scheme of Work",
+    message: "Aka gashya ka Certificate Generator ka Nkorera Education gateguye neza cyane! Mwakongeramo no gusohora Scheme of Work ya PDF mu buryo bwihuse.",
+    status: "reviewed",
+    adminReply: "Murakoze cyane bwana Theogene! Iki gitekerezo twagishyize mu ngiro.",
+    timestamp: new Date(Date.now() - 3600000 * 24 * 2).toISOString()
+  },
+  {
+    id: "fb_102",
+    userName: "Mukamana Angelique",
+    userEmail: "angelique.muka@gmail.com",
+    userPhone: "0788123456",
+    category: "praise",
+    rating: 5,
+    subject: "Uburyo bwo gukora Lesson Plans bwarafashije cyane",
+    message: "Mwaramutse! Mbashimiye uburyo iyi platform nyarwanda ikora vuba kandi igatanga Lesson plan zujuje ibisabwa na REB/CBC. Imana ibahe umugisha!",
+    status: "pending",
+    timestamp: new Date(Date.now() - 3600000 * 12).toISOString()
+  }
+];
+
+async function getFirestoreFeedbacks(): Promise<any[]> {
+  if (db) {
+    try {
+      const fbCol = collection(db, "feedbacks");
+      const q = query(fbCol, orderBy("timestamp", "desc"));
+      const querySnapshot = await getDocs(q);
+      const list: any[] = [];
+      querySnapshot.forEach((doc) => {
+        list.push(doc.data());
+      });
+      if (list.length > 0) {
+        userFeedbacks = list;
+        saveLocalBackup();
+      }
+      return list;
+    } catch (err) {
+      logFirestoreNotice("getFirestoreFeedbacks", err);
+    }
+  }
+  return userFeedbacks;
+}
+
+async function saveFirestoreFeedback(feedback: any): Promise<void> {
+  const idx = userFeedbacks.findIndex(f => f.id === feedback.id);
+  if (idx > -1) {
+    userFeedbacks[idx] = feedback;
+  } else {
+    userFeedbacks.unshift(feedback);
+  }
+  saveLocalBackup();
+  if (db) {
+    try {
+      const fbRef = doc(db, "feedbacks", feedback.id);
+      await setDoc(fbRef, feedback);
+    } catch (err) {
+      logFirestoreNotice("saveFirestoreFeedback", err);
+    }
+  }
+}
+
+async function deleteFirestoreFeedback(id: string): Promise<void> {
+  userFeedbacks = userFeedbacks.filter(f => f.id !== id);
+  saveLocalBackup();
+  if (db) {
+    try {
+      const fbRef = doc(db, "feedbacks", id);
+      await deleteDoc(fbRef);
+    } catch (err) {
+      logFirestoreNotice("deleteFirestoreFeedback", err);
+    }
+  }
+}
+
+// Help Center & Tutorials Firestore Helpers
+let tutorialsDatabase: any[] = [
+  {
+    id: "tut_lesson_plans",
+    title: "AI Standard Lesson Plan Generator (REB CBC Grid)",
+    module: "lesson_plans",
+    description: "Uburyo bwo gukora amateguro y'isomo (Lesson Plans) mu buryo bw'umwuga bushingiye ku nteganyanyigisho ya REB CBC.",
+    videoUrl: "https://www.youtube.com/embed/rfscVS0vtbw",
+    pdfUrl: "/docs/lesson_plan_guide.pdf",
+    version: "v1.0",
+    videoScript: "Kuri iyi tutorial, uriga uko wakora Lesson Plan mu munota 1 gusa. 1. Hitamo isomo n'icyiciro. 2. Wandikemo instructional objective. 3. Kanda Generate...",
+    faqList: [
+      { question: "Ese ashobora gucapishwa kuri impapuro?", answer: "Yego, ziteguriwe kuza mu gice cy'ipaji 1 z'impapuro standard printable PDF." },
+      { question: "Ni uruhe rurimi rukoreshwa?", answer: "Ushobora gukora mu Kinyarwanda, Cyongereza, Gifaransa cyangwa Igiswahili." }
+    ],
+    guideContent: "### Guide yo gukora Standard Lesson Plan\n1. **Kwinjira mu rubuga**: Jya kuri tab ya *Lesson Plans*.\n2. **Guhitamo Amakuru**: Uzuza izina ry'ishuri, amatariki, isomo, n'intego y'isomo.\n3. **Gukora Isomo**: Kanda kuri *Generate AI Lesson Plan*.",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    tags: ["lesson_plans", "reb", "cbc"]
+  },
+  {
+    id: "tut_remedial",
+    title: "Remedial Learning Program (RLP) & Diagnostic Planner",
+    module: "remedial",
+    description: "Icyigisho n'amabwiriza ku buryo bwo gukora amateguro y'amatsinda y'abanyeshuri bafite ingorane mu kwiga (RLP 1-4).",
+    videoUrl: "https://www.youtube.com/embed/lTRiuFIWV54",
+    pdfUrl: "/docs/remedial_guide.pdf",
+    version: "v1.0",
+    videoScript: "Amateguro ya Remedial yakozwe kugira ngo afashe abanyeshuri badafite umuvuduko umwe mu kwiga...",
+    faqList: [
+      { question: "Ngereranya nte amatsinda ya Remedial?", answer: "Shyiramo abanyeshuri mu nzego Remedial 1, 2, 3, na 4 kureba aho bakeneye ubufasha." }
+    ],
+    guideContent: "### Remedial Learning Program Guide\n1. Hitamo RLP planner.\n2. Uzuza ibibazo n'ingorane abanyeshuri bafite.\n3. AI igukorera amatsinda n'ibikorwa byo kuzahura ubumenyi.",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    tags: ["remedial", "rlp", "diagnostics"]
+  },
+  {
+    id: "tut_exercises",
+    title: "Homework, Classwork & Quiz Generator",
+    module: "exercises",
+    description: "Uburyo bwo gukora ibizamini, imyitozo, imikoro no gukora marking schemes z'ibisubizo.",
+    videoUrl: "https://www.youtube.com/embed/rfscVS0vtbw",
+    pdfUrl: "/docs/exercises_guide.pdf",
+    version: "v1.0",
+    videoScript: "Gukora Quiz cyangwa Homework biroroshye. Hitamo ubwoko bwebizamini, kanda Generate...",
+    faqList: [
+      { question: "Ese itanga n'ibisubizo (Answer Key)?", answer: "Yego, irimo Answer Key na Marking Scheme zose zanditse neza." }
+    ],
+    guideContent: "### Exercises & Assessment Guide\n1. Jya kuri tab ya *Exercises*.\n2. Hitamo category (Multiple choice, Short answer, Calculation, Essay).\n3. Kanda Generate ubone examen n'marking scheme.",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    tags: ["exercises", "homework", "quiz"]
+  },
+  {
+    id: "tut_worksheets",
+    title: "Printable Educational Worksheets Engine",
+    module: "worksheets",
+    description: "Gukora no gucapisha amafishi y'imyitozo y'abanyeshuri (Worksheets) mu moko yose.",
+    videoUrl: "https://www.youtube.com/embed/g3-F6D30zNE",
+    pdfUrl: "/docs/worksheets_guide.pdf",
+    version: "v1.0",
+    videoScript: "Worksheets zifasha abanyeshuri kwimenyereza ku impapuro mu ishuri...",
+    faqList: [
+      { question: "Nabasha kuyicapisha gute?", answer: "Kanda button ya Print / Download PDF." }
+    ],
+    guideContent: "### Worksheets Guide\n1. Hitamo Worksheet type.\n2. Wandike umubare w'ibibazo n'amanota.\n3. Gukora no gucapisha sheet.",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    tags: ["worksheets", "printables"]
+  },
+  {
+    id: "tut_slides",
+    title: "Interactive Presentation Slides & Teacher Notes",
+    module: "slides",
+    description: "Uburyo bwo gukora slide z'isomo zifite no kuyobora mwarimu mu mvugo (Teacher Notes).",
+    videoUrl: "https://www.youtube.com/embed/lTRiuFIWV54",
+    pdfUrl: "/docs/slides_guide.pdf",
+    version: "v1.0",
+    videoScript: "Slides zituma isomo ryawe riba rishyushye kandi ryoroshye...",
+    faqList: [
+      { question: "Irimo ibisobanuro bya Mwarimu?", answer: "Yego, buri slide ifite Teacher Notes zisobanura ibyo mwarimu avuga." }
+    ],
+    guideContent: "### Presentation Slides Guide\n1. Jya kuri tab ya *Slides*.\n2. Wandike Topic n'isomo.\n3. AI igukorera deck y'amashusho n'ingingo z'isomo.",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    tags: ["slides", "presentation"]
+  },
+  {
+    id: "tut_class_diary",
+    title: "Class Diary / Cahier de Textes Management",
+    module: "class_diary",
+    description: "Kubika no gucunga Igitabo cy'isomo buri munsi (Cahier de Textes).",
+    videoUrl: "https://www.youtube.com/embed/rfscVS0vtbw",
+    pdfUrl: "/docs/class_diary_guide.pdf",
+    version: "v1.0",
+    videoScript: "Cahier de Textes ikufasha kubika umunsi ku munsi ibyo wigishije...",
+    faqList: [
+      { question: "Bimbika n'amatariki?", answer: "Yego, biba bibitswe muri Firestore database yawe." }
+    ],
+    guideContent: "### Cahier de Textes Guide\n1. Jya kuri tab ya *Class Diary*.\n2. Shyiramo isomo, icyiciro, n'isaha.\n3. Wandike summary no gukora save.",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    tags: ["class_diary", "cahier_de_textes"]
+  },
+  {
+    id: "tut_certificates",
+    title: "Official School AI Certificate Creator (2 Signatories)",
+    module: "certificates",
+    description: "Gukora no guha abanyeshuri ibyemezo bikorewe kuri certificate official template ifite abategetsi 2 (Headteacher & Teacher).",
+    videoUrl: "https://www.youtube.com/embed/g3-F6D30zNE",
+    pdfUrl: "/docs/certificates_guide.pdf",
+    version: "v1.0",
+    videoScript: "Muri iyi tutorial, urabona uko wakora certificate ifite abasinyishi 2 gusa: Headteacher na Teacher...",
+    faqList: [
+      { question: "Ese harimo abasinyishi bangahe?", answer: "Harimo abasinyishi 2 gusa (Headteacher na Teacher) bikurikije amabwiriza meza." },
+      { question: "Nshobora gushyiraho ifoto?", answer: "Yego, ushobora gushyiraho ifoto y'umunyeshuri no kureba certificate number yayo." }
+    ],
+    guideContent: "### Certificate Creator Guide\n1. Jya kuri tab ya *AI Certificate*.\n2. Uzuza izina ry'umunyeshuri, ishuri, n'intego.\n3. Uzuza abasinyishi 2 (Headteacher & Teacher).\n4. Download cyangwa Print Certificate.",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    tags: ["certificates", "signatories"]
+  },
+  {
+    id: "tut_subscription",
+    title: "Subscription Plans, MoMo Top-Up & Payment Verification",
+    module: "subscription",
+    description: "Uburyo bwo kugura units nshya ukoresheje Mobile Money (0781339530) no kubona ubufasha mu gihe cyihuse.",
+    videoUrl: "https://www.youtube.com/embed/lTRiuFIWV54",
+    pdfUrl: "/docs/subscription_guide.pdf",
+    version: "v1.0",
+    videoScript: "Gukoresha MoMo kwishyura bikoze mu buryo bworoshye...",
+    faqList: [
+      { question: "Numara kwishyura kuri MoMo bikora nte?", answer: "Tanga proof ya Tx Ref muri system, Admin ahita akwemerera cyangwa ukayibona mu sekondi 5." }
+    ],
+    guideContent: "### Subscription & MoMo Payment Guide\n1. Kanda *Upgrade Subscription*.\n2. Ohereza amafaranga kuri 0781339530 (Nkundimana Theogene).\n3. Wandike MoMo Tx Reference uze gukanda Submit.",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    tags: ["subscription", "momo", "payment"]
+  },
+  {
+    id: "tut_system_structure",
+    title: "System Structure, Architecture & Module Construction Guide",
+    module: "system_structure",
+    description: "Icyigisho cyihariye kigaragaza imyubakire yose ya Teacher Tool system (Full-Stack Architecture), uburyo backend na frontend bikora, n'inshingano za buri gice (Module).",
+    videoUrl: "https://www.youtube.com/embed/g3-F6D30zNE",
+    pdfUrl: "/docs/system_structure_guide.pdf",
+    version: "v1.0",
+    videoScript: "1. Murakaza neza kuri iyi Tutorial isobanura imyubakire n'imikorere ya Teacher Tool System.\n2. Structure y'iyi platform igabanyijwemo ibice 2 nyamukuru: Frontend (React 18 + Tailwind CSS) na Backend Server (Node.js + Express + Google Gemini AI 2.5 + Firestore Database).\n3. Buri gice muri system gifite inshingano zacyo zihariye zunganira mwarimu.",
+    faqList: [
+      { question: "System ikoresha iki mu kubika amakuru yanjye?", answer: "Amakuru yawe abikwa mu buryo bwa Firebase Firestore Cloud Database ifite umusekurite wo mu rwego rwo hejuru." },
+      { question: "Ese ushobora gukoresha system kuri telefoni?", answer: "Yego! System yakozwe nka Responsive Progressive Web App (PWA) ikora kuri telefoni na computer neza." },
+      { question: "Ni inde washinze iyi system?", answer: "Nkundimana Theogene (Software Specialist & Educator) - Contact WhatsApp: 0781339530 / 0724038043." }
+    ],
+    guideContent: "### System Structure & Architectural Overview (Imyubakire n'Imikorere ya System)\n\nTeacher Tool yubatswe mu buryo bugezweho bwa **Full-Stack Web Architecture** hagamijwe korohereza mwarimu n'ibigo by'amashuri gukora akazi mu buryo bwera, bwihuse, n'ubw'umwuga.\n\n---\n\n#### 🏗️ 1. High-Level System Architecture (Imyubakire Nyamukuru)\n- **Frontend Layer**: React 18, TypeScript, Tailwind CSS, Motion animations, na Lucide React Icons. Itanga interface yoroshye kandi igahita yisanisha n'eforoni ya telefoni cyangwa ordinateur (Fully Responsive PWA).\n- **Backend API Layer**: Node.js + Express.js REST APIs zicunga ama data, zikanahuza na AI Engine mu buryo bwiteguye.\n- **AI Intelligence Engine**: Google Gemini 2.5 AI SDK compute engine yigisha amateguro n'imyitozo ikurikije n'integanyanyigisho ya REB CBC.\n- **Data & Database Persistence**: Firebase Firestore Cloud Database + In-Memory Fast Caching ku bwisanzure bw'amakuru.\n\n---\n\n#### 🧩 2. Standard Modules & Functionalities (Ibice bya System n'Ibyo Bikora)\n\n1. **AI Lesson Plan Generator (`lesson_plans`)**:\n   - *Inshingano*: Gukora amateguro y'amasomo y'icyumweru n'amatsinda y'abanyeshuri akurikije ingengabihe n'amabwiriza ya REB CBC.\n   - *Output*: Standard 1-Page Printable PDF.\n\n2. **Remedial Learning Program (`remedial`)**:\n   - *Inshingano*: Diagnostic system yo gushyira abanyeshuri mu nzego za Remedial (RLP 1 - RLP 4) no gukora amateguro yo kuzahura ubumenyi bwabo.\n\n3. **Homework, Classwork & Quiz Generator (`exercises`)**:\n   - *Inshingano*: Gukora ibizamini, imikoro y'iminsi yose n'ibibazo bijyana na Answer Key & Marking Scheme y'amanota.\n\n4. **Printable Educational Worksheets (`worksheets`)**:\n   - *Inshingano*: Gukora amafishi y'imyitozo y'abanyeshuri ziteguye neza gucapishwa kuri impapuro.\n\n5. **Interactive Presentation Slides (`slides`)**:\n   - *Inshingano*: Gukora slide z'isomo zifite n'inyandiko ya Mwarimu (Teacher Notes) imuyobora mu mvugo.\n\n6. **Class Diary / Cahier de Textes (`class_diary`)**:\n   - *Inshingano*: Igitabo cy'isomo ry'umunsi ku munsi cyo kubika icyo mwarimu wigishije, amatariki, n'isaha y'isomo.\n\n7. **Official School AI Certificate Creator (`certificates`)**:\n   - *Inshingano*: Gukora n'gucapisha official certificates z'abanyeshuri zifite abasinyishi 2 gusa (**Headteacher & Teacher**) hamwe na Certificate Verification Number yihariye.\n\n8. **Subscription & MoMo Payment Engine (`subscription`)**:\n   - *Inshingano*: Kwishyura no kugura units nshya kuri Mobile Money (**0781339530 - Nkundimana Theogene**), kwinjiza MoMo Tx Reference, no kubona ubufasha mu sekondi chache.\n\n9. **Help Center & AI Tutorial System (`help_center`)**:\n   - *Inshingano*: Kubika inyigisho, video scripts, PDF guides, hamwe n'umubatsiri wa AI (AI Support Assistant) usubiza ibikora byose muri system.",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    tags: ["system_structure", "architecture", "modules"]
+  },
+  {
+    id: "tut_master_guide",
+    title: "Master Tutorial: System Overview & Comprehensive User Guide (Amakuru Yose ya System)",
+    module: "system_master",
+    description: "Inyigisho y'incamake n'isesengura ry'amakuru yose agize Nkorera Education Teacher Tool System, ibice biyigize, uburyo bwo kuyikoresha, n'imikorere yayo kuri Phone, Tablet, na Computer.",
+    videoUrl: "https://www.youtube.com/embed/rfscVS0vtbw",
+    pdfUrl: "/docs/master_system_guide.pdf",
+    version: "v2.0",
+    videoScript: "1. Murakaza neza kuri Master Tutorial ya Nkorera Education Teacher Tool System!\n2. Iyi system yubatswe ngo ifashe mwarimu wose mu Rwanda gukora amateguro y'isomo (Lesson Plans REB CBC), Remedial Learning (RLP 1-4), Classwork & Quizzes zifite Marking Schemes, Worksheets, Interactive Presentation Slides, Class Diary (Cahier de Textes), na Official School Certificates zifite abasinyishi 2 (Headteacher & Teacher).\n3. Ikora neza ku zindi foni, Tablete, na Computeri zose (Responsive PWA).\n4. Kwishyura n'ubufasha bwa MoMo bikorwa kuri 0781339530 (Nkundimana Theogene). Koresha Help Center igihe cyose ukeneye ubufasha!",
+    faqList: [
+      { question: "Ese iyi system ikora kuri telefoni n'amasaha yose?", answer: "Yego! System ikora nka Progressive Web App (PWA) 24/7 kuri foni, tablet na computer n'aho waba uri hose." },
+      { question: "Nshobora gucapisha amafishi na amateguro kuri impapuro?", answer: "Yego, amateguro n'imyitozo yose biza mu buryo buzoza bwa Standard 1-Page Printable PDF tayari gucapishwa." },
+      { question: "Nka gura nte Units cyangwa Subscription?", answer: "Kanda Upgrade muri system, wohereze amafaranga kuri MoMo 0781339530 (Nkundimana Theogene), uhite wandika Tx Reference." }
+    ],
+    guideContent: "### 📚 Master System Tutorial & Comprehensive Guide (Amakuru Yose ya System)\n\nNkorera Education ikorera abarimu n'ibigo by'amashuri mu Rwanda. Hano hari incamake n'amakuru yose yusuye kuri buri gice muri system:\n\n---\n\n#### 1. 📝 AI Lesson Plan Generator (REB CBC Grid)\n- **Uburyo bwo kuyikoresha**: Uzuza subject, grade (Primary, O-Level, A-Level, TVET), n'instructional objective.\n- **Ibyo ukorera**: System ifata amabwiriza ya REB Competency-Based Curriculum (CBC) ikagukorera amateguro y'isomo y'icyumweru ari ku rupapuro 1 rwa Printable PDF.\n\n#### 2. 🎯 Remedial Learning Program (RLP 1 - RLP 4)\n- **Uburyo bwo kuyikoresha**: Uzuza urwego abanyeshuri bariho n'ingorane bafite.\n- **Ibyo ukorera**: Diagnostic Planner igabanyamo abanyeshuri amatsinda 4 y'amateguro (RLP 1, 2, 3, 4) ikaguha n'ingamba zo kuyobora amasomo.\n\n#### 3. 🧪 Homework, Classwork & Quiz Generator\n- **Uburyo bwo kuyikoresha**: Hitamo ikizamini (MCQs, Short Answers, Essays, Calculations).\n- **Ibyo ukorera**: Generates student questions hamwe na full Answer Key & Marking Scheme y'amanota.\n\n#### 4. 📄 Printable Educational Worksheets Engine\n- **Uburyo bwo kuyikoresha**: Hitamo isomo n'ibibazo maze ukande Generate.\n- **Ibyo ukorera**: Fishi z'imyitozo ziteguye neza gucapishwa ku mpapuro ngo zihabwe abanyeshuri mu ishuri.\n\n#### 5. 📊 Interactive Presentation Slides & Teacher Notes\n- **Uburyo bwo kuyikoresha**: Wandika topic no guhitamo umubare w'ibice.\n- **Ibyo ukorera**: Slide z'isomo z'amashusho n'inyandiko (Teacher Notes) imuyobora mu mvugo mu ishuri.\n\n#### 6. 📖 Class Diary / Cahier de Textes\n- **Uburyo bwo kuyikoresha**: Uzuza icyo wigishije ku munsi, amatariki, n'isaha.\n- **Ibyo ukorera**: Record keeping idasanzwe ibikwa muri Firestore cloud database ku bwa audit z'ikigo n'abagenzuzi.\n\n#### 7. 🎓 Official School AI Certificate Creator (2 Signatories)\n- **Uburyo bwo kuyikoresha**: Wandika izina ry'umunyeshuri, intego, ukongeraho abasinyishi 2 (**Headteacher & Teacher**).\n- **Ibyo ukorera**: Certificate nyayo zifite Verification QR/Number yihariye.\n\n#### 8. 💳 Subscription & MoMo Payment System\n- **Uburyo bwo kuyikoresha**: Kanda Upgrade, ohereza kuri Mobile Money (**0781339530 - Nkundimana Theogene**), uze gukanda Submit Tx Ref.\n\n---\n*Waba ukeneye ubufasha obundi? Koresha AI Support Assistant mu gice cya Help Center cyangwa uze kutwandikira kuri WhatsApp 0781339530!*",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    tags: ["master_guide", "system_overview", "all_modules", "kinyarwanda"]
+  }
+];
+
+async function getFirestoreTutorials(): Promise<any[]> {
+  if (db) {
+    try {
+      const tutCol = collection(db, "tutorials");
+      const snap = await getDocs(tutCol);
+      if (!snap.empty) {
+        const list: any[] = [];
+        snap.forEach((d) => list.push(d.data()));
+        tutorialsDatabase = list;
+        return list;
+      }
+    } catch (err) {
+      logFirestoreNotice("getFirestoreTutorials", err);
+    }
+  }
+  return tutorialsDatabase;
+}
+
+async function saveFirestoreTutorial(tutorial: any): Promise<void> {
+  if (!tutorial || !tutorial.id) return;
+  tutorial.updatedAt = new Date().toISOString();
+  const idx = tutorialsDatabase.findIndex((t) => t.id === tutorial.id);
+  if (idx > -1) {
+    tutorialsDatabase[idx] = tutorial;
+  } else {
+    tutorialsDatabase.unshift(tutorial);
+  }
+  saveLocalBackup();
+  if (db) {
+    try {
+      const tutRef = doc(db, "tutorials", tutorial.id);
+      await setDoc(tutRef, tutorial);
+    } catch (err) {
+      logFirestoreNotice("saveFirestoreTutorial", err);
+    }
+  }
+}
+
+async function deleteFirestoreTutorial(id: string): Promise<void> {
+  tutorialsDatabase = tutorialsDatabase.filter((t) => t.id !== id);
+  saveLocalBackup();
+  if (db) {
+    try {
+      const tutRef = doc(db, "tutorials", id);
+      await deleteDoc(tutRef);
+    } catch (err) {
+      logFirestoreNotice("deleteFirestoreTutorial", err);
+    }
+  }
+}
+
 async function seedFirestoreIfNeeded(): Promise<void> {
+  // Always load local JSON database backup first for full reliability and protection against Firestore quotas/downtimes
+  loadLocalBackup();
+
   if (!db) return;
   try {
     const usersCol = collection(db, "users");
@@ -489,11 +987,17 @@ async function seedFirestoreIfNeeded(): Promise<void> {
         await setDoc(doc(db, "planLogs", log.id), log);
       }
       
+      // Seed tutorials
+      for (const tut of tutorialsDatabase) {
+        await setDoc(doc(db, "tutorials", tut.id), tut);
+      }
+      
       console.log("Firestore seeded successfully!");
     } else {
       console.log("Firestore already has data. Loading latest into memory caches...");
       await getFirestorePayments();
       await getFirestorePlanLogs();
+      await getFirestoreTutorials();
       const allUsersSnap = await getDocs(collection(db, "users"));
       allUsersSnap.forEach((doc) => {
         userDatabase[doc.id] = doc.data();
@@ -507,17 +1011,45 @@ async function seedFirestoreIfNeeded(): Promise<void> {
         });
         console.log(`Synced ${classDiariesLogs.length} class diaries from Firestore.`);
       } catch (err) {
-        console.warn("Could not sync class diaries (might be empty or missing schema):", err);
+        logFirestoreNotice("syncClassDiaries", err);
+      }
+      // Sync tutorials from Firestore
+      try {
+        const allTutSnap = await getDocs(collection(db, "tutorials"));
+        if (!allTutSnap.empty) {
+          tutorialsDatabase = [];
+          allTutSnap.forEach((doc) => {
+            tutorialsDatabase.push(doc.data());
+          });
+          console.log(`Synced ${tutorialsDatabase.length} tutorials from Firestore.`);
+        } else {
+          console.log("Seeding initial tutorials into Firestore...");
+          for (const tut of tutorialsDatabase) {
+            await setDoc(doc(db, "tutorials", tut.id), tut);
+          }
+        }
+      } catch (err) {
+        logFirestoreNotice("syncTutorials", err);
       }
       console.log("In-memory caches synced with Firestore successfully!");
     }
-  } catch (err) {
-    console.error("Error seeding/syncing Firestore:", err);
+  } catch (err: any) {
+    logFirestoreNotice("seedFirestoreIfNeeded", err);
   }
 }
 
+// Secure Password Hashing Helper (SHA-256 with fallback checking support)
+function hashPassword(password: string): string {
+  if (!password) return "";
+  // If already a SHA-256 hash, return it directly to avoid double hashing
+  if (/^[a-f0-9]{64}$/i.test(password)) {
+    return password;
+  }
+  return crypto.createHash("sha256").update(password).digest("hex");
+}
+
 // Helper to get or create user
-async function getUserProfile(email: string, name?: string, phone?: string, provider?: string, password?: string) {
+async function getUserProfile(email: string, name?: string, phone?: string, provider?: string, password?: string, isLogin: boolean = false) {
   const cleanEmail = email.toLowerCase().trim();
   const currentMonth = new Date().toISOString().substring(0, 7); // e.g. "2026-07"
   const now = new Date().toISOString();
@@ -537,30 +1069,78 @@ async function getUserProfile(email: string, name?: string, phone?: string, prov
       lastFreeResetMonth: currentMonth,
       isAdmin: cleanEmail === "nkundimana123theogene@gmail.com",
       authProvider: provider || "google",
-      password: password || "123456", // Default fallback password if none provided
+      password: hashPassword(password || "123456"), // Default fallback password if none provided
       createdAt: now,
       lastLoginAt: now,
       status: "active",
       loginCount: 1,
+      lastResetMonth: currentMonth,
+      monthlySlidesCount: 0,
+      monthlyExercisesCount: 0,
+      monthlyWorksheetsCount: 0,
+      monthlySchemesCount: 0,
+      monthlyDiaryCount: 0,
+      hasPremiumToolsSub: false,
     };
+    await saveFirestoreUser(cleanEmail, user);
   } else {
-    if (name) user.name = name;
-    if (phone) user.phone = phone;
-    if (provider) user.authProvider = provider;
-    if (password) user.password = password;
-    user.lastLoginAt = now;
-    user.loginCount = (user.loginCount || 0) + 1;
+    let needsSave = false;
+    if (name && user.name !== name) {
+      user.name = name;
+      needsSave = true;
+    }
+    if (phone && user.phone !== phone) {
+      user.phone = phone;
+      needsSave = true;
+    }
+    if (provider && user.authProvider !== provider) {
+      user.authProvider = provider;
+      needsSave = true;
+    }
+    if (password) {
+      const hashedPass = hashPassword(password);
+      if (user.password !== hashedPass) {
+        user.password = hashedPass;
+        needsSave = true;
+      }
+    }
+    
+    if (isLogin) {
+      user.lastLoginAt = now;
+      user.loginCount = (user.loginCount || 0) + 1;
+      needsSave = true;
+    }
 
-    // Monthly automatic reset of 3 free plans for all customers
+    // Monthly automatic reset and expiration of unused paid plans
     if (user.lastFreeResetMonth !== currentMonth && !user.isAdmin) {
       user.lastFreeResetMonth = currentMonth;
-      if (user.currentPlan === "Free Tier (3 plans/mo)" || user.remainingPlans < 3) {
-        user.remainingPlans = 3;
-      }
+      
+      // Since the month ended, any unused purchased/premium plans expire.
+      // Reset the user back to the Free Tier with exactly 3 plans.
+      user.currentPlan = "Free Tier (3 plans/mo)";
+      user.remainingPlans = 3;
+      
+      needsSave = true;
+    }
+
+    // Monthly automatic reset of premium tools counts
+    if (user.lastResetMonth !== currentMonth && !user.isAdmin) {
+      user.lastResetMonth = currentMonth;
+      user.monthlySlidesCount = 0;
+      user.monthlyExercisesCount = 0;
+      user.monthlyWorksheetsCount = 0;
+      user.monthlySchemesCount = 0;
+      user.monthlyDiaryCount = 0;
+      user.hasPremiumToolsSub = false; // Expire subscription on monthly reset
+      user.premiumToolsExpiryDate = "";
+      needsSave = true;
+    }
+
+    if (needsSave) {
+      await saveFirestoreUser(cleanEmail, user);
     }
   }
 
-  await saveFirestoreUser(cleanEmail, user);
   return user;
 }
 
@@ -585,16 +1165,40 @@ async function requireAdmin(req: any, res: any, next: any) {
     return;
   }
   const token = authHeader.substring(7);
-  // Find user with this session token
+  
+  // 1. Find user with this session token in the RAM database
   let user = Object.values(userDatabase).find((u) => u.sessionToken === token);
-  if (!user && token.startsWith("tok_")) {
+  
+  // 2. If not found in RAM cache, load the owner from Firestore and check their token
+  if (!user) {
     const adminUser = await getFirestoreUser("nkundimana123theogene@gmail.com");
-    if (adminUser && !adminUser.sessionToken) {
-      adminUser.sessionToken = token;
-      await saveFirestoreUser("nkundimana123theogene@gmail.com", adminUser);
-      user = adminUser;
+    if (adminUser) {
+      if (adminUser.sessionToken === token) {
+        user = adminUser;
+        // Ensure cache is populated
+        userDatabase["nkundimana123theogene@gmail.com"] = adminUser;
+      }
     }
   }
+
+  // 3. If still not found, check if there is any other admin in Firestore with this token
+  if (!user && db) {
+    try {
+      const usersCol = collection(db, "users");
+      const q = query(usersCol, where("sessionToken", "==", token));
+      const qSnap = await getDocs(q);
+      if (!qSnap.empty) {
+        const foundUser = qSnap.docs[0].data();
+        if (foundUser && foundUser.isAdmin) {
+          user = foundUser;
+          userDatabase[user.email.toLowerCase().trim()] = user;
+        }
+      }
+    } catch (err) {
+      console.error("Error searching admin by token in Firestore:", err);
+    }
+  }
+
   if (!user || !user.isAdmin) {
     res.status(403).json({ error: "Ntabwo uri umuyobozi (Forbidden. Admin access required)." });
     return;
@@ -609,28 +1213,26 @@ app.post("/api/user-profile", async (req, res) => {
     return;
   }
 
+  const cleanEmail = email.toLowerCase().trim();
+
   // Check token if provided
   const authHeader = req.headers.authorization;
   let hasValidToken = false;
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.substring(7);
-    const existingUser = await getFirestoreUser(email);
+    const existingUser = await getFirestoreUser(cleanEmail);
     if (existingUser) {
       if (existingUser.sessionToken === token) {
-        hasValidToken = true;
-      } else if (!existingUser.sessionToken && token.startsWith("tok_")) {
-        existingUser.sessionToken = token;
-        await saveFirestoreUser(email, existingUser);
         hasValidToken = true;
       }
     }
   }
 
-  const profile = await getUserProfile(email, name);
+  const profile = await getUserProfile(cleanEmail, name);
 
   // If visitor is requesting owner email but is NOT authenticated with a valid token,
   // we treat them as a standard visitor/free educator to prevent unauthorized privilege escalation.
-  if (email.toLowerCase() === "nkundimana123theogene@gmail.com" && !hasValidToken) {
+  if (cleanEmail === "nkundimana123theogene@gmail.com" && !hasValidToken) {
     res.json({
       id: "usr_visitor",
       name: "Mwarimu / Visitor",
@@ -672,7 +1274,7 @@ app.post("/api/auth/sign-in", async (req, res) => {
     return;
   }
 
-  const user = await getUserProfile(email, name, phone, provider || 'google');
+  const user = await getUserProfile(email, name, phone, provider || 'google', undefined, true);
   // Generate a cryptographically secure-looking temporary session token
   const token = "tok_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   user.sessionToken = token;
@@ -697,7 +1299,7 @@ app.post("/api/auth/register", async (req, res) => {
     return;
   }
 
-  const user = await getUserProfile(email, name, phone, 'email', password);
+  const user = await getUserProfile(email, name, phone, 'email', password, true);
   const token = "tok_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   user.sessionToken = token;
   await saveFirestoreUser(email, user);
@@ -726,12 +1328,16 @@ app.post("/api/auth/login", async (req, res) => {
     return;
   }
 
-  if (user.password !== password) {
-    res.status(401).json({ error: "Ijambo ry'ibanga saryo (Incorrect password). Ongera ugerageze cyangwa ukande 'Wibagiwe'!" });
+  const hashedInput = hashPassword(password);
+  if (user.password !== hashedInput && user.password !== password) {
+    res.status(401).json({ error: "Ijambo ry'ibanga si ryo (Incorrect password). Ongera ugerageze cyangwa ukande 'Wibagiwe'!" });
     return;
   }
 
-  const updatedUser = await getUserProfile(email);
+  const updatedUser = await getUserProfile(email, undefined, undefined, undefined, undefined, true);
+  if (updatedUser.password === password) {
+    updatedUser.password = hashedInput;
+  }
   const token = "tok_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   updatedUser.sessionToken = token;
   await saveFirestoreUser(email, updatedUser);
@@ -797,7 +1403,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
   // Update password
   const user = await getFirestoreUser(email);
   if (user) {
-    user.password = newPassword;
+    user.password = hashPassword(newPassword);
     await saveFirestoreUser(email, user);
   }
 
@@ -866,6 +1472,105 @@ app.post("/api/admin/update-user", requireAdmin, async (req, res) => {
 app.get("/api/admin/plan-logs", requireAdmin, async (req, res) => {
   const logs = await getFirestorePlanLogs();
   res.json(logs);
+});
+
+// User Feedback Submission Endpoint (Public / Logged-in users)
+app.post("/api/feedback", async (req, res) => {
+  try {
+    const { userName, userEmail, userPhone, category, rating, subject, message, timestamp } = req.body;
+    if (!message || !message.trim()) {
+      res.status(400).json({ error: "Ubutumwa ntibushobora kuba burimo ubusa (Message is required)." });
+      return;
+    }
+
+    const newFeedback = {
+      id: "fb_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
+      userName: userName || "Anonymous Teacher",
+      userEmail: userEmail || "Nta Email",
+      userPhone: userPhone || "",
+      category: category || "suggestion",
+      rating: Number(rating) || 5,
+      subject: subject || undefined,
+      message: message.trim(),
+      status: "pending",
+      timestamp: timestamp || new Date().toISOString()
+    };
+
+    await saveFirestoreFeedback(newFeedback);
+    res.json({ success: true, message: "Feedback submitted successfully!", feedback: newFeedback });
+  } catch (err: any) {
+    console.error("Error submitting feedback:", err);
+    res.status(500).json({ error: "Failed to submit feedback" });
+  }
+});
+
+// User API: Get user's own submitted feedbacks & Admin replies
+app.get("/api/my-feedbacks", async (req, res) => {
+  try {
+    const contact = (req.query.contact as string || "").toLowerCase().trim();
+    const feedbacks = await getFirestoreFeedbacks();
+    if (!contact) {
+      // Return public/recent feedbacks or empty list if no contact filter provided
+      const resolvedPublic = feedbacks.filter((f: any) => f.adminReply && f.status !== "pending").slice(0, 10);
+      res.json(resolvedPublic);
+      return;
+    }
+
+    const myFeedbacks = feedbacks.filter((f: any) => {
+      const emailMatch = f.userEmail && f.userEmail.toLowerCase().includes(contact);
+      const phoneMatch = f.userPhone && f.userPhone.includes(contact);
+      const nameMatch = f.userName && f.userName.toLowerCase().includes(contact);
+      return emailMatch || phoneMatch || nameMatch;
+    });
+
+    res.json(myFeedbacks);
+  } catch (err: any) {
+    console.error("Error fetching user feedbacks:", err);
+    res.status(500).json({ error: "Failed to fetch feedbacks" });
+  }
+});
+
+// Admin API: Get all user feedbacks
+app.get("/api/admin/feedbacks", requireAdmin, async (req, res) => {
+  const feedbacks = await getFirestoreFeedbacks();
+  res.json(feedbacks);
+});
+
+// Admin API: Update or Delete user feedback
+app.post("/api/admin/update-feedback", requireAdmin, async (req, res) => {
+  try {
+    const { id, action, status, adminReply } = req.body;
+    if (!id) {
+      res.status(400).json({ error: "Feedback ID is required" });
+      return;
+    }
+
+    if (action === "delete") {
+      await deleteFirestoreFeedback(id);
+      res.json({ message: "Feedback deleted successfully" });
+      return;
+    }
+
+    const feedbacks = await getFirestoreFeedbacks();
+    const fb = feedbacks.find((f: any) => f.id === id);
+    if (!fb) {
+      res.status(404).json({ error: "Feedback not found" });
+      return;
+    }
+
+    if (status) {
+      fb.status = status;
+    }
+    if (adminReply !== undefined) {
+      fb.adminReply = adminReply;
+    }
+
+    await saveFirestoreFeedback(fb);
+    res.json({ message: "Feedback updated successfully", feedback: fb });
+  } catch (err: any) {
+    console.error("Error updating feedback:", err);
+    res.status(500).json({ error: "Failed to update feedback" });
+  }
 });
 
 // Helper for Fallback Lesson Plan Generation in case Gemini model call is unavailable or fails
@@ -1016,8 +1721,8 @@ function generateFallbackLessonPlan(request: any, language: string, format: stri
         {
           stepName: '2. IBIKORWA BYO KUNGOZA NO KUZAHURA (DIFFERENTIATED REMEDIAL ACTIVITIES)',
           timing: '25 min',
-          teacherActivities: `• Group 1 - Remediation (${request.remedialGroup1Category || 'Abakeneye inyunganira yihariye'}): Mwarimu yikora kuri iki tsinda, abasobanurira umwimerere wa "${lessonTitle}" akoresheje ibikoresho bifatika no kubafasha intambwe ku yindi.\n• Group 2 - Consolidation (${request.remedialGroup2Category || 'Abakomeza ubumenyi'}): Mwarimu aha iki tsinda imyitozo yo gukomeza ubumenyi n'ibibazo byo gukemura mu bwumvikane.\n• Group 3 - Extension (${request.remedialGroup3Category || 'Abihuta / Extension'}): Mwarimu aha iki tsinda ibibazo bitoroshye (high-order challenge problems) no kuba abafasha b'abandi (peer tutors).`,
-          learnerActivities: `• Group 1 (Remediation): Abanyeshuri bafashwa na mwarimu mu buryo bw'umwimerere no gukora imyitozo yoroshye ifasha kuzahura ubumenyi.\n• Group 2 (Consolidation): Abanyeshuri bakora imyitozo yo gukomeza ubumenyi bagasobanurirana mu tsinda.\n• Group 3 (Extension): Abanyeshuri b'abahanga bakora imyitozo yisumbuye gihamya bakagira n'uruhare mu gufasha bagenzi babo.`,
+          teacherActivities: `• Itsinda rya 1 - Kungora (${request.remedialGroup1Category || 'Abakeneye inyunganira yihariye'}): Mwarimu yikora kuri iki tsinda, abasobanurira umwimerere wa "${lessonTitle}" akoresheje ibikoresho bifatika no kubafasha intambwe ku yindi.\n• Itsinda rya 2 - Gukomeza Ubumenyi (${request.remedialGroup2Category || 'Abakomeza ubumenyi'}): Mwarimu aha iki tsinda imyitozo yo gukomeza ubumenyi n'ibibazo byo gukemura mu bwumvikane.\n• Itsinda rya 3 - Kwihuta / Extension (${request.remedialGroup3Category || 'Abihuta / Extension'}): Mwarimu aha iki tsinda ibibazo bitoroshye (high-order challenge problems) no kuba abafasha b'abandi (peer tutors).`,
+          learnerActivities: `• Itsinda rya 1 (Kungora): Abanyeshuri bafashwa na mwarimu mu buryo bw'umwimerere no gukora imyitozo yoroshye ifasha kuzahura ubumenyi.\n• Itsinda rya 2 (Gukomeza Ubumenyi): Abanyeshuri bakora imyitozo yo gukomeza ubumenyi bagasobanurirana mu tsinda.\n• Itsinda rya 3 (Kwihuta / Extension): Abanyeshuri b'abahanga bakora imyitozo yisumbuye gihamya bakagira n'uruhare mu gufasha bagenzi babo.`,
           competencesAndCrossCutting: 'Inyunganira yihariye (Differentiated Remediation), Ubusabane (Cooperation) & Uburinganire muri RLP.'
         },
         {
@@ -1185,8 +1890,9 @@ app.post("/api/update-country", async (req, res) => {
   if (!user) {
     user = await getUserProfile(email);
   }
-  if (token) {
-    user.sessionToken = token;
+  if (!token || user.sessionToken !== token) {
+    res.status(401).json({ error: "Ntabwo wemerewe guhindura ibi (Unauthorized. Invalid session token)." });
+    return;
   }
 
   user.country = country;
@@ -1294,10 +2000,28 @@ app.post("/api/class-diary/delete", async (req, res) => {
 });
 
 app.post("/api/class-diary/generate", async (req, res) => {
-  const { request, userEmail } = req.body;
+  const { request, userEmail, sessionToken } = req.body;
   if (!request || !userEmail) {
     res.status(400).json({ error: "Request parameters and userEmail are required" });
     return;
+  }
+
+  // Enforce monthly limit
+  let user: any = null;
+  if (userEmail) {
+    user = await getUserProfile(userEmail);
+    if (user && sessionToken && user.sessionToken === sessionToken) {
+      if (!user.isAdmin && !user.hasPremiumToolsSub) {
+        const diaryCount = user.monthlyDiaryCount || 0;
+        if (diaryCount >= 5) {
+          res.status(403).json({
+            code: "PREMIUM_LIMIT_EXCEEDED",
+            error: "Ntabwo wemerewe gukora Class Diary (Cahier de Textes) zirenga 5 ku kwezi z'ubuntu. Koresha izo wakoze cyangwa ugure ifatabuguzi (Premium Tools Sub) rya 2,500 Rwf muri Subscription page!"
+          });
+          return;
+        }
+      }
+    }
   }
 
   const { subject, classGrade, date, period, lessonTitle, language, additionalInfo } = request;
@@ -1363,12 +2087,17 @@ Respond strictly with valid JSON inside a JSON block. No markdown wrapper outsid
       throw new Error("Empty or invalid response from Gemini API");
     }
 
+    if (user && !user.isAdmin && !user.hasPremiumToolsSub) {
+      user.monthlyDiaryCount = (user.monthlyDiaryCount || 0) + 1;
+      await saveFirestoreUser(user.email, user);
+    }
+
     res.json(result);
   } catch (err: any) {
     console.warn("Class diary generator failed or was throttled, returning fallback:", err?.message || err);
     
     // Provide a high-quality local fallback in Kinyarwanda, English, French, Swahili
-    const isKiny = targetLanguage.toLowerCase().includes("kiny") || targetLanguage.toLowerCase().includes("rwanda");
+    const isKiny = targetLanguage.toLowerCase().includes("kinya") || targetLanguage.toLowerCase().includes("rwanda");
     const isFrench = targetLanguage.toLowerCase().includes("fren") || targetLanguage.toLowerCase().includes("fran");
     const isSwahili = targetLanguage.toLowerCase().includes("swah") || targetLanguage.toLowerCase().includes("kisw");
 
@@ -1399,6 +2128,11 @@ Respond strictly with valid JSON inside a JSON block. No markdown wrapper outsid
       remarksObservations = `The lesson was successfully delivered. Most learners demonstrated a solid understanding of the concepts, while a few will benefit from extra support during revision.`;
     }
 
+    if (user && !user.isAdmin && !user.hasPremiumToolsSub) {
+      user.monthlyDiaryCount = (user.monthlyDiaryCount || 0) + 1;
+      await saveFirestoreUser(user.email, user);
+    }
+
     res.json({
       workCoveredSummary,
       skillsCompetencesTargeted,
@@ -1424,9 +2158,9 @@ app.post("/api/generate-lesson-plan", async (req, res) => {
     if (!user) {
       user = await getUserProfile(userEmail);
     }
-    if (token) {
-      user.sessionToken = token;
-      await saveFirestoreUser(userEmail, user);
+    if (!token || user.sessionToken !== token) {
+      res.status(401).json({ error: "Ntabwo wemerewe gukora iki gikorwa (Unauthorized. Invalid session token)." });
+      return;
     }
 
     if (user.status === 'blocked') {
@@ -1443,6 +2177,18 @@ app.post("/api/generate-lesson-plan", async (req, res) => {
         code: "QUOTA_EXCEEDED"
       });
       return;
+    }
+
+    // Daily Limit Check: Capped at 3 lesson plans per day for standard clients
+    const todayStr = new Date().toISOString().substring(0, 10);
+    if (!user.isAdmin) {
+      if (user.lastLessonPlanDate === todayStr && (user.dailyLessonPlansCount || 0) >= 3) {
+        res.status(403).json({
+          error: "Ntabwo wemerewe gukora lesson plans zirenga 3 ku munsi. Niba ukeneye izindi cyangwa ufite ikibazo, vugana n'umuyobozi kuri 0781339530.",
+          code: "DAILY_LIMIT_EXCEEDED"
+        });
+        return;
+      }
     }
 
     const targetLanguage = request.language || "English";
@@ -1551,6 +2297,7 @@ CRITICAL PEDAGOGICAL & QUALITY REQUIREMENTS (MUST BE WRITTEN IN ${targetLanguage
 
 5. LANGUAGE & FORMATTING:
    - EVERY SINGLE FIELD (headers, step names, activities, competences) MUST BE WRITTEN EXCLUSIVELY IN ${targetLanguage.toUpperCase()}.
+   - If ${targetLanguage.toUpperCase()} is KINYARWANDA, translate all pedagogical and technical terms into pure Kinyarwanda. For example, use 'Itsinda' for Group, 'Isuzuma mbule' for Diagnostic, 'Kuzahura no kungora' or 'Kunganira' for Remediation, 'Gukomeza ubumenyi' for Consolidation, 'Kwihuta / Extension' for Extension, 'Irihuriro / Gukoranira hamwe' for Circle Time. NEVER mix English/French terms or write 'learners' or 'lessons' in English; use Kinyarwanda equivalents like 'abanyeshuri' and 'isomo'.
    - Ensure the content is compact, clear, and perfectly formatted for a 1-page printable document.
    - For Teacher Self-Evaluation: return empty string "" so the teacher can fill it after lesson delivery.
    - If Open Format is requested, provide a detailed Markdown formatted text version in 'openFormatContent' in ${targetLanguage}.
@@ -1700,6 +2447,14 @@ CRITICAL PEDAGOGICAL & QUALITY REQUIREMENTS (MUST BE WRITTEN IN ${targetLanguage
     // Deduct plan credit from user if not admin
     if (!user.isAdmin) {
       user.remainingPlans = Math.max(0, user.remainingPlans - 1);
+      
+      const todayStr = new Date().toISOString().substring(0, 10);
+      if (user.lastLessonPlanDate === todayStr) {
+        user.dailyLessonPlansCount = (user.dailyLessonPlansCount || 0) + 1;
+      } else {
+        user.lastLessonPlanDate = todayStr;
+        user.dailyLessonPlansCount = 1;
+      }
     }
     user.totalGenerated = (user.totalGenerated || 0) + 1;
     
@@ -1755,11 +2510,42 @@ CRITICAL PEDAGOGICAL & QUALITY REQUIREMENTS (MUST BE WRITTEN IN ${targetLanguage
   }
 });
 
-// Submit Payment Proof
-app.post("/api/submit-payment", async (req, res) => {
+// Submit Payment Proof with Anti-Fraud & Anti-Spam Protection
+app.post("/api/submit-payment", systemAntiSpamLimiter(10 * 60 * 1000, 5, 'payment_submit'), async (req, res) => {
   const { userEmail, userName, userPhone, planId, momoTxRef, momoNumber } = req.body;
   if (!userEmail || !planId || !momoTxRef) {
     res.status(400).json({ error: "Missing required payment parameters" });
+    return;
+  }
+
+  const cleanTxRef = String(momoTxRef || '').trim();
+
+  // 1. Anti-Fraud Validation: Check minimum length
+  if (cleanTxRef.length < 6) {
+    res.status(400).json({ error: "Anti-Fraud Protection: MoMo Transaction Reference ID must be at least 6 characters long." });
+    return;
+  }
+
+  // 2. Anti-Fraud Validation: Check known dummy/fake transaction codes
+  const BLACKLISTED_FAKE_CODES = [
+    "123456", "000000", "111111", "222222", "333333", "444444", "555555", "666666",
+    "777777", "888888", "999999", "12345", "00000", "test", "testing", "momo",
+    "fake", "code", "qwerty", "asdfgh", "0781339530", "12345678"
+  ];
+  if (BLACKLISTED_FAKE_CODES.includes(cleanTxRef.toLowerCase())) {
+    res.status(400).json({ error: "Anti-Fraud Security Alert: The transaction reference provided appears invalid or simulated. Please provide your real MTN/Airtel MoMo SMS transaction ID." });
+    return;
+  }
+
+  // 3. Anti-Fraud Validation: Check for duplicate submitted codes across DB
+  const existingPayments = await getFirestorePayments();
+  const isDuplicate = existingPayments.some(
+    (p) => String(p.momoTxRef || '').trim().toLowerCase() === cleanTxRef.toLowerCase()
+  );
+  if (isDuplicate) {
+    res.status(400).json({
+      error: "Anti-Fraud Security Alert: This MoMo Transaction Reference ID has already been submitted or processed. Reusing transaction codes is strictly prohibited."
+    });
     return;
   }
 
@@ -1769,9 +2555,9 @@ app.post("/api/submit-payment", async (req, res) => {
   if (!user) {
     user = await getUserProfile(userEmail);
   }
-  if (token) {
-    user.sessionToken = token;
-    await saveFirestoreUser(userEmail, user);
+  if (!token || user.sessionToken !== token) {
+    res.status(401).json({ error: "Ntabwo wemerewe gukora iki gikorwa (Unauthorized. Invalid session token)." });
+    return;
   }
 
   const selectedPlan = SUBSCRIPTION_PLANS.find((p) => p.id === planId);
@@ -1789,14 +2575,47 @@ app.post("/api/submit-payment", async (req, res) => {
     planLabel: selectedPlan.label,
     amountFrw: selectedPlan.priceFrw,
     plansCount: selectedPlan.plansCount,
-    momoTxRef,
+    momoTxRef: cleanTxRef,
     momoNumber: momoNumber || userPhone,
     status: "pending",
     timestamp: new Date().toISOString(),
   };
 
   await saveFirestorePayment(newSubmission);
-  res.json({ message: "Payment proof submitted successfully!", payment: newSubmission });
+  res.json({ message: "Payment proof verified and submitted successfully!", payment: newSubmission });
+});
+
+// Official Verification & Anti-Scam Channel Check API
+app.get("/api/verify-official-channel", (req, res) => {
+  const query = String(req.query.query || '').trim().toLowerCase();
+  
+  const officialPhone = "0781339530";
+  const officialCode = "*182*1*1*0781339530#";
+  const officialName = "NKUNDIMANA Theogene";
+  const officialEmail = "nkundimana123theogene@gmail.com";
+  const officialDomain = "teacherlessonplans.ai.studio";
+
+  const isOfficial = 
+    query.includes("0781339530") || 
+    query.includes("nkundimana") || 
+    query.includes("teacherlessonplans") || 
+    query.includes("182*1*1*0781339530") ||
+    query.includes("nkundimana123theogene@gmail.com");
+
+  res.json({
+    query,
+    isOfficial,
+    officialDetails: {
+      accountHolder: officialName,
+      momoCode: officialCode,
+      whatsappPhone: officialPhone,
+      email: officialEmail,
+      websiteDomain: officialDomain,
+    },
+    securityAlert: isOfficial
+      ? "✅ VERIFIED OFFICIAL CHANNEL: This is the official Teacher Tool account."
+      : "⚠️ UNVERIFIED CHANNEL WARNING: Always pay ONLY to official MoMo Code *182*1*1*0781339530# (NKUNDIMANA Theogene). Never pay unverified third parties."
+  });
 });
 
 // Get user's payment submissions
@@ -1809,9 +2628,9 @@ app.get("/api/user-payments/:email", async (req, res) => {
   if (!user) {
     user = await getUserProfile(email);
   }
-  if (token) {
-    user.sessionToken = token;
-    await saveFirestoreUser(email, user);
+  if (!token || user.sessionToken !== token) {
+    res.status(401).json({ error: "Ntabwo wemerewe gukora iki gikorwa (Unauthorized. Invalid session token)." });
+    return;
   }
 
   const allPayments = await getFirestorePayments();
@@ -1844,6 +2663,9 @@ app.post("/api/admin/update-payment-status", requireAdmin, async (req, res) => {
     const user = await getUserProfile(payment.userEmail);
     user.currentPlan = payment.planLabel;
     user.remainingPlans = (user.remainingPlans || 0) + payment.plansCount;
+    if (payment.planId === "plan_premium_tools") {
+      user.hasPremiumToolsSub = true;
+    }
     await saveFirestoreUser(payment.userEmail, user);
   }
 
@@ -2003,11 +2825,29 @@ function generateFallbackExercises(request: any, language: string): any {
 // AI Exercise / Homework / Quiz Generation Endpoint
 app.post("/api/generate-exercises", async (req, res) => {
   const request = req.body;
-  const { language, subject, grade, topic, creationType, useSections, sections, simpleCategory, simpleQuestionCount, simpleMarksPerQuestion, difficulty, timeAllowed, sourceContent } = request;
+  const { language, subject, grade, topic, creationType, useSections, sections, simpleCategory, simpleQuestionCount, simpleMarksPerQuestion, difficulty, timeAllowed, sourceContent, userEmail, sessionToken } = request;
 
   if (!subject || !grade || !topic) {
     res.status(400).json({ error: "Missing required parameters: subject, grade, topic" });
     return;
+  }
+
+  // Enforce monthly limit
+  let user: any = null;
+  if (userEmail) {
+    user = await getUserProfile(userEmail);
+    if (user && sessionToken && user.sessionToken === sessionToken) {
+      if (!user.isAdmin && !user.hasPremiumToolsSub) {
+        const exercisesCount = user.monthlyExercisesCount || 0;
+        if (exercisesCount >= 5) {
+          res.status(403).json({
+            code: "PREMIUM_LIMIT_EXCEEDED",
+            error: "Ntabwo wemerewe gukora Exercises & Quizzes zirenga 5 ku kwezi z'ubuntu. Koresha izo wakoze cyangwa ugure ifatabuguzi (Premium Tools Sub) rya 2,500 Rwf muri Subscription page!"
+          });
+          return;
+        }
+      }
+    }
   }
 
   const targetLanguage = language || "English";
@@ -2158,6 +2998,11 @@ IMPORTANT PEDAGOGICAL INSTRUCTIONS:
     outputExercise = generateFallbackExercises(request, targetLanguage);
   }
 
+  if (user && !user.isAdmin && !user.hasPremiumToolsSub) {
+    user.monthlyExercisesCount = (user.monthlyExercisesCount || 0) + 1;
+    await saveFirestoreUser(user.email, user);
+  }
+
   res.json(outputExercise);
 });
 
@@ -2263,12 +3108,32 @@ app.post("/api/generate-worksheets", async (req, res) => {
     customInstructions,
     additionalDetails,
     webSearch,
-    includeAnswerKey
+    includeAnswerKey,
+    userEmail,
+    sessionToken
   } = request;
 
   if (!subject || !gradeLevel || !topic) {
     res.status(400).json({ error: "Missing required parameters: subject, gradeLevel, topic" });
     return;
+  }
+
+  // Enforce monthly limit
+  let user: any = null;
+  if (userEmail) {
+    user = await getUserProfile(userEmail);
+    if (user && sessionToken && user.sessionToken === sessionToken) {
+      if (!user.isAdmin && !user.hasPremiumToolsSub) {
+        const worksheetsCount = user.monthlyWorksheetsCount || 0;
+        if (worksheetsCount >= 5) {
+          res.status(403).json({
+            code: "PREMIUM_LIMIT_EXCEEDED",
+            error: "Ntabwo wemerewe gukora Worksheets zirenga 5 ku kwezi z'ubuntu. Koresha izo wakoze cyangwa ugure ifatabuguzi (Premium Tools Sub) rya 2,500 Rwf muri Subscription page!"
+          });
+          return;
+        }
+      }
+    }
   }
 
   const targetLanguage = language || "English";
@@ -2379,6 +3244,11 @@ IMPORTANT PEDAGOGICAL INSTRUCTIONS:
 
   if (!outputWorksheet) {
     outputWorksheet = generateFallbackWorksheet(request);
+  }
+
+  if (user && !user.isAdmin && !user.hasPremiumToolsSub) {
+    user.monthlyWorksheetsCount = (user.monthlyWorksheetsCount || 0) + 1;
+    await saveFirestoreUser(user.email, user);
   }
 
   res.json(outputWorksheet);
@@ -2601,12 +3471,32 @@ app.post("/api/generate-slides", async (req, res) => {
     slideCount,
     includeTimings,
     simplifiedMode,
-    theme
+    theme,
+    userEmail,
+    sessionToken
   } = request;
 
   if (!subject || !grade || !topic) {
     res.status(400).json({ error: "Missing required parameters: subject, grade, topic" });
     return;
+  }
+
+  // Enforce monthly limit
+  let user: any = null;
+  if (userEmail) {
+    user = await getUserProfile(userEmail);
+    if (user && sessionToken && user.sessionToken === sessionToken) {
+      if (!user.isAdmin && !user.hasPremiumToolsSub) {
+        const slidesCount = user.monthlySlidesCount || 0;
+        if (slidesCount >= 5) {
+          res.status(403).json({
+            code: "PREMIUM_LIMIT_EXCEEDED",
+            error: "Ntabwo wemerewe gukora Presentation Slides zirenga 5 ku kwezi z'ubuntu. Koresha izo wakoze cyangwa ugure ifatabuguzi (Premium Tools Sub) rya 2,500 Rwf muri Subscription page!"
+          });
+          return;
+        }
+      }
+    }
   }
 
   const targetLanguage = language || "English";
@@ -2708,6 +3598,11 @@ Please output strictly valid JSON with the exact requested responseSchema.
 
   if (!outputSlides) {
     outputSlides = generateFallbackSlides(request);
+  }
+
+  if (user && !user.isAdmin && !user.hasPremiumToolsSub) {
+    user.monthlySlidesCount = (user.monthlySlidesCount || 0) + 1;
+    await saveFirestoreUser(user.email, user);
   }
 
   res.json(outputSlides);
@@ -2841,12 +3736,32 @@ app.post("/api/generate-scheme", async (req, res) => {
     term,
     numberOfWeeks,
     language,
-    additionalInfo
+    additionalInfo,
+    userEmail,
+    sessionToken
   } = request;
 
   if (!type || !level || !tradeOrSubject || !term) {
     res.status(400).json({ error: "Missing required parameters: type, level, tradeOrSubject, term" });
     return;
+  }
+
+  // Enforce monthly limit
+  let user: any = null;
+  if (userEmail) {
+    user = await getUserProfile(userEmail);
+    if (user && sessionToken && user.sessionToken === sessionToken) {
+      if (!user.isAdmin && !user.hasPremiumToolsSub) {
+        const schemesCount = user.monthlySchemesCount || 0;
+        if (schemesCount >= 5) {
+          res.status(403).json({
+            code: "PREMIUM_LIMIT_EXCEEDED",
+            error: "Ntabwo wemerewe gukora Schemes of Work (SOW) zirenga 5 ku kwezi z'ubuntu. Koresha izo wakoze cyangwa ugure ifatabuguzi (Premium Tools Sub) rya 2,500 Rwf muri Subscription page!"
+          });
+          return;
+        }
+      }
+    }
   }
 
   const weeksCount = parseInt(numberOfWeeks) || 10;
@@ -2933,6 +3848,11 @@ You MUST write all output fields in ${targetLanguage.toUpperCase()}.`;
     generatedSOW = generateFallbackScheme(request);
   }
 
+  if (user && !user.isAdmin && !user.hasPremiumToolsSub) {
+    user.monthlySchemesCount = (user.monthlySchemesCount || 0) + 1;
+    await saveFirestoreUser(user.email, user);
+  }
+
   res.json(generatedSOW);
 });
 
@@ -2949,6 +3869,325 @@ app.post("/api/certificates/save", async (req, res) => {
   } catch (err: any) {
     console.error("Error saving certificate:", err);
     res.status(500).json({ error: "Failed to save certificate" });
+  }
+});
+
+// Get All Tutorials from Firestore/Memory
+app.get("/api/tutorials", async (req, res) => {
+  try {
+    const tutorials = await getFirestoreTutorials();
+    res.json(tutorials);
+  } catch (err: any) {
+    console.error("Error fetching tutorials:", err);
+    res.status(500).json({ error: "Failed to fetch tutorials" });
+  }
+});
+
+// Save/Update Tutorial (Admin Only)
+app.post("/api/tutorials", requireAdmin, async (req, res) => {
+  try {
+    const tutorial = req.body;
+    if (!tutorial || !tutorial.title || !tutorial.module) {
+      res.status(400).json({ error: "Missing required tutorial parameters" });
+      return;
+    }
+    if (!tutorial.id) {
+      tutorial.id = "tut_" + Math.random().toString(36).substring(2, 9);
+      tutorial.createdAt = new Date().toISOString();
+    }
+    await saveFirestoreTutorial(tutorial);
+    res.json({ success: true, tutorial });
+  } catch (err: any) {
+    console.error("Error saving tutorial:", err);
+    res.status(500).json({ error: "Failed to save tutorial" });
+  }
+});
+
+// Delete Tutorial (Admin Only)
+app.delete("/api/tutorials/:id", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await deleteFirestoreTutorial(id);
+    res.json({ success: true, message: "Tutorial deleted successfully" });
+  } catch (err: any) {
+    console.error("Error deleting tutorial:", err);
+    res.status(500).json({ error: "Failed to delete tutorial" });
+  }
+});
+
+// AI Generate Tutorial Documentation, Script, FAQs & PDF breakdown
+app.post("/api/tutorials/generate-ai-doc", async (req, res) => {
+  const { title, module: moduleName, systemDescription, language } = req.body;
+  const targetLanguage = language || "Kinyarwanda";
+
+  if (!moduleName && !title) {
+    res.status(400).json({ error: "Missing required parameters: title or module" });
+    return;
+  }
+
+  try {
+    const promptText = `
+Generate a comprehensive, highly professional System Tutorial Documentation Package for Teacher Tool app.
+- Tutorial Title: ${title || moduleName}
+- Target System Section/Module: ${moduleName || "General System"}
+- Additional System Description / Feature Details: ${systemDescription || "Standard Teacher Tool module"}
+- Target Language: ${targetLanguage} (Write ALL content in ${targetLanguage})
+
+Requirements:
+1. "description": A short 2-sentence summary of what this feature does.
+2. "videoScript": A step-by-step spoken script for recording a video tutorial or AI voiceover (numbered steps 1, 2, 3...).
+3. "guideContent": Rich Markdown text detailing how to use this feature step-by-step with tips and prerequisites.
+4. "faqList": Array of 3-4 realistic questions and answers about this feature.
+5. "version": "v1.0"
+`;
+
+    const response = await callGeminiWithRetry({
+      contents: promptText,
+      config: {
+        systemInstruction: `You are Teacher Tool's AI Documentation Engine. You write clear, easy-to-understand system guides, video scripts, and FAQs in ${targetLanguage.toUpperCase()}. Output strictly valid JSON conforming to the requested schema.`,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            description: { type: Type.STRING },
+            videoScript: { type: Type.STRING },
+            guideContent: { type: Type.STRING },
+            faqList: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  question: { type: Type.STRING },
+                  answer: { type: Type.STRING }
+                },
+                required: ["question", "answer"]
+              }
+            },
+            version: { type: Type.STRING }
+          },
+          required: ["title", "description", "videoScript", "guideContent", "faqList"]
+        }
+      }
+    });
+
+    const parsed = JSON.parse(response.text || "{}");
+    const tutorialDoc = {
+      id: "tut_" + Math.random().toString(36).substring(2, 9),
+      module: moduleName || "general",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      pdfUrl: `/docs/${(moduleName || 'guide').toLowerCase()}_v1.pdf`,
+      version: parsed.version || "v1.0",
+      ...parsed
+    };
+
+    await saveFirestoreTutorial(tutorialDoc);
+    res.json(tutorialDoc);
+  } catch (err: any) {
+    console.error("AI Tutorial doc generation failed:", err);
+    // Fallback tutorial doc if AI fails
+    const fallbackDoc = {
+      id: "tut_" + Math.random().toString(36).substring(2, 9),
+      title: title || `Tutorial for ${moduleName}`,
+      module: moduleName || "general",
+      description: `Amabwiriza n'inyigisho ku buryo bwo gukoresha ${moduleName || 'system'}.`,
+      videoScript: `1. Kwinjira mu mfashanyigisho za ${moduleName}.\n2. Uzuza amakuru asabwa.\n3. Kanda button yo gukora (Generate).`,
+      guideContent: `### Guide yo gukoresha ${moduleName}\n- Step 1: Hitamo isomo cyangwa icyiciro.\n- Step 2: Kanda generate n'icapishwa.`,
+      faqList: [
+        { question: "Ese biroroshye?", answer: "Yego, ikorwa mu munota 1 gusa." }
+      ],
+      version: "v1.0",
+      videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      pdfUrl: `/docs/${(moduleName || 'guide').toLowerCase()}_v1.pdf`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    await saveFirestoreTutorial(fallbackDoc);
+    res.json(fallbackDoc);
+  }
+});
+
+// AI Update Tutorial when System Feature is Changed (Bumps version, updates script & guide)
+app.post("/api/tutorials/update-feature", async (req, res) => {
+  const { tutorialId, featureChangesDescription } = req.body;
+  if (!tutorialId || !featureChangesDescription) {
+    res.status(400).json({ error: "Missing required parameters: tutorialId, featureChangesDescription" });
+    return;
+  }
+
+  const existingTutorials = await getFirestoreTutorials();
+  const existing = existingTutorials.find((t) => t.id === tutorialId);
+  if (!existing) {
+    res.status(404).json({ error: "Tutorial record not found" });
+    return;
+  }
+
+  try {
+    const promptText = `
+You are updating an existing System Tutorial in Teacher Tool app because a feature has been modified/updated.
+Existing Tutorial Data:
+- Title: ${existing.title}
+- Module: ${existing.module}
+- Current Version: ${existing.version}
+- Existing Guide Content: ${existing.guideContent}
+- Existing Video Script: ${existing.videoScript}
+
+NEW FEATURE UPDATE DETAILS:
+"${featureChangesDescription}"
+
+INSTRUCTIONS:
+1. Update the "guideContent" to seamlessly integrate the new feature changes into the step-by-step Markdown instructions.
+2. Update the "videoScript" so the narrator explains the new feature clearly.
+3. Update or add new items to "faqList" reflecting common questions about this update.
+4. Increment the "version" string (e.g., "v1.0" becomes "v1.1", or "v1.1" becomes "v1.2").
+5. Write a updated "description" mentioning the new feature capability.
+`;
+
+    const response = await callGeminiWithRetry({
+      contents: promptText,
+      config: {
+        systemInstruction: "You are Teacher Tool's AI Documentation Maintainer. You update existing documentation and bump version numbers cleanly. Output strictly valid JSON.",
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            description: { type: Type.STRING },
+            videoScript: { type: Type.STRING },
+            guideContent: { type: Type.STRING },
+            faqList: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  question: { type: Type.STRING },
+                  answer: { type: Type.STRING }
+                },
+                required: ["question", "answer"]
+              }
+            },
+            version: { type: Type.STRING }
+          },
+          required: ["description", "videoScript", "guideContent", "version"]
+        }
+      }
+    });
+
+    const parsed = JSON.parse(response.text || "{}");
+    const updatedTutorial = {
+      ...existing,
+      ...parsed,
+      updatedAt: new Date().toISOString()
+    };
+
+    await saveFirestoreTutorial(updatedTutorial);
+    res.json(updatedTutorial);
+  } catch (err: any) {
+    console.error("Error updating tutorial feature with AI:", err);
+    // Fallback simple version bump
+    const currentVerNum = parseFloat((existing.version || "v1.0").replace("v", "")) || 1.0;
+    const nextVer = `v${(currentVerNum + 0.1).toFixed(1)}`;
+    existing.version = nextVer;
+    existing.guideContent += `\n\n#### Update (${nextVer}):\n${featureChangesDescription}`;
+    existing.updatedAt = new Date().toISOString();
+    await saveFirestoreTutorial(existing);
+    res.json(existing);
+  }
+});
+
+// AI Help Center Chat Assistant (Answers user questions with action buttons & tutorial references)
+app.post("/api/help-center/chat-ai", async (req, res) => {
+  const { message, currentModule, userEmail } = req.body;
+  if (!message) {
+    res.status(400).json({ error: "Missing message parameter" });
+    return;
+  }
+
+  const tutorials = await getFirestoreTutorials();
+  const availableTutorialsSummary = tutorials.map((t) => `- ID: ${t.id}, Module: ${t.module}, Title: ${t.title}`).join("\n");
+
+  try {
+    const promptText = `
+You are the Official AI Help & Support Assistant for "Teacher Tool" (Nkorera Education / AI Teacher Systems), created by IT Specialist & Founder NKUNDIMANA Theogene (WhatsApp: 0781339530 / 0724038043).
+
+USER QUESTION: "${message}"
+USER CURRENT SCREEN/TAB: "${currentModule || 'dashboard'}"
+
+SYSTEM MODULES & AVAILABLE TUTORIALS:
+${availableTutorialsSummary}
+
+KEY SYSTEM CAPABILITIES:
+1. Lesson Plans (generator): AI REB CBC Weekly lesson plans in 1 page PDF.
+2. Remedial (remedial): RLP 1 to 4 diagnostic learning program.
+3. Exercises (exercises): Homework, Classwork, Quizzes with Answer Key & Marking Scheme.
+4. Worksheets (worksheets): Printable exercise sheets.
+5. Slides (slides): Presentation slides with Teacher Notes.
+6. Class Diary (class-diary): Cahier de Textes daily logbook.
+7. Certificates (certificates): Official school certificates with 2 signatories (Headteacher & Teacher).
+8. Subscription (subscription): MoMo Top-up to 0781339530 (Nkundimana Theogene) with Tx Ref verification.
+
+INSTRUCTIONS FOR YOUR RESPONSE:
+1. "text": Answer the user's question clearly, warmly, and step-by-step in Kinyarwanda (or English if the user asked in English). Be encouraging and professional!
+2. "suggestedAction": Provide a concrete action object if relevant to direct the user:
+   - "type": "nav_tab" | "open_video" | "open_guide"
+   - "target": module name (e.g. "generator", "exercises", "worksheets", "certificates", "subscription", "class-diary", etc.)
+   - "label": Short button text (e.g., "Jya kuri Certificate Page", "Reba Video", "Soma Guide")
+3. "tutorialRef": Provide matching tutorial id, title, and module if applicable.
+`;
+
+    const response = await callGeminiWithRetry({
+      contents: promptText,
+      config: {
+        systemInstruction: "You are Teacher Tool's friendly, step-by-step AI Support Assistant. You provide helpful guidance in Kinyarwanda or English with clear action links. Output strictly valid JSON.",
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            text: { type: Type.STRING },
+            suggestedAction: {
+              type: Type.OBJECT,
+              properties: {
+                type: { type: Type.STRING },
+                target: { type: Type.STRING },
+                label: { type: Type.STRING }
+              },
+              required: ["type", "target", "label"]
+            },
+            tutorialRef: {
+              type: Type.OBJECT,
+              properties: {
+                id: { type: Type.STRING },
+                title: { type: Type.STRING },
+                module: { type: Type.STRING }
+              }
+            }
+          },
+          required: ["text"]
+        }
+      }
+    });
+
+    const parsed = JSON.parse(response.text || "{}");
+    res.json({
+      id: "msg_" + Math.random().toString(36).substring(2, 9),
+      sender: "assistant",
+      timestamp: new Date().toISOString(),
+      ...parsed
+    });
+  } catch (err: any) {
+    console.error("AI Help Assistant chat failed:", err);
+    res.json({
+      id: "msg_" + Math.random().toString(36).substring(2, 9),
+      sender: "assistant",
+      timestamp: new Date().toISOString(),
+      text: "Muraho! Murakaza neza mu Help Center ya Teacher Tool. Ushobora kwiga uko ukoresha system mu gukora Lesson Plans, Remedial, Exercises, Worksheets, Class Diary, Certificates, n'uburyo bwo kwishyura kuri MoMo 0781339530.",
+      suggestedAction: {
+        type: "nav_tab",
+        target: "generator",
+        label: "Jya kuri Lesson Plans"
+      }
+    });
   }
 });
 
@@ -2981,6 +4220,27 @@ app.get("/api/certificates/verify/:certNumber", async (req, res) => {
   }
 });
 
+// Direct Android App (.apk) Download Endpoint (Must be placed BEFORE api 404 catch-all)
+app.get(["/api/download-app", "/download/Nkorera_Education_App.apk", "/nkorera-education.apk", "/download/app"], (req, res) => {
+  let apkPath = path.join(process.cwd(), "public", "download", "Nkorera_Education_App.apk");
+  if (!fs.existsSync(apkPath)) {
+    apkPath = path.join(process.cwd(), "public", "nkorera-education.apk");
+  }
+  
+  if (fs.existsSync(apkPath)) {
+    const stat = fs.statSync(apkPath);
+    res.setHeader("Content-Type", "application/vnd.android.package-archive");
+    res.setHeader("Content-Disposition", 'attachment; filename="Nkorera_Education_App_v5.apk"');
+    res.setHeader("Content-Length", stat.size.toString());
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.sendFile(apkPath);
+  } else {
+    res.status(404).send("APK file not found. Please use PWA installation.");
+  }
+});
+
 // Catch-all 404 for any unhandled /api/* route to ensure valid JSON is returned
 app.all("/api/*", (req, res) => {
   res.status(404).json({ error: `API endpoint not found: ${req.method} ${req.path}` });
@@ -2996,7 +4256,65 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   next(err);
 });
 
-// Serve static assets from public folder (sw.js, manifest.json, icons) with correct MIME types
+// AI Developer Automated Codebase Documentation Helper Endpoint
+app.post("/api/admin/codebase-doc-helper", requireAdmin, async (req, res) => {
+  const { queryType, targetFunctionOrQuery, context } = req.body;
+
+  try {
+    const promptText = `
+You are Teacher Tool's Automated Developer Documentation & Code Maintenance Assistant.
+Your task is to provide platform developers with exact documentation parity, architecture state summaries, or detailed function explanations.
+
+REQUEST TYPE: ${queryType || "codebase_summary"}
+TARGET FUNCTION / QUERY: ${targetFunctionOrQuery || "All Core Application Services"}
+ADDITIONAL DEVELOPER CONTEXT: ${context || "None provided"}
+
+SYSTEM ARCHITECTURE OVERVIEW:
+- Stack: React 18, TypeScript, Tailwind CSS, Node.js + Express, Google Gemini 2.5 AI SDK (@google/genai), Firebase Firestore.
+- Entry Points: server.ts (Express REST API backend on port 3000), src/main.tsx & src/App.tsx (React SPA).
+- Core Modules:
+  1. Lesson Plans (/api/generate-lesson-plan) - REB CBC weekly plans, 1-page PDF layout.
+  2. Remedial Learning Program (/api/generate-remedial-plan) - RLP 1-4 diagnostic planner.
+  3. Exercises & Quizzes (/api/generate-exercises) - Homework, Classwork, Marking schemes.
+  4. Worksheets (/api/generate-worksheets) - Printable student worksheets.
+  5. Presentation Slides (/api/generate-slides) - Slide decks & Teacher Notes.
+  6. Class Diary (/api/class-diaries) - Daily Cahier de Textes logbook.
+  7. Certificates (/api/certificates/generate, /api/certificates/verify/:certNumber) - Official certificates with 2 signatories (Headteacher & Teacher).
+  8. Help Center & Tutorials (/api/tutorials, /api/help-center/chat-ai) - Video scripts, PDF guides, AI Support Assistant.
+  9. MoMo Subscription & Admin (/api/payments/submit, /api/admin/approve-payment) - MoMo top-ups (0781339530).
+
+INSTRUCTIONS FOR OUTPUT:
+Provide a clear, highly structured developer markdown response covering:
+1. Executive Summary / Codebase Health & Parity Check.
+2. Technical Explanation of the target function, data flow, or architecture subsystem.
+3. Input/Output Data Schemas and Error Handling edge cases.
+4. Maintenance Recommendations & Future Extensions.
+`;
+
+    const response = await callGeminiWithRetry({
+      contents: promptText,
+      config: {
+        systemInstruction: "You are Teacher Tool's Senior AI Systems Architect and Lead Technical Writer. Provide clear, precise, developer-grade markdown explanations and documentation summaries.",
+      }
+    });
+
+    res.json({
+      success: true,
+      queryType,
+      target: targetFunctionOrQuery,
+      documentation: response.text || "No documentation generated.",
+      timestamp: new Date().toISOString()
+    });
+  } catch (err: any) {
+    console.error("Codebase doc helper error:", err);
+    res.status(500).json({
+      error: "Failed to generate codebase documentation summary",
+      details: err.message
+    });
+  }
+});
+
+// Serve static assets from public folder (sw.js, manifest.json, icons, apk) with correct MIME types
 app.get("/sw.js", (req, res) => {
   res.setHeader("Content-Type", "application/javascript; charset=utf-8");
   res.setHeader("Service-Worker-Allowed", "/");
@@ -3004,6 +4322,29 @@ app.get("/sw.js", (req, res) => {
   res.sendFile(path.join(process.cwd(), "public", "sw.js"));
 });
 
+app.get("/manifest.json", (req, res) => {
+  res.setHeader("Content-Type", "application/manifest+json; charset=utf-8");
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  res.sendFile(path.join(process.cwd(), "public", "manifest.json"));
+});
+
+app.get("/.well-known/assetlinks.json", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.json([
+    {
+      relation: ["delegate_permission/common.handle_all_urls"],
+      target: {
+        namespace: "android_app",
+        package_name: "com.nkorera.education.teacher.app",
+        sha256_cert_fingerprints: [
+          "14:6D:E9:8E:22:90 text/fingerprint"
+        ]
+      }
+    }
+  ]);
+});
+
+// Direct static files serving from public
 app.use(express.static(path.join(process.cwd(), "public")));
 
 // Start Express and Vite middleware

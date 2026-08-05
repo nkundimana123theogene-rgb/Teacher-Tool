@@ -36,6 +36,7 @@ interface PresentationCreatorProps {
   selectedLanguage: LanguageOption;
   onOpenSignIn?: () => void;
   onBackToDashboard?: () => void;
+  onOpenSubscription?: () => void;
 }
 
 interface Slide {
@@ -88,7 +89,8 @@ export const PresentationCreator: React.FC<PresentationCreatorProps> = ({
   user,
   selectedLanguage,
   onOpenSignIn,
-  onBackToDashboard
+  onBackToDashboard,
+  onOpenSubscription
 }) => {
   const [view, setView] = useState<'form' | 'slideshow' | 'history'>('form');
 
@@ -215,7 +217,9 @@ export const PresentationCreator: React.FC<PresentationCreatorProps> = ({
       slideCount,
       includeTimings,
       simplifiedMode,
-      theme: selectedTheme
+      theme: selectedTheme,
+      userEmail: user?.email,
+      sessionToken: user?.sessionToken
     };
 
     try {
@@ -226,6 +230,14 @@ export const PresentationCreator: React.FC<PresentationCreatorProps> = ({
       });
 
       if (!response.ok) {
+        if (response.status === 403) {
+          const errData = await response.json().catch(() => ({}));
+          if (errData.code === 'PREMIUM_LIMIT_EXCEEDED') {
+            setErrorMsg(errData.error || "Ntabwo wemerewe gukora Presentation Slides zirenga 5 ku kwezi z'ubuntu. Koresha izo wakoze cyangwa ugure ifatabuguzi (Premium Tools Sub) rya 2,500 Rwf muri Subscription page!");
+            setIsGenerating(false);
+            return;
+          }
+        }
         throw new Error('Failed to generate slides. Please check network and try again.');
       }
 
@@ -559,6 +571,33 @@ export const PresentationCreator: React.FC<PresentationCreatorProps> = ({
               </p>
             </div>
 
+            {/* Unlimited Premium Access Banner */}
+            {!user?.isAdmin && !user?.hasPremiumToolsSub && (user?.monthlySlidesCount || 0) >= 5 && (
+              <div className="m-6 md:m-8 p-6 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-600/10 border-2 border-dashed border-orange-300 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
+                <div className="flex items-start gap-3 text-left">
+                  <div className="w-10 h-10 rounded-xl bg-orange-500 text-slate-950 flex items-center justify-center shrink-0 shadow-md">
+                    <Sparkles className="w-5 h-5 fill-amber-300 animate-pulse" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-950">Wamaze gukoresha imfashanyigisho 5 z'ubuntu kuri uku kwezi!</h4>
+                    <p className="text-xs text-slate-600 font-bold mt-1">
+                      Gura ifatabuguzi (Premium Tools Sub) rya 2,500 Rwf/mo gusa kugira ngo ukore Presentation Slides zitemewe umubare (Unlimited)!
+                    </p>
+                  </div>
+                </div>
+                {onOpenSubscription && (
+                  <button
+                    type="button"
+                    onClick={onOpenSubscription}
+                    className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-slate-950 text-xs font-extrabold rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer border border-orange-600 shrink-0 flex items-center gap-1.5 whitespace-nowrap"
+                  >
+                    <Sparkles className="w-4 h-4 text-slate-950 fill-amber-200" />
+                    <span>GURA IFATABUGUZI (2,500 Rwf)</span>
+                  </button>
+                )}
+              </div>
+            )}
+
             {errorMsg && (
               <div className="m-6 p-4 bg-red-50 border border-red-200 text-red-900 rounded-xl flex items-start gap-3">
                 <div className="shrink-0 w-5 h-5 rounded-full bg-red-100 text-red-700 flex items-center justify-center font-bold text-sm">!</div>
@@ -855,13 +894,26 @@ export const PresentationCreator: React.FC<PresentationCreatorProps> = ({
                   >
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-slate-950 font-black rounded-xl text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer border border-orange-600"
-                  >
-                    <Sparkles className="w-4 h-4 text-slate-950 fill-amber-200" />
-                    <span>Generate Presentation</span>
-                  </button>
+                  {!user?.isAdmin && !user?.hasPremiumToolsSub && (user?.monthlySlidesCount || 0) >= 5 ? (
+                    onOpenSubscription && (
+                      <button
+                        type="button"
+                        onClick={onOpenSubscription}
+                        className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-slate-950 font-black rounded-xl text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer border border-orange-600 animate-pulse"
+                      >
+                        <Sparkles className="w-4 h-4 text-slate-950 fill-amber-200" />
+                        <span>Get Unlimited Access (2,500 Rwf)</span>
+                      </button>
+                    )
+                  ) : (
+                    <button
+                      type="submit"
+                      className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-slate-950 font-black rounded-xl text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer border border-orange-600"
+                    >
+                      <Sparkles className="w-4 h-4 text-slate-950 fill-amber-200" />
+                      <span>Generate Presentation</span>
+                    </button>
+                  )}
                 </div>
               </form>
             )}

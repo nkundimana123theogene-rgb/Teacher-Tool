@@ -28,6 +28,14 @@ export interface UserProfile {
   loginCount?: number;
   sessionToken?: string;
   canDownloadCertificate?: boolean;
+  monthlySlidesCount?: number;
+  monthlyExercisesCount?: number;
+  monthlyWorksheetsCount?: number;
+  monthlySchemesCount?: number;
+  monthlyDiaryCount?: number;
+  lastResetMonth?: string;
+  hasPremiumToolsSub?: boolean;
+  premiumToolsExpiryDate?: string;
 }
 
 export interface LessonPlanRequest {
@@ -346,10 +354,19 @@ export interface CertificateRequest {
   issuer1Title: string;
   issuer2Name?: string;
   issuer2Title?: string;
+  issuer3Name?: string;
+  issuer3Title?: string;
   borderStyle: 'lime_gold_luxury' | 'reb_academic' | 'modern_emerald_lime';
   language: LanguageOption;
-  gender?: 'male' | 'female' | 'auto';
+  gender?: 'male' | 'female' | 'academic_emblem' | 'special_coach_logo' | 'auto';
+  ageGroup?: 'child' | 'adult' | 'auto';
   recipientPhoto?: string;
+  courseName?: string;
+  schoolLogo?: string;
+  issuer1Signature?: string;
+  issuer2Signature?: string;
+  issuer3Signature?: string;
+  useCursiveSignatures?: boolean;
 }
 
 export interface CertificateData extends CertificateRequest {
@@ -358,6 +375,60 @@ export interface CertificateData extends CertificateRequest {
   certificateNumber: string;
   userEmail?: string;
 }
+
+// Help Center & Tutorial System Types
+export interface TutorialFaq {
+  question: string;
+  answer: string;
+}
+
+export interface TutorialItem {
+  id: string;
+  title: string;
+  module: 'lesson_plans' | 'remedial' | 'nursery' | 'slides' | 'exercises' | 'worksheets' | 'library' | 'class_diary' | 'certificates' | 'subscription' | 'admin' | string;
+  description: string;
+  videoUrl?: string;
+  pdfUrl?: string;
+  version: string;
+  videoScript?: string;
+  faqList?: TutorialFaq[];
+  guideContent?: string;
+  createdAt: string;
+  updatedAt: string;
+  tags?: string[];
+}
+
+export interface HelpChatMessage {
+  id: string;
+  sender: 'user' | 'assistant';
+  text: string;
+  timestamp: string;
+  suggestedAction?: {
+    type: 'nav_tab' | 'open_video' | 'open_guide';
+    target: string;
+    label: string;
+  };
+  tutorialRef?: {
+    id: string;
+    title: string;
+    module: string;
+  };
+}
+
+export interface UserFeedback {
+  id: string;
+  userName: string;
+  userEmail: string;
+  userPhone: string;
+  category: 'suggestion' | 'bug' | 'praise' | 'help' | 'general';
+  rating: number;
+  subject: string;
+  message: string;
+  status: 'pending' | 'reviewed' | 'resolved' | string;
+  adminReply?: string;
+  timestamp: string;
+}
+
 
 
 

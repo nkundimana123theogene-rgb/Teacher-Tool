@@ -102,8 +102,8 @@
 
 @media print {
   @page {
-    size: A4 landscape;
-    margin: 0 !important;
+    size: A4 landscape !important;
+    margin: 0mm !important;
   }
   
   html, body {
@@ -111,8 +111,11 @@
     color: black !important;
     margin: 0 !important;
     padding: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
+    width: 297mm !important;
+    height: 210mm !important;
+    max-width: 297mm !important;
+    max-height: 210mm !important;
+    overflow: hidden !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
@@ -121,29 +124,48 @@
   body.print-landscape {
     @page {
       size: A4 landscape !important;
-      margin: 0 !important;
+      margin: 0mm !important;
     }
   }
 
   body.print-portrait {
     @page {
       size: A4 portrait !important;
-      margin: 0 !important;
+      margin: 0mm !important;
     }
   }
 
   /* Force exact 1-page bounds on body, root and main containers during printing */
   body.print-landscape,
   body.print-landscape #root,
-  body.print-landscape main,
-  body.print-portrait,
-  body.print-portrait #root,
-  body.print-portrait main {
-    height: 100vh !important;
-    max-height: 100vh !important;
+  body.print-landscape main {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 297mm !important;
+    height: 210mm !important;
+    max-width: 297mm !important;
+    max-height: 210mm !important;
     overflow: hidden !important;
     margin: 0 !important;
     padding: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.print-portrait,
+  body.print-portrait #root,
+  body.print-portrait main {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    max-width: 210mm !important;
+    max-height: 297mm !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
   }
 
   /* Hide navigation, headers, footers, buttons and print-hidden elements */
@@ -168,9 +190,9 @@
     visibility: visible !important;
   }
 
-  /* Position A4 Landscape Certificate to fit perfectly on 1 single page */
+  /* Position A4 Landscape Certificate to fit perfectly on 1 single page without any spill or page 2 */
   body.print-landscape .printable-certificate-frame {
-    position: fixed !important;
+    position: absolute !important;
     left: 0 !important;
     top: 0 !important;
     width: 297mm !important;
@@ -178,10 +200,13 @@
     max-width: 297mm !important;
     max-height: 210mm !important;
     margin: 0 !important;
-    padding: 5mm 7mm !important;
+    padding: clamp(1.5mm, 1vh, 3mm) clamp(3mm, 1.5vw, 5mm) !important;
     box-sizing: border-box !important;
     border-radius: 0 !important;
+    border-width: clamp(4mm, 1.5vh, 6mm) !important;
     box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+    outline: none !important;
     z-index: 9999999 !important;
     background: white !important;
     overflow: hidden !important;
@@ -191,9 +216,18 @@
     break-after: avoid !important;
     break-before: avoid !important;
     break-inside: avoid !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: space-between !important;
+    display: grid !important;
+    grid-template-rows: auto 1fr auto !important;
+    justify-content: center !important;
+    align-content: space-between !important;
+    justify-items: center !important;
+    align-items: center !important;
+    gap: clamp(0.5mm, 0.8vh, 2mm) !important;
+  }
+
+  /* Force box-sizing on all children inside printable-certificate-frame */
+  body.print-landscape .printable-certificate-frame * {
+    box-sizing: border-box !important;
   }
 
   /* Prevent browser from creating page 2 */
@@ -206,55 +240,57 @@
 
   /* Dynamic font sizing & responsive text adjustments based on content length for print */
   body.print-landscape .printable-certificate-frame h1 {
-    font-size: clamp(14pt, 2.5vh, 20pt) !important;
-    line-height: 1.15 !important;
-    margin-top: 1mm !important;
-    margin-bottom: 1mm !important;
+    font-size: clamp(11pt, 2vh, 16pt) !important;
+    line-height: 1.1 !important;
+    margin-top: 0.3mm !important;
+    margin-bottom: 0.3mm !important;
     word-break: break-word !important;
   }
 
   body.print-landscape .printable-certificate-frame h2 {
-    font-size: clamp(10pt, 1.8vh, 14pt) !important;
+    font-size: clamp(8.5pt, 1.4vh, 11pt) !important;
     line-height: 1.1 !important;
     word-break: break-word !important;
   }
 
   body.print-landscape .printable-certificate-frame h3 {
-    font-size: clamp(14pt, 3vh, 22pt) !important;
+    font-size: clamp(11.5pt, 2.2vh, 18pt) !important;
     line-height: 1.1 !important;
     word-break: break-word !important;
   }
 
   body.print-landscape .printable-certificate-frame p {
-    font-size: clamp(8pt, 1.5vh, 10pt) !important;
-    line-height: 1.2 !important;
+    font-size: clamp(7pt, 1.2vh, 9pt) !important;
+    line-height: 1.12 !important;
+    margin-top: 0.2mm !important;
+    margin-bottom: 0.2mm !important;
   }
 
   /* Compact avatar & badges in print mode to save vertical space for long texts */
   body.print-landscape .printable-certificate-frame .group.inline-block > div {
-    width: 16mm !important;
-    height: 16mm !important;
-    min-width: 16mm !important;
-    min-height: 16mm !important;
+    width: clamp(11mm, 2.2vh, 14mm) !important;
+    height: clamp(11mm, 2.2vh, 14mm) !important;
+    min-width: clamp(11mm, 2.2vh, 14mm) !important;
+    min-height: clamp(11mm, 2.2vh, 14mm) !important;
     padding: 0.5mm !important;
     border-width: 2px !important;
   }
 
   body.print-landscape .printable-certificate-frame .group.inline-block svg {
-    width: 13mm !important;
-    height: 13mm !important;
+    width: clamp(9mm, 1.8vh, 11mm) !important;
+    height: clamp(9mm, 1.8vh, 11mm) !important;
   }
 
   /* Footer grid & signature scaling in print */
   body.print-landscape .printable-certificate-frame .grid.grid-cols-4 {
-    padding-top: 2mm !important;
+    padding-top: clamp(0.5mm, 0.5vh, 1mm) !important;
     margin-top: auto !important;
-    gap: 2mm !important;
+    gap: clamp(1mm, 0.8vh, 1.5mm) !important;
   }
 
   body.print-landscape .printable-certificate-frame .grid.grid-cols-4 .h-8,
   body.print-landscape .printable-certificate-frame .grid.grid-cols-4 .h-10 {
-    height: 6mm !important;
+    height: clamp(4.5mm, 1vh, 5.5mm) !important;
   }
 
   /* Position QR badge frames centrally on the page */
@@ -320,6 +356,12 @@
     border-radius: 0 !important;
     box-shadow: none !important;
     overflow: hidden !important;
+    display: grid !important;
+    grid-template-rows: auto 1fr auto !important;
+    justify-content: center !important;
+    align-content: space-between !important;
+    justify-items: center !important;
+    align-items: center !important;
   }
 }
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nkorera-edu-v3';
+const CACHE_NAME = 'nkorera-edu-v5';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -8,12 +8,17 @@ const ASSETS_TO_CACHE = [
   '/pwa-512x512.png'
 ];
 
-// Install event - Cache static assets
+// Install event - Cache static assets robustly
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[ServiceWorker] Pre-caching offline essentials');
-      return cache.addAll(ASSETS_TO_CACHE);
+      const cachePromises = ASSETS_TO_CACHE.map((url) => {
+        return cache.add(url).catch((err) => {
+          console.warn(`[ServiceWorker] Failed to pre-cache asset ${url}:`, err);
+        });
+      });
+      return Promise.all(cachePromises);
     }).then(() => self.skipWaiting())
   );
 });

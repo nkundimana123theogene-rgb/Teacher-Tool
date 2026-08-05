@@ -155,10 +155,22 @@ export const WorksheetsCreator: React.FC<WorksheetsCreatorProps> = ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          ...requestBody,
+          userEmail: user?.email,
+          sessionToken: user?.sessionToken
+        }),
       });
 
       if (!response.ok) {
+        if (response.status === 403) {
+          const errData = await response.json().catch(() => ({}));
+          if (errData.code === 'PREMIUM_LIMIT_EXCEEDED') {
+            setErrorMsg(errData.error || "Ntabwo wemerewe gukora Worksheets zirenga 5 ku kwezi z'ubuntu. Koresha izo wakoze cyangwa ugure ifatabuguzi (Premium Tools Sub) rya 2,500 Rwf muri Subscription page!");
+            setIsGenerating(false);
+            return;
+          }
+        }
         throw new Error('Server returned an error. Please try again.');
       }
 
@@ -309,6 +321,33 @@ export const WorksheetsCreator: React.FC<WorksheetsCreatorProps> = ({
               </p>
             </div>
           </div>
+
+          {/* Unlimited Premium Access Banner */}
+          {!user?.isAdmin && !user?.hasPremiumToolsSub && (user?.monthlyWorksheetsCount || 0) >= 5 && (
+            <div className="mb-6 p-6 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-600/10 border-2 border-dashed border-orange-300 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
+              <div className="flex items-start gap-3 text-left">
+                <div className="w-10 h-10 rounded-xl bg-orange-500 text-slate-950 flex items-center justify-center shrink-0 shadow-md">
+                  <Sparkles className="w-5 h-5 fill-amber-300 animate-pulse" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-950">Wamaze gukoresha imfashanyigisho 5 z'ubuntu kuri uku kwezi!</h4>
+                  <p className="text-xs text-slate-600 font-bold mt-1">
+                    Gura ifatabuguzi (Premium Tools Sub) rya 2,500 Rwf/mo gusa kugira ngo ukore Worksheets zitemewe umubare (Unlimited)!
+                  </p>
+                </div>
+              </div>
+              {onOpenSubscription && (
+                <button
+                  type="button"
+                  onClick={onOpenSubscription}
+                  className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-slate-950 text-xs font-extrabold rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer border border-orange-600 shrink-0 flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <Sparkles className="w-4 h-4 text-slate-950 fill-amber-200" />
+                  <span>GURA IFATABUGUZI (2,500 Rwf)</span>
+                </button>
+              )}
+            </div>
+          )}
 
           <form onSubmit={handleGenerateWorksheet} className="space-y-6">
             {errorMsg && (
@@ -588,26 +627,39 @@ export const WorksheetsCreator: React.FC<WorksheetsCreatorProps> = ({
 
             {/* Generate Button */}
             <div className="pt-4 flex justify-center">
-              <button
-                type="submit"
-                disabled={isGenerating}
-                className="w-full sm:w-auto px-12 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-base rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 shrink-0 flex items-center justify-center gap-2.5"
-              >
-                {isGenerating ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5.5 w-5.5 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Generating Worksheet...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-5 h-5 text-amber-300 fill-amber-300" />
-                    <span>Generate Worksheet</span>
-                  </>
-                )}
-              </button>
+              {!user?.isAdmin && !user?.hasPremiumToolsSub && (user?.monthlyWorksheetsCount || 0) >= 5 ? (
+                onOpenSubscription && (
+                  <button
+                    type="button"
+                    onClick={onOpenSubscription}
+                    className="w-full sm:w-auto px-12 py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-slate-950 font-black text-base rounded-2xl shadow-lg hover:shadow-xl transition-all shrink-0 flex items-center justify-center gap-2.5 border border-orange-600 animate-pulse"
+                  >
+                    <Sparkles className="w-5 h-5 text-slate-950 fill-amber-200" />
+                    <span>Get Unlimited Access (2,500 Rwf)</span>
+                  </button>
+                )
+              ) : (
+                <button
+                  type="submit"
+                  disabled={isGenerating}
+                  className="w-full sm:w-auto px-12 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-base rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 shrink-0 flex items-center justify-center gap-2.5"
+                >
+                  {isGenerating ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5.5 w-5.5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Generating Worksheet...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5 text-amber-300 fill-amber-300" />
+                      <span>Generate Worksheet</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </form>
 

@@ -50,8 +50,8 @@ export function generateClientLessonPlan(request: LessonPlanRequest, defaultTeac
         {
           stepName: '2. IBIKORWA BYO KUNGOZA NO KUZAHURA (DIFFERENTIATED REMEDIAL ACTIVITIES)',
           timing: '25 min',
-          teacherActivities: `• Group 1 - Remediation (${request.remedialGroup1Category || 'Abakeneye inyunganira yihariye'}): Mwarimu yikora kuri iki tsinda, abasobanurira umwimerere wa "${lessonTitle}" akoresheje ibikoresho bifatika no kubafasha intambwe ku yindi.\n• Group 2 - Consolidation (${request.remedialGroup2Category || 'Abakomeza ubumenyi'}): Mwarimu aha iki tsinda imyitozo yo gukomeza ubumenyi n'ibibazo byo gukemura mu bwumvikane.\n• Group 3 - Extension (${request.remedialGroup3Category || 'Abihuta / Extension'}): Mwarimu aha iki tsinda ibibazo bitoroshye (high-order challenge problems) no kuba abafasha b'abandi (peer tutors).`,
-          learnerActivities: `• Group 1 (Remediation): Abanyeshuri bafashwa na mwarimu mu buryo bw'umwimerere no gukora imyitozo yoroshye ifasha kuzahura ubumenyi.\n• Group 2 (Consolidation): Abanyeshuri bakora imyitozo yo gukomeza ubumenyi bagasobanurirana mu tsinda.\n• Group 3 (Extension): Abanyeshuri b'abahanga bakora imyitozo yisumbuye gihamya bakagira n'uruhare mu gufasha bagenzi babo.`,
+          teacherActivities: `• Itsinda rya 1 - Kungora (${request.remedialGroup1Category || 'Abakeneye inyunganira yihariye'}): Mwarimu yikora kuri iki tsinda, abasobanurira umwimerere wa "${lessonTitle}" akoresheje ibikoresho bifatika no kubafasha intambwe ku yindi.\n• Itsinda rya 2 - Gukomeza Ubumenyi (${request.remedialGroup2Category || 'Abakomeza ubumenyi'}): Mwarimu aha iki tsinda imyitozo yo gukomeza ubumenyi n'ibibazo byo gukemura mu bwumvikane.\n• Itsinda rya 3 - Kwihuta / Extension (${request.remedialGroup3Category || 'Abihuta / Extension'}): Mwarimu aha iki tsinda ibibazo bitoroshye (high-order challenge problems) no kuba abafasha b'abandi (peer tutors).`,
+          learnerActivities: `• Itsinda rya 1 (Kungora): Abanyeshuri bafashwa na mwarimu mu buryo bw'umwimerere no gukora imyitozo yoroshye ifasha kuzahura ubumenyi.\n• Itsinda rya 2 (Gukomeza Ubumenyi): Abanyeshuri bakora imyitozo yo gukomeza ubumenyi bagasobanurirana mu tsinda.\n• Itsinda rya 3 (Kwihuta / Extension): Abanyeshuri b'abahanga bakora imyitozo yisumbuye gihamya bakagira n'uruhare mu gufasha bagenzi babo.`,
           competencesAndCrossCutting: 'Inyunganira yihariye (Differentiated Remediation), Ubusabane (Cooperation) & Uburinganire muri RLP.'
         },
         {
@@ -184,7 +184,99 @@ export function generateClientLessonPlan(request: LessonPlanRequest, defaultTeac
     ];
   }
 
-  const openFormat = `# LESSON PLAN: ${lessonTitle.toUpperCase()}
+  let openFormat = '';
+  if (isKiny) {
+    openFormat = `# IMBONERAHAMWE Y'ISOMO: ${lessonTitle.toUpperCase()}
+**Isomo:** ${subject} | **Icyasi:** ${grade} | **Itariki:** ${date}
+**Ishuri:** ${school} | **Mwarimu:** ${teacher}
+
+---
+### 1. INCAMAKE Y'ISOMO
+- **Inomero & Umutwe:** Umutwe wa ${unitNo} - ${unitTitle}
+- **Ubushobozi bw'Umutwe:** ${keyCompetence}
+- **Umutwe w'Isomo:** ${lessonTitle} (${lessonNo})
+- **Igihe:** ${duration} | **Umubare w'Abanyeshuri:** ${classSize}
+- **Ibikoresho by'Inyigisho:** ${materials}
+- **Izindi Mfashanyigisho:** ${refs}
+
+---
+### 2. INTEGO Y'ISOMO
+${obj}
+
+---
+### 3. INTAMBWE Z'INNYIGISHO
+${steps.map(s => `#### ${s.stepName} (${s.timing})
+- **Ibikorwa bya Mwarimu:** ${s.teacherActivities}
+- **Ibikorwa by'Abanyeshuri:** ${s.learnerActivities}
+- **Ubushobozi & Inyunganira:** ${s.competencesAndCrossCutting}
+`).join('\n')}
+
+---
+### 4. ISUZUMA-BUMENYI BWA MWARIMU
+*(Rwuzuzwa n'umwarimu nyuma yo kwigisha)*
+`;
+  } else if (isFrench) {
+    openFormat = `# FICHE DE LEÇON: ${lessonTitle.toUpperCase()}
+**Matière:** ${subject} | **Classe:** ${grade} | **Date:** ${date}
+**École:** ${school} | **Enseignant:** ${teacher}
+
+---
+### 1. APERÇU DE LA LEÇON
+- **N° & Titre de l'Unité:** Unité ${unitNo} - ${unitTitle}
+- **Compétence Clé de l'Unité:** ${keyCompetence}
+- **Titre de la Leçon:** ${lessonTitle} (${lessonNo})
+- **Durée:** ${duration} | **Effectif:** ${classSize}
+- **Matériel Didactique:** ${materials}
+- **Références:** ${refs}
+
+---
+### 2. OBJECTIF PÉDAGOGIQUE
+${obj}
+
+---
+### 3. ÉTAPES PÉDAGOGIQUES DÉTAILLÉES
+${steps.map(s => `#### ${s.stepName} (${s.timing})
+- **Activités de l'Enseignant:** ${s.teacherActivities}
+- **Activités des Apprenants:** ${s.learnerActivities}
+- **Compétences & Thèmes Transversaux:** ${s.competencesAndCrossCutting}
+`).join('\n')}
+
+---
+### 4. AUTO-ÉVALUATION DE L'ENSEIGNANT
+*(À remplir après la prestation de la leçon)*
+`;
+  } else if (isSwahili) {
+    openFormat = `# MPANGO WA SOMO: ${lessonTitle.toUpperCase()}
+**Somo:** ${subject} | **Darasa:** ${grade} | **Tarehe:** ${date}
+**Shule:** ${school} | **Mwalimu:** ${teacher}
+
+---
+### 1. MUHTASARI WA SOMO
+- **Nambari & Mada ya Kitengo:** Kitengo ${unitNo} - ${unitTitle}
+- **Uwezo Mkuu wa Kitengo:** ${keyCompetence}
+- **Mada ya Somo:** ${lessonTitle} (${lessonNo})
+- **Muda:** ${duration} | **Idadi ya Wanafunzi:** ${classSize}
+- **Zana za Kufundishia:** ${materials}
+- **Marejeo:** ${refs}
+
+---
+### 2. LENGO LA SOMO
+${obj}
+
+---
+### 3. HATUA ZA SOMO
+${steps.map(s => `#### ${s.stepName} (${s.timing})
+- **Shughuli za Mwalimu:** ${s.teacherActivities}
+- **Shughuli za Wanafunzi:** ${s.learnerActivities}
+- **Uwezo & Masuala Mtambuka:** ${s.competencesAndCrossCutting}
+`).join('\n')}
+
+---
+### 4. TATHMINI BINAFTI YA MWALIMU
+*(Ijazwe na mwalimu baada ya kufundisha)*
+`;
+  } else {
+    openFormat = `# LESSON PLAN: ${lessonTitle.toUpperCase()}
 **Subject:** ${subject} | **Class:** ${grade} | **Date:** ${date}
 **School:** ${school} | **Teacher:** ${teacher}
 
@@ -213,6 +305,7 @@ ${steps.map(s => `#### ${s.stepName} (${s.timing})
 ### 4. TEACHER SELF-EVALUATION
 *(To be completed after lesson delivery)*
 `;
+  }
 
   return {
     id: 'lp_' + Math.random().toString(36).substring(2, 10),
@@ -238,6 +331,17 @@ ${steps.map(s => `#### ${s.stepName} (${s.timing})
       location: request.location || 'In Classroom',
       learningMaterials: materials,
       references: refs,
+      district: request.district || 'N/A',
+      remedialCount: request.remedialCount || '8 learners',
+      consolidationCount: request.consolidationCount || '22 learners',
+      extensionCount: request.extensionCount || '10 learners',
+      remedialGroup1Category: request.remedialGroup1Category || 'Group 1: Remediation (Abakeneye inyunganira yihariye)',
+      remedialGroup2Category: request.remedialGroup2Category || 'Group 2: Consolidation (Abakomeza ubumenyi)',
+      remedialGroup3Category: request.remedialGroup3Category || 'Group 3: Extension (Abihuta / Extension)',
+      remedialGroup4Category: request.remedialGroup4Category || 'Peer tutoring support',
+      mainProblemCategory: request.mainProblemCategory || '',
+      specificChallenges: request.specificChallenges || '',
+      teachingLearningAids: request.teachingLearningAids || materials,
     },
     steps: steps,
     selfEvaluation: '',

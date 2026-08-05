@@ -328,11 +328,35 @@ export const CertificateVerification: React.FC<CertificateVerificationProps> = (
                     <span className="text-slate-400 font-bold block text-[10px] uppercase tracking-wider">
                       {t.school}
                     </span>
-                    <span className="text-sm font-extrabold text-slate-900 block flex items-center gap-1.5">
-                      <Building className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span className="text-sm font-extrabold text-slate-900 block flex items-center gap-2">
+                      {certData.schoolLogo ? (
+                        <img
+                          src={certData.schoolLogo}
+                          alt={certData.schoolName}
+                          className="w-6 h-6 rounded-full object-cover border border-amber-300"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <Building className="w-4 h-4 text-slate-400 shrink-0" />
+                      )}
                       <span>{certData.schoolName}</span>
                     </span>
                   </div>
+
+                  {/* Course Completed */}
+                  {certData.courseName && (
+                    <div className="col-span-1 sm:col-span-2 space-y-1 border-t border-slate-100 pt-3">
+                      <span className="text-slate-400 font-bold block text-[10px] uppercase tracking-wider">
+                        {lang === 'Kinyarwanda' ? "Izina ry'amahugurwa / Gahunda yarangije" : "Completed Course / Training Program"}
+                      </span>
+                      <span className="text-sm font-black text-emerald-900 block flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span className="bg-gradient-to-r from-lime-50 to-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full text-xs font-bold">
+                          {certData.courseName}
+                        </span>
+                      </span>
+                    </div>
+                  )}
 
                   {/* Certificate Title */}
                   <div className="col-span-1 sm:col-span-2 space-y-1 border-t border-slate-100 pt-3">

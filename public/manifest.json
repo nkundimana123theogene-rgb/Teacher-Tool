@@ -1,20 +1,32 @@
 {
   "id": "com.nkorera.education.teacher.app",
   "short_name": "Nkorera Edu",
-  "name": "Nkorera Education - AI Teacher Tool",
+  "name": "Nkorera Education",
   "description": "Nkorera Education - AI Lesson Plan Generator, Nursery Plans, Class Diary & Certificate Creator for Teachers in Rwanda.",
   "icons": [
     {
       "src": "/pwa-192x192.png",
       "type": "image/png",
       "sizes": "192x192",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
     },
     {
       "src": "/pwa-512x512.png",
       "type": "image/png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
     }
   ],
   "screenshots": [

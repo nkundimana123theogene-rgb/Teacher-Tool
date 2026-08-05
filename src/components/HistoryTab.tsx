@@ -19,7 +19,8 @@ import {
   Layers,
   Clock,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  AlertCircle
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -43,6 +44,7 @@ interface HistoryTabProps {
   onDeletePlan: (id: string) => void;
   onUpdatePlanTags?: (planId: string, tags: string[]) => void;
   onNewPlanClick: () => void;
+  onOpenSubscription?: () => void;
 }
 
 const DEFAULT_PRESET_TAGS = [
@@ -74,6 +76,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
   onDeletePlan,
   onUpdatePlanTags,
   onNewPlanClick,
+  onOpenSubscription,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
@@ -225,7 +228,20 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
 
     const subject = (plan.header.subject || '').toLowerCase();
     const classGrade = (plan.header.classGrade || '').toLowerCase();
-    const dateStr = (plan.header.date || new Date(plan.createdAt).toLocaleDateString()).toLowerCase();
+    const dateStr = (plan.header.date || '').toLowerCase();
+    
+    // Comprehensive date matching variations for custom/created dates
+    const dateObj = new Date(plan.createdAt);
+    const formattedCreatedDate = !isNaN(dateObj.getTime())
+      ? dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }).toLowerCase()
+      : '';
+    const formattedShortDate = !isNaN(dateObj.getTime())
+      ? dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).toLowerCase()
+      : '';
+    const formattedCreatedLocale = !isNaN(dateObj.getTime())
+      ? dateObj.toLocaleDateString().toLowerCase()
+      : '';
+
     const lessonTitle = (plan.header.lessonTitle || '').toLowerCase();
     const unitTitle = (plan.header.unitTitle || '').toLowerCase();
     const schoolName = (plan.header.schoolName || '').toLowerCase();
@@ -237,6 +253,9 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
       subject.includes(query) ||
       classGrade.includes(query) ||
       dateStr.includes(query) ||
+      formattedCreatedDate.includes(query) ||
+      formattedShortDate.includes(query) ||
+      formattedCreatedLocale.includes(query) ||
       lessonTitle.includes(query) ||
       unitTitle.includes(query) ||
       schoolName.includes(query) ||
@@ -268,6 +287,147 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
           <Sparkles className="w-4 h-4 text-amber-300" />
           <span>New Lesson Plan</span>
         </button>
+      </div>
+
+      {/* SEARCH & TAG FILTER CONTROLS */}
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+          {/* Search Bar Input */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-3 h-4 w-4 text-emerald-600" />
+            <input
+              type="text"
+              id="history-search-input"
+              placeholder="Search saved plans by title, topic/subject, date, or tags (e.g., 'Forces', 'Physics', 'August 5', 'Exam Prep')..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-9 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white font-semibold text-slate-800 placeholder-slate-400 transition-all shadow-2xs"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200 transition-colors"
+                title="Clear search text"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Subject Filter Select Dropdown */}
+          {availableSubjects.length > 0 && (
+            <div className="relative shrink-0">
+              <select
+                id="history-subject-filter-select"
+                value={selectedSubjectFilter || ''}
+                onChange={(e) => setSelectedSubjectFilter(e.target.value ? e.target.value : null)}
+                className="w-full md:w-auto px-3 py-2.5 text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer transition-all"
+              >
+                <option value="">All Subjects ({savedPlans.length})</option>
+                {availableSubjects.map((sub) => (
+                  <option key={sub} value={sub}>
+                    📚 {sub}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Clear Filters Button */}
+          {(searchQuery || selectedTagFilter || selectedSubjectFilter) && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedTagFilter(null);
+                setSelectedSubjectFilter(null);
+              }}
+              className="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-colors flex items-center justify-center gap-1.5 shrink-0"
+              id="history-clear-all-filters-btn"
+            >
+              <X className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>Clear Filters</span>
+            </button>
+          )}
+        </div>
+
+        {/* Active Filters Summary Badge */}
+        {(searchQuery || selectedTagFilter || selectedSubjectFilter) && (
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold bg-emerald-50/80 p-2.5 rounded-xl border border-emerald-200/80 text-emerald-950">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-extrabold text-[11px] flex items-center gap-1 text-emerald-800">
+                <Filter className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Active Filters:</span>
+              </span>
+              {searchQuery && (
+                <span className="px-2.5 py-0.5 bg-white text-emerald-950 border border-emerald-300 rounded-lg text-[11px] font-bold shadow-2xs">
+                  Title/Search: "{searchQuery}"
+                </span>
+              )}
+              {selectedSubjectFilter && (
+                <span className="px-2.5 py-0.5 bg-white text-emerald-950 border border-emerald-300 rounded-lg text-[11px] font-bold shadow-2xs">
+                  Subject: {selectedSubjectFilter}
+                </span>
+              )}
+              {selectedTagFilter && (
+                <span className="px-2.5 py-0.5 bg-purple-100 text-purple-950 border border-purple-300 rounded-lg text-[11px] font-bold shadow-2xs">
+                  Tag: #{selectedTagFilter}
+                </span>
+              )}
+            </div>
+            <span className="font-black text-[11px] bg-emerald-600 text-white px-3 py-1 rounded-full shadow-2xs shrink-0">
+              {filteredPlans.length} {filteredPlans.length === 1 ? 'Plan Found' : 'Plans Found'}
+            </span>
+          </div>
+        )}
+
+        {/* TAG FILTER CHIPS BAR */}
+        <div className="pt-2 border-t border-slate-100 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+          <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1 shrink-0">
+            <Filter className="w-3 h-3 text-emerald-600" />
+            <span>Filter by Tag:</span>
+          </span>
+
+          <button
+            onClick={() => setSelectedTagFilter(null)}
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0 ${
+              selectedTagFilter === null
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            All Plans ({savedPlans.length})
+          </button>
+
+          {availableFilterTags.map((tag) => {
+            const count = savedPlans.filter((p) => (p.tags || []).includes(tag)).length;
+            const isSelected = selectedTagFilter === tag;
+            return (
+              <button
+                key={tag}
+                onClick={() => setSelectedTagFilter(isSelected ? null : tag)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 shrink-0 ${
+                  isSelected
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : count > 0
+                    ? 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
+                    : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <Tag className="w-3 h-3" />
+                <span>#{tag}</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${
+                    isSelected ? 'bg-emerald-800 text-emerald-100' : 'bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* VISUAL DASHBOARD: LESSON PLAN TRENDS & PRODUCTIVITY */}
@@ -539,147 +699,6 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
         )}
       </div>
 
-      {/* SEARCH & TAG FILTER CONTROLS */}
-      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-          {/* Search Bar Input */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-3 h-4 w-4 text-emerald-600" />
-            <input
-              type="text"
-              id="history-search-input"
-              placeholder="Search saved lesson plans by title, subject, or tags (e.g., 'Calculus', 'Mathematics', 'Exam Prep')..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-9 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white font-semibold text-slate-800 placeholder-slate-400 transition-all shadow-2xs"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200 transition-colors"
-                title="Clear search text"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-
-          {/* Subject Filter Select Dropdown */}
-          {availableSubjects.length > 0 && (
-            <div className="relative shrink-0">
-              <select
-                id="history-subject-filter-select"
-                value={selectedSubjectFilter || ''}
-                onChange={(e) => setSelectedSubjectFilter(e.target.value ? e.target.value : null)}
-                className="w-full md:w-auto px-3 py-2.5 text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer transition-all"
-              >
-                <option value="">All Subjects ({savedPlans.length})</option>
-                {availableSubjects.map((sub) => (
-                  <option key={sub} value={sub}>
-                    📚 {sub}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Clear Filters Button */}
-          {(searchQuery || selectedTagFilter || selectedSubjectFilter) && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedTagFilter(null);
-                setSelectedSubjectFilter(null);
-              }}
-              className="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-colors flex items-center justify-center gap-1.5 shrink-0"
-              id="history-clear-all-filters-btn"
-            >
-              <X className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Clear Filters</span>
-            </button>
-          )}
-        </div>
-
-        {/* Active Filters Summary Badge */}
-        {(searchQuery || selectedTagFilter || selectedSubjectFilter) && (
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold bg-emerald-50/80 p-2.5 rounded-xl border border-emerald-200/80 text-emerald-950">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-extrabold text-[11px] flex items-center gap-1 text-emerald-800">
-                <Filter className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Active Filters:</span>
-              </span>
-              {searchQuery && (
-                <span className="px-2.5 py-0.5 bg-white text-emerald-950 border border-emerald-300 rounded-lg text-[11px] font-bold shadow-2xs">
-                  Title/Search: "{searchQuery}"
-                </span>
-              )}
-              {selectedSubjectFilter && (
-                <span className="px-2.5 py-0.5 bg-white text-emerald-950 border border-emerald-300 rounded-lg text-[11px] font-bold shadow-2xs">
-                  Subject: {selectedSubjectFilter}
-                </span>
-              )}
-              {selectedTagFilter && (
-                <span className="px-2.5 py-0.5 bg-purple-100 text-purple-950 border border-purple-300 rounded-lg text-[11px] font-bold shadow-2xs">
-                  Tag: #{selectedTagFilter}
-                </span>
-              )}
-            </div>
-            <span className="font-black text-[11px] bg-emerald-600 text-white px-3 py-1 rounded-full shadow-2xs shrink-0">
-              {filteredPlans.length} {filteredPlans.length === 1 ? 'Plan Found' : 'Plans Found'}
-            </span>
-          </div>
-        )}
-
-        {/* TAG FILTER CHIPS BAR */}
-        <div className="pt-2 border-t border-slate-100 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
-          <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1 shrink-0">
-            <Filter className="w-3 h-3 text-emerald-600" />
-            <span>Filter by Tag:</span>
-          </span>
-
-          <button
-            onClick={() => setSelectedTagFilter(null)}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0 ${
-              selectedTagFilter === null
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            All Plans ({savedPlans.length})
-          </button>
-
-          {availableFilterTags.map((tag) => {
-            const count = savedPlans.filter((p) => (p.tags || []).includes(tag)).length;
-            const isSelected = selectedTagFilter === tag;
-            return (
-              <button
-                key={tag}
-                onClick={() => setSelectedTagFilter(isSelected ? null : tag)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 shrink-0 ${
-                  isSelected
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : count > 0
-                    ? 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
-                    : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-200'
-                }`}
-              >
-                <Tag className="w-3 h-3" />
-                <span>#{tag}</span>
-                <span
-                  className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${
-                    isSelected ? 'bg-emerald-800 text-emerald-100' : 'bg-slate-200 text-slate-700'
-                  }`}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* PLANS GRID */}
       {filteredPlans.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center max-w-md mx-auto space-y-4 shadow-xs">
@@ -706,21 +725,38 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
           {filteredPlans.map((plan) => {
             const planTags = plan.tags || [];
             const isEditingThisCard = editingTagPlanId === plan.id;
+            const isExpired = (() => {
+              if (!plan.createdAt) return false;
+              const planDate = new Date(plan.createdAt);
+              const now = new Date();
+              return planDate.getFullYear() < now.getFullYear() || 
+                     (planDate.getFullYear() === now.getFullYear() && planDate.getMonth() < now.getMonth());
+            })();
 
             return (
               <div
                 key={plan.id}
-                className="bg-white p-5 rounded-2xl border border-slate-200 hover:border-emerald-300 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                className={`bg-white p-5 rounded-2xl border transition-all flex flex-col justify-between hover:shadow-md ${
+                  isExpired ? 'border-rose-200 hover:border-rose-300' : 'border-slate-200 hover:border-emerald-300 shadow-xs'
+                }`}
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-700 border border-slate-200">
                         {plan.language}
                       </span>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                        (Saved)
-                      </span>
+                      {isExpired ? (
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1 shadow-2xs">
+                          <AlertCircle className="w-3 h-3 text-rose-500 shrink-0" />
+                          <span>Expired (End of Month)</span>
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+                          <span>Active Plan</span>
+                        </span>
+                      )}
                     </div>
                     <span className="text-[11px] text-slate-400 flex items-center gap-1 shrink-0">
                       <Calendar className="w-3 h-3" />
@@ -861,23 +897,35 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                   </div>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <button
-                    onClick={() => onSelectPlan(plan)}
-                    className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
-                    id={`view-saved-plan-${plan.id}`}
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>View &amp; Print</span>
-                  </button>
+                <div className="mt-5 pt-3 border-t border-slate-100 flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      onClick={() => onSelectPlan(plan)}
+                      className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                      id={`view-saved-plan-${plan.id}`}
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>View &amp; Print</span>
+                    </button>
 
-                  <button
-                    onClick={() => onDeletePlan(plan.id)}
-                    className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors"
-                    title="Delete saved plan"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    <button
+                      onClick={() => onDeletePlan(plan.id)}
+                      className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors"
+                      title="Delete saved plan"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {isExpired && onOpenSubscription && (
+                    <button
+                      onClick={onOpenSubscription}
+                      className="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-xs hover:shadow-md border border-orange-400 transition-all cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 fill-slate-950 text-slate-950" />
+                      <span>Renew Access</span>
+                    </button>
+                  )}
                 </div>
               </div>
             );

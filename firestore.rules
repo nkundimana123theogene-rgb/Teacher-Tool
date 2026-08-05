@@ -36,5 +36,10 @@ service cloud.firestore {
     match /classDiaries/{diaryId} {
       allow read, write: if true;
     }
+
+    // Tutorials Collection Matcher
+    match /tutorials/{tutorialId} {
+      allow read, write: if true;
+    }
   }
 }

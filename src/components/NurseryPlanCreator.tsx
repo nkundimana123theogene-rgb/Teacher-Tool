@@ -16,6 +16,7 @@ import {
   UserProfile,
   LanguageOption
 } from '../types';
+import { processLessonPlanStreamSafely } from '../utils/lessonPlanGenerator';
 
 interface NurseryPlanCreatorProps {
   user: UserProfile | null;
@@ -116,29 +117,66 @@ export const NurseryPlanCreator: React.FC<NurseryPlanCreatorProps> = ({
 
     try {
       const token = localStorage.getItem('tegura_session_token') || localStorage.getItem('nkorera_session_token');
-      const response = await fetch('/api/generate-lesson-plan', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ request: requestPayload, userEmail: user.email }),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData?.error || 'Failed to generate. Please check quota or network and try again.');
+      let response: Response | null = null;
+      try {
+        response = await fetch('/api/generate-lesson-plan', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ request: requestPayload, userEmail: user.email }),
+          signal: controller.signal,
+        });
+      } catch (fetchErr) {
+        console.warn('Network request failed or timed out for nursery plan:', fetchErr);
+      } finally {
+        clearTimeout(timeoutId);
       }
 
-      const responseData = await response.json();
-      const finalPlan: LessonPlanData = responseData.lessonPlan || responseData;
+      let finalPlan: LessonPlanData | null = null;
+      if (response) {
+        if (response.ok) {
+          const responseData = await response.json().catch(() => null);
+          if (responseData) {
+            finalPlan = responseData.lessonPlan || responseData;
+          }
+        } else {
+          let errData: any = {};
+          try {
+            errData = await response.json();
+          } catch (_) {}
+          if (errData.code === 'QUOTA_EXCEEDED') {
+            setErrorMsg('Monthly quota exceeded (0 plans remaining). Please purchase a package or upgrade your subscription to continue.');
+            if (onOpenSubscription) onOpenSubscription();
+            setIsGenerating(false);
+            return;
+          } else if (errData.code === 'ACCOUNT_BLOCKED') {
+            setErrorMsg(errData.error || 'Konti yawe yahagaritswe.');
+            setIsGenerating(false);
+            return;
+          } else if (errData.code === 'DAILY_LIMIT_EXCEEDED') {
+            setErrorMsg(errData.error || 'Ntabwo wemerewe gukora lesson plans zirenga 3 ku munsi. Koresha izo wakoze cyangwa utegereze ejo.');
+            setIsGenerating(false);
+            return;
+          }
+        }
+      }
 
-      if (onSavePlan) {
+      if (!finalPlan) {
+        finalPlan = await processLessonPlanStreamSafely(null, requestPayload, user.name || 'Teacher');
+      }
+
+      if (finalPlan && onSavePlan) {
         onSavePlan(finalPlan);
       }
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err?.message || 'Failed to generate nursery lesson plan. Please try again.');
+      const fallbackPlan = await processLessonPlanStreamSafely(null, requestPayload, user.name || 'Teacher');
+      if (onSavePlan) onSavePlan(fallbackPlan);
     } finally {
       setIsGenerating(false);
     }

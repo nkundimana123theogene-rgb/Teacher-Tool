@@ -36,6 +36,15 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { CertificateData, CertificateRequest, UserProfile, LanguageOption } from '../types';
+import { PrintPreviewModal, PrintSettings } from './PrintPreviewModal';
+
+import adultMaleGraduateImg from '../assets/images/adult_male_graduate_1785745686643.jpg';
+import adultFemaleGraduateImg from '../assets/images/adult_female_graduate_1785745702125.jpg';
+import childMaleGraduateImg from '../assets/images/child_male_graduate_1785745716166.jpg';
+import childFemaleGraduateImg from '../assets/images/child_female_graduate_1785745730565.jpg';
+import academicBookCapPenImg from '../assets/images/academic_book_cap_pen_1785746328256.jpg';
+import academicEmblemLogoImg from '../assets/images/academic_emblem_logo_1785746621671.jpg';
+import specialCoachP6LogoImg from '../assets/images/special_coach_p6_logo_1785752450167.jpg';
 
 interface CertificateCreatorProps {
   user: UserProfile | null;
@@ -135,6 +144,10 @@ const CERT_I18N: Record<LanguageOption, {
   genderAuto: string;
   genderFemale: string;
   genderMale: string;
+  labelAgeGroup?: string;
+  ageAuto?: string;
+  ageChild?: string;
+  ageAdult?: string;
   secFrameStyle: string;
   styleLimeLabel: string;
   styleLimeDesc: string;
@@ -212,16 +225,20 @@ const CERT_I18N: Record<LanguageOption, {
     sec3Signatories: "3. Abashyiraho Umukono n'Itariki (Signatories & Date)",
     labelIssuer1: "Umukono 1 - Izina (Signatory 1)",
     placeIssuer1Name: "Urugero: NKUNDIMANA Theogene",
-    placeIssuer1Title: "Urugero: Head Teacher / Director",
+    placeIssuer1Title: "Urugero: Director / Headteacher",
     labelIssuer2: "Umukono 2 - Izina (Signatory 2)",
     placeIssuer2Name: "Urugero: Uwimana Marie Rose",
-    placeIssuer2Title: "Urugero: Director of Studies (DOS)",
+    placeIssuer2Title: "Urugero: Director in Charge of Deputy of Study (DOS)",
     labelDate: "Itariki y'Icyemezo (Issue Date)",
     labelLanguage: "Guhitamo Ururimi (Language)",
-    labelGender: "Ubwoko bw'Ishusho (Graduate Avatar)",
+    labelGender: "Ubwoko bw'Ishusho (Graduate Gender)",
     genderAuto: "Guhitamo ku buryo bwikora (Auto Detect)",
-    genderFemale: "Umukobwa Yambaye Ikanzu n'Ingofero (Girl)",
-    genderMale: "Umuhungu Yambaye Ikanzu n'Ingofero (Boy)",
+    genderFemale: "Umukobwa/Umugore (Female Graduate)",
+    genderMale: "Umuhungu/Umugabo (Male Graduate)",
+    labelAgeGroup: "Urwego ry'Imyaka / Persona (Age Group)",
+    ageAuto: "Auto Detect (Umwana / Mukuru)",
+    ageChild: "Umwana w'Icyana (Child Learner - P1-P6)",
+    ageAdult: "Mukuru (Adult Student / Educator - S1-S6/Teacher)",
     secFrameStyle: "Uburyo bw'Ikarita (Frame & Border Style)",
     styleLimeLabel: "Lime & Gold Luxury Frame",
     styleLimeDesc: "Ikarita ya zahabu n'icyatsi kibisi kizira amakemwa",
@@ -290,16 +307,20 @@ const CERT_I18N: Record<LanguageOption, {
     sec3Signatories: "3. Signatories & Issue Date",
     labelIssuer1: "Signatory 1 Name & Title",
     placeIssuer1Name: "e.g. NKUNDIMANA Theogene",
-    placeIssuer1Title: "e.g. Head Teacher / Principal",
+    placeIssuer1Title: "e.g. Director / Headteacher",
     labelIssuer2: "Signatory 2 Name & Title",
     placeIssuer2Name: "e.g. Uwimana Marie Rose",
-    placeIssuer2Title: "e.g. Director of Studies (DOS)",
+    placeIssuer2Title: "e.g. Director in Charge of Deputy of Study (DOS)",
     labelDate: "Issue Date",
     labelLanguage: "Certificate Language",
-    labelGender: "Graduate Graphic (Cap & Gown)",
+    labelGender: "Graduate Gender",
     genderAuto: "Auto-detect from Name",
-    genderFemale: "Female Graduate (Girl)",
-    genderMale: "Male Graduate (Boy)",
+    genderFemale: "Female Graduate (Girl / Woman)",
+    genderMale: "Male Graduate (Boy / Man)",
+    labelAgeGroup: "Graduate Age Group & Persona",
+    ageAuto: "Auto Detect (Child / Adult)",
+    ageChild: "Child Graduate (Primary/Nursery)",
+    ageAdult: "Adult Graduate (Secondary/Teacher)",
     secFrameStyle: "Frame & Border Style",
     styleLimeLabel: "Lime & Gold Luxury Frame",
     styleLimeDesc: "Elegant gold and fresh green luxury border",
@@ -368,16 +389,20 @@ const CERT_I18N: Record<LanguageOption, {
     sec3Signatories: "3. Signataires & Date de Délivrance",
     labelIssuer1: "Signataire 1 Nom & Titre",
     placeIssuer1Name: "ex: NKUNDIMANA Theogene",
-    placeIssuer1Title: "ex: Directeur de l'Établissement",
+    placeIssuer1Title: "ex: Director / Headteacher",
     labelIssuer2: "Signataire 2 Nom & Titre",
     placeIssuer2Name: "ex: Uwimana Marie Rose",
-    placeIssuer2Title: "ex: Directeur des Études (DOS)",
+    placeIssuer2Title: "ex: Director in Charge of Deputy of Study (DOS)",
     labelDate: "Date de Délivrance",
     labelLanguage: "Langue du Certificat",
-    labelGender: "Graphique du Diplômé (Toque & Toge)",
+    labelGender: "Genre du Diplômé",
     genderAuto: "Détection automatique d'après le nom",
-    genderFemale: "Diplômée (Fille)",
-    genderMale: "Diplômé (Garçon)",
+    genderFemale: "Diplômée (Fille / Femme)",
+    genderMale: "Diplômé (Garçon / Homme)",
+    labelAgeGroup: "Tranche d'Âge du Diplômé",
+    ageAuto: "Détection auto (Enfant / Adulte)",
+    ageChild: "Diplômé Enfant (Primaire)",
+    ageAdult: "Diplômé Adulte (Secondaire/Enseignant)",
     secFrameStyle: "Style du Cadre & Bordure",
     styleLimeLabel: "Cadre Luxueux Vert & Or",
     styleLimeDesc: "Bordure dorée élégante et vert éclatant",
@@ -446,16 +471,20 @@ const CERT_I18N: Record<LanguageOption, {
     sec3Signatories: "3. Sahihi na Tarehe ya Kutolewa",
     labelIssuer1: "Sahihi 1 Jina na Cheo",
     placeIssuer1Name: "mf. NKUNDIMANA Theogene",
-    placeIssuer1Title: "mf. Mwalimu Mkuu / Mkurugenzi",
+    placeIssuer1Title: "mf. Director / Headteacher",
     labelIssuer2: "Sahihi 2 Jina na Cheo",
     placeIssuer2Name: "mf. Uwimana Marie Rose",
-    placeIssuer2Title: "mf. Mkurugenzi wa Masomo (DOS)",
+    placeIssuer2Title: "mf. Director in Charge of Deputy of Study (DOS)",
     labelDate: "Tarehe ya Kutolewa",
     labelLanguage: "Lugha ya Cheti",
-    labelGender: "Picha ya Mhitimu (Kofia na Joho)",
+    labelGender: "Jinsia ya Mhitimu",
     genderAuto: "Tambua jinsia kutoka kwa jina",
-    genderFemale: "Mhitimu wa Kike (Msichana)",
-    genderMale: "Mhitimu wa Kiume (Mvulana)",
+    genderFemale: "Mhitimu wa Kike (Msichana / Mwanamke)",
+    genderMale: "Mhitimu wa Kiume (Mvulana / Mwanamume)",
+    labelAgeGroup: "Kiwango cha Umri cha Mhitimu",
+    ageAuto: "Baini Kiotomatiki (Mtoto / Mtu mzima)",
+    ageChild: "Mhitimu Mtoto (Shule ya Msingi)",
+    ageAdult: "Mhitimu Mtu mzima (Sekondari/Mwalimu)",
     secFrameStyle: "Muundo wa Pambizo (Frame Style)",
     styleLimeLabel: "Pambizo la Kifahari la Dhahabu na Kijani",
     styleLimeDesc: "Pambizo zuri la kifahari la dhahabu na kijani kibichi",
@@ -577,6 +606,49 @@ export const MaleGraduateSvg: React.FC<{ className?: string }> = ({ className = 
     <path d="M50 23C44 24 38 28 36 31" stroke="#FBBF24" strokeWidth="1" fill="none" />
     <rect x="34" y="31" width="3" height="6" fill="#FBBF24" rx="0.5" />
   </svg>
+);
+
+// Beautiful Academic Shield Crest/Logo
+export const SchoolCrestSvg: React.FC<{ className?: string }> = ({ className = "w-10 h-10" }) => (
+  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M50 10 L15 25 L15 55 C15 75 35 90 50 95 C65 90 85 75 85 55 L85 25 L50 10 Z" fill="#047857" stroke="#F59E0B" strokeWidth="4"/>
+    <path d="M50 15 L20 28 L20 54 C20 71 37 84 50 89 C63 84 80 71 80 54 L80 28 L50 15 Z" fill="#065F46"/>
+    {/* Book inside */}
+    <path d="M35 55 C42 52 48 55 50 58 C52 55 58 52 65 55 L65 40 C58 37 52 40 50 43 C48 40 42 37 35 40 Z" fill="#FBBF24" stroke="#FFFFFF" strokeWidth="1.5"/>
+    <path d="M50 43 L50 58" stroke="#FFFFFF" strokeWidth="1.5"/>
+    {/* Star inside */}
+    <polygon points="50,23 53,30 60,30 55,34 57,41 50,37 43,41 45,34 40,30 47,30" fill="#FBBF24"/>
+  </svg>
+);
+
+// Beautiful Realistic Ink Stamp/Seal
+export const OfficialStampSvg: React.FC<{ text?: string; date?: string; color?: string; className?: string }> = ({
+  text = "NKORERA EDUCATION",
+  date = "2026",
+  color = "#1d4ed8",
+  className = "w-16 h-16"
+}) => (
+  <div className={`relative flex items-center justify-center shrink-0 ${className}`}>
+    {/* Outer circle with dash */}
+    <div className="absolute inset-0 rounded-full border border-dashed animate-[spin_40s_linear_infinite]" style={{ borderColor: color }} />
+    {/* Inner circle */}
+    <div className="absolute inset-1 rounded-full border-2 border-double flex flex-col items-center justify-center text-center p-0.5 select-none" style={{ borderColor: color, color }}>
+      <span className="text-[4px] font-black uppercase tracking-tight leading-none text-center block w-10 truncate" style={{ fontSize: '3.5px' }}>
+        {text}
+      </span>
+      <span className="text-[5px] font-black leading-none mt-0.5 block tracking-widest">
+        OFFICIAL
+      </span>
+      <div className="w-6 h-[0.5px] my-0.5" style={{ backgroundColor: color }} />
+      <span className="text-[4px] font-bold leading-none block">
+        {date}
+      </span>
+    </div>
+    {/* Diagonal Approved label overlay */}
+    <span className="absolute rotate-12 bg-white/95 border px-1 py-0.5 text-[4px] font-black uppercase tracking-wider rounded-xs shadow-2xs leading-none" style={{ borderColor: color, color, fontSize: '4.5px' }}>
+      APPROVED
+    </span>
+  </div>
 );
 
 export const detectGenderFromName = (name: string): 'male' | 'female' => {
@@ -784,6 +856,118 @@ export const detectGenderFromName = (name: string): 'male' | 'female' => {
   return 'male';
 };
 
+export const detectAgeGroup = (role: string = '', category: string = ''): 'child' | 'adult' => {
+  const lowerRole = role.toLowerCase().trim();
+  
+  const childPatterns = [
+    /\bprimary\b/i,
+    /\bp[1-6]\b/i,
+    /\bnursery\b/i,
+    /\bkindergarten\b/i,
+    /\bbaby\b/i,
+    /\bmiddle\b/i,
+    /\btop class\b/i,
+    /\bchild\b/i,
+    /\bkid\b/i,
+    /\bumwana\b/i,
+    /\bstd\s*[1-6]\b/i,
+    /\bgrade\s*[1-6]\b/i,
+    /\beleve primary\b/i,
+    /\blearner - p\b/i,
+    /\bp\.?[1-6]\b/i
+  ];
+
+  const adultPatterns = [
+    /\bteacher\b/i,
+    /\beducator\b/i,
+    /\bheadteacher\b/i,
+    /\bdirector\b/i,
+    /\bcoach\b/i,
+    /\bcpd\b/i,
+    /\bprof\b/i,
+    /\bmukuru\b/i,
+    /\badult\b/i,
+    /\bsenior\b/i,
+    /\bs[1-6]\b/i,
+    /\bsecondary\b/i,
+    /\buniversity\b/i,
+    /\btvet\b/i,
+    /\bcollege\b/i
+  ];
+
+  for (const pattern of childPatterns) {
+    if (pattern.test(lowerRole)) return 'child';
+  }
+  for (const pattern of adultPatterns) {
+    if (pattern.test(lowerRole)) return 'adult';
+  }
+
+  if (category === 'teacher_cpd' || category === 'special_coach') return 'adult';
+
+  return 'adult';
+};
+
+export const getGraduateAvatarInfo = (
+  name: string = '',
+  role: string = '',
+  category: string = '',
+  genderSetting: 'male' | 'female' | 'academic_emblem' | 'special_coach_logo' | 'auto' = 'auto',
+  ageGroupSetting: 'child' | 'adult' | 'auto' = 'auto'
+): { url: string; gender: string; ageGroup: string; label: string } => {
+  if (genderSetting === 'special_coach_logo') {
+    return {
+      url: specialCoachP6LogoImg,
+      gender: 'special_coach_logo',
+      ageGroup: 'all',
+      label: "Special Coach for Primary Logo"
+    };
+  }
+
+  if (genderSetting === 'academic_emblem') {
+    return {
+      url: academicEmblemLogoImg,
+      gender: 'academic_emblem',
+      ageGroup: 'all',
+      label: "Igitabo, Ikaramu n'Ingofero (Academic Seal Emblem Logo)"
+    };
+  }
+
+  // Default when set to auto
+  if (genderSetting === 'auto') {
+    if (category === 'special_coach') {
+      return {
+        url: specialCoachP6LogoImg,
+        gender: 'special_coach_logo',
+        ageGroup: 'all',
+        label: "Special Coach for Primary Logo"
+      };
+    }
+    return {
+      url: academicEmblemLogoImg,
+      gender: 'academic_emblem',
+      ageGroup: 'all',
+      label: "Igitabo, Ikaramu n'Ingofero (Academic Seal Emblem Logo)"
+    };
+  }
+
+  const activeGender = genderSetting;
+  const activeAge = ageGroupSetting === 'auto' ? detectAgeGroup(role, category) : ageGroupSetting;
+
+  if (activeAge === 'child') {
+    if (activeGender === 'female') {
+      return { url: childFemaleGraduateImg, gender: 'female', ageGroup: 'child', label: "AI Child Female Graduate (Umwana w'Umukobwa)" };
+    } else {
+      return { url: childMaleGraduateImg, gender: 'male', ageGroup: 'child', label: "AI Child Male Graduate (Umwana w'Umuhungu)" };
+    }
+  } else {
+    if (activeGender === 'female') {
+      return { url: adultFemaleGraduateImg, gender: 'female', ageGroup: 'adult', label: "AI Adult Female Graduate (Mukuru w'Umukobwa/Umugore)" };
+    } else {
+      return { url: adultMaleGraduateImg, gender: 'male', ageGroup: 'adult', label: "AI Adult Male Graduate (Mukuru w'Umuhungu/Umugabo)" };
+    }
+  }
+};
+
 export const CertificateCreator: React.FC<CertificateCreatorProps> = ({
   user,
   selectedLanguage,
@@ -798,22 +982,117 @@ export const CertificateCreator: React.FC<CertificateCreatorProps> = ({
   const [category, setCategory] = useState<'student_academic' | 'student_discipline' | 'remedial_progress' | 'teacher_cpd' | 'stem_award' | 'special_coach' | 'custom'>('student_academic');
   const [recipientName, setRecipientName] = useState('Mukamana Angelique');
   const [recipientRole, setRecipientRole] = useState('Learner - Senior 3 A');
-  const [schoolName, setSchoolName] = useState('G.S. Saint André Kigali');
+  const [schoolName, setSchoolName] = useState(() => {
+    try {
+      return localStorage.getItem('cert_school_name') || 'G.S. Saint André Kigali';
+    } catch (e) {
+      return 'G.S. Saint André Kigali';
+    }
+  });
   const [certificateTitle, setCertificateTitle] = useState('CERTIFICATE OF ACADEMIC EXCELLENCE');
   const [citationText, setCitationText] = useState('');
   const [issueDate, setIssueDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [issuer1Name, setIssuer1Name] = useState('NKUNDIMANA Theogene');
-  const [issuer1Title, setIssuer1Title] = useState('Head Teacher / Director');
-  const [issuer2Name, setIssuer2Name] = useState('Uwimana Marie Rose');
-  const [issuer2Title, setIssuer2Title] = useState('Director of Studies (DOS)');
+  const [issuer1Name, setIssuer1Name] = useState(() => {
+    try {
+      return localStorage.getItem('cert_issuer1_name') || 'NKUNDIMANA Theogene';
+    } catch (e) {
+      return 'NKUNDIMANA Theogene';
+    }
+  });
+  const [issuer1Title, setIssuer1Title] = useState(() => {
+    try {
+      return localStorage.getItem('cert_issuer1_title') || 'Director / Headteacher';
+    } catch (e) {
+      return 'Director / Headteacher';
+    }
+  });
+  const [issuer2Name, setIssuer2Name] = useState(() => {
+    try {
+      return localStorage.getItem('cert_issuer2_name') || 'Uwimana Marie Rose';
+    } catch (e) {
+      return 'Uwimana Marie Rose';
+    }
+  });
+  const [issuer2Title, setIssuer2Title] = useState(() => {
+    try {
+      return localStorage.getItem('cert_issuer2_title') || 'Director in Charge of Deputy of Study (DOS)';
+    } catch (e) {
+      return 'Director in Charge of Deputy of Study (DOS)';
+    }
+  });
+  const [issuer3Name, setIssuer3Name] = useState(() => {
+    try {
+      return localStorage.getItem('cert_issuer3_name') || '';
+    } catch (e) {
+      return '';
+    }
+  });
+  const [issuer3Title, setIssuer3Title] = useState(() => {
+    try {
+      return localStorage.getItem('cert_issuer3_title') || 'Teacher';
+    } catch (e) {
+      return 'Teacher';
+    }
+  });
   const [borderStyle, setBorderStyle] = useState<'lime_gold_luxury' | 'reb_academic' | 'modern_emerald_lime'>('lime_gold_luxury');
-  const [gender, setGender] = useState<'male' | 'female' | 'auto'>('auto');
+  const [gender, setGender] = useState<'male' | 'female' | 'academic_emblem' | 'special_coach_logo' | 'auto'>('academic_emblem');
+  const [ageGroup, setAgeGroup] = useState<'child' | 'adult' | 'auto'>('auto');
   const [recipientPhoto, setRecipientPhoto] = useState<string>('');
+  const [courseName, setCourseName] = useState('Web Development');
+  const [schoolLogo, setSchoolLogo] = useState<string>(() => {
+    try {
+      return localStorage.getItem('cert_school_logo') || '';
+    } catch (e) {
+      return '';
+    }
+  });
+  const [issuer1Signature, setIssuer1Signature] = useState<string>(() => {
+    try {
+      return localStorage.getItem('cert_issuer1_signature') || '';
+    } catch (e) {
+      return '';
+    }
+  });
+  const [issuer2Signature, setIssuer2Signature] = useState<string>(() => {
+    try {
+      return localStorage.getItem('cert_issuer2_signature') || '';
+    } catch (e) {
+      return '';
+    }
+  });
+  const [issuer3Signature, setIssuer3Signature] = useState<string>(() => {
+    try {
+      return localStorage.getItem('cert_issuer3_signature') || '';
+    } catch (e) {
+      return '';
+    }
+  });
+  const [useCursiveSignatures, setUseCursiveSignatures] = useState<boolean>(true);
+
+  // Auto-save signatory & school details to localStorage for persistent session usage
+  useEffect(() => {
+    try {
+      localStorage.setItem('cert_school_name', schoolName);
+      localStorage.setItem('cert_issuer1_name', issuer1Name);
+      localStorage.setItem('cert_issuer1_title', issuer1Title);
+      localStorage.setItem('cert_issuer2_name', issuer2Name);
+      localStorage.setItem('cert_issuer2_title', issuer2Title);
+      localStorage.setItem('cert_issuer3_name', issuer3Name);
+      localStorage.setItem('cert_issuer3_title', issuer3Title);
+      localStorage.setItem('cert_school_logo', schoolLogo);
+      localStorage.setItem('cert_issuer1_signature', issuer1Signature);
+      localStorage.setItem('cert_issuer2_signature', issuer2Signature);
+      localStorage.setItem('cert_issuer3_signature', issuer3Signature);
+    } catch (e) {
+      console.warn("Failed to auto-save certificate settings:", e);
+    }
+  }, [schoolName, issuer1Name, issuer1Title, issuer2Name, issuer2Title, issuer3Name, issuer3Title, schoolLogo, issuer1Signature, issuer2Signature, issuer3Signature]);
 
   // UI States
   const [activeView, setActiveView] = useState<'create' | 'preview' | 'history' | 'verify' | 'qr-badge'>('create');
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [showPrintPreviewModal, setShowPrintPreviewModal] = useState(false);
   const [currentCert, setCurrentCert] = useState<CertificateData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusNotice, setStatusNotice] = useState<{ type: 'success' | 'info'; text: string } | null>(null);
@@ -825,6 +1104,32 @@ export const CertificateCreator: React.FC<CertificateCreatorProps> = ({
   const [passcodeError, setPasscodeError] = useState<string | null>(null);
 
   const isCertDownloadUnlocked = Boolean(user?.isAdmin || user?.canDownloadCertificate || isUnlockedLocally);
+
+  const loadCertificateToForm = (cert: CertificateData) => {
+    setCategory(cert.category);
+    setRecipientName(cert.recipientName);
+    setRecipientRole(cert.recipientRole || '');
+    setSchoolName(cert.schoolName);
+    setCertificateTitle(cert.certificateTitle);
+    setCitationText(cert.citationText);
+    setIssueDate(cert.issueDate);
+    setIssuer1Name(cert.issuer1Name);
+    setIssuer1Title(cert.issuer1Title);
+    setIssuer2Name(cert.issuer2Name || '');
+    setIssuer2Title(cert.issuer2Title || '');
+    setIssuer3Name(cert.issuer3Name || '');
+    setIssuer3Title(cert.issuer3Title || '');
+    setBorderStyle(cert.borderStyle);
+    setGender(cert.gender || 'auto');
+    setAgeGroup(cert.ageGroup || 'auto');
+    setRecipientPhoto(cert.recipientPhoto || '');
+    setCourseName(cert.courseName || 'Web Development');
+    setSchoolLogo(cert.schoolLogo || '');
+    setIssuer1Signature(cert.issuer1Signature || '');
+    setIssuer2Signature(cert.issuer2Signature || '');
+    setIssuer3Signature(cert.issuer3Signature || '');
+    setUseCursiveSignatures(cert.useCursiveSignatures !== false);
+  };
 
   // QR Badge Utility States
   const [qrType, setQrType] = useState<'certificate' | 'report' | 'custom'>('certificate');
@@ -1038,6 +1343,7 @@ export const CertificateCreator: React.FC<CertificateCreatorProps> = ({
         lang === 'Swahili' ? "CHETI CHA KOCHA MAALUM" :
         "CERTIFICATE OF SPECIAL COACH"
       );
+      setGender('special_coach_logo');
     } else {
       setCertificateTitle(
         lang === 'Kinyarwanda' ? "ICYEMEZO CY'ICYUBAHIRO" :
@@ -1093,7 +1399,9 @@ Write 2-3 formal elegant sentences honoring their achievement. Output ONLY the c
     e.preventDefault();
     if (!recipientName.trim() || !schoolName.trim()) return;
 
-    const certNum = 'CERT-' + Math.floor(100000 + Math.random() * 900000);
+    const year = new Date(issueDate).getFullYear() || 2026;
+    const serialNum = String(Math.floor(100000 + Math.random() * 900000)).padStart(6, '0');
+    const certNum = `CERT-${year}-${serialNum}`;
 
     const newCert: CertificateData = {
       id: 'cert_' + Date.now(),
@@ -1110,11 +1418,20 @@ Write 2-3 formal elegant sentences honoring their achievement. Output ONLY the c
       issuer1Title: issuer1Title.trim(),
       issuer2Name: issuer2Name.trim(),
       issuer2Title: issuer2Title.trim(),
+      issuer3Name: issuer3Name.trim(),
+      issuer3Title: issuer3Title.trim(),
       borderStyle,
       language: lang,
       gender,
+      ageGroup,
       recipientPhoto: recipientPhoto || undefined,
-      userEmail: user?.email
+      userEmail: user?.email,
+      courseName: courseName.trim(),
+      schoolLogo: schoolLogo || undefined,
+      issuer1Signature: issuer1Signature || undefined,
+      issuer2Signature: issuer2Signature || undefined,
+      issuer3Signature: issuer3Signature || undefined,
+      useCursiveSignatures: useCursiveSignatures
     };
 
     setCurrentCert(newCert);
@@ -1277,12 +1594,33 @@ Write 2-3 formal elegant sentences honoring their achievement. Output ONLY the c
       setShowLockModal(true);
       return;
     }
-    document.body.classList.add('print-landscape');
-    document.body.classList.remove('print-portrait');
+    setShowPrintPreviewModal(true);
+  };
+
+  const handleConfirmPrint = (settings: PrintSettings) => {
+    setShowPrintPreviewModal(false);
+    if (settings.orientation === 'landscape') {
+      document.body.classList.add('print-landscape');
+      document.body.classList.remove('print-portrait');
+    } else {
+      document.body.classList.add('print-portrait');
+      document.body.classList.remove('print-landscape');
+    }
+
+    const frameEl = document.querySelector('.printable-certificate-frame') as HTMLElement;
+    let originalTransform = '';
+    if (frameEl && settings.scale !== 100) {
+      originalTransform = frameEl.style.transform;
+      frameEl.style.transform = `scale(${settings.scale / 100})`;
+    }
+
     setTimeout(() => {
       window.print();
       setTimeout(() => {
         document.body.classList.remove('print-landscape', 'print-portrait');
+        if (frameEl && originalTransform !== undefined) {
+          frameEl.style.transform = originalTransform;
+        }
       }, 1000);
     }, 150);
   };
@@ -1466,35 +1804,46 @@ Write 2-3 formal elegant sentences honoring their achievement. Output ONLY the c
               </h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Photo Upload & Human Avatar Field */}
-                <div className="sm:col-span-2 bg-gradient-to-r from-lime-50 to-emerald-50 p-3.5 rounded-2xl border border-lime-200 flex flex-col sm:flex-row items-center gap-4">
+                {/* Photo Upload & AI Human Avatar / Logo Field */}
+                <div className="sm:col-span-2 bg-gradient-to-r from-lime-50 via-emerald-50 to-teal-50 p-4 rounded-2xl border border-lime-200 flex flex-col sm:flex-row items-center gap-4">
                   <div className="relative shrink-0">
-                    <div className="w-16 h-16 rounded-full border-2 border-lime-500 overflow-hidden bg-white shadow-sm flex items-center justify-center">
+                    <div className="w-20 h-20 rounded-full border-4 border-amber-400 p-0.5 bg-gradient-to-tr from-amber-300 via-yellow-100 to-amber-500 shadow-lg flex items-center justify-center overflow-hidden relative z-20 ring-2 ring-amber-200">
                       {recipientPhoto ? (
-                        <img src={recipientPhoto} alt="Recipient" className="w-full h-full object-cover" />
+                        <img src={recipientPhoto} alt="Recipient" className="w-full h-full object-cover rounded-full" />
                       ) : (
-                        <div className="flex flex-col items-center justify-center text-lime-700">
-                          <User className="w-7 h-7" />
-                          <span className="text-[9px] font-black uppercase">Human</span>
-                        </div>
+                        <img
+                          src={getGraduateAvatarInfo(recipientName, recipientRole, category, gender, ageGroup).url}
+                          alt="AI Academic Logo Emblem"
+                          className="w-full h-full object-cover rounded-full"
+                        />
                       )}
                     </div>
-                    <span className="absolute -bottom-1 -right-1 bg-emerald-600 text-white rounded-full p-1 shadow-2xs">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                    </span>
                   </div>
-                  <div className="flex-1 space-y-1 text-center sm:text-left">
-                    <label className="block text-xs font-black text-slate-900 flex items-center justify-center sm:justify-start gap-1.5">
-                      <span>{t.labelRecipientPhoto}</span>
-                      <span className="text-[10px] text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">Verified Person</span>
-                    </label>
-                    <p className="text-[11px] text-slate-600 font-medium">
-                      {t.placeRecipientPhoto}
+                  <div className="flex-1 space-y-1.5 text-center sm:text-left">
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                      <label className="text-xs font-black text-slate-900">
+                        {t.labelRecipientPhoto}
+                      </label>
+                      <span className="text-[10px] text-emerald-900 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full font-black">
+                        ✨ AI Realistic Portrait Active
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-700 font-bold">
+                      {recipientPhoto ? (
+                        <span className="text-emerald-700">✓ Uploaded Custom Photo</span>
+                      ) : (
+                        <span className="text-slate-700">
+                          Automatic AI Portrait:{' '}
+                          <span className="text-lime-800 font-black">
+                            {getGraduateAvatarInfo(recipientName, recipientRole, category, gender, ageGroup).label}
+                          </span>
+                        </span>
+                      )}
                     </p>
                     <div className="flex items-center gap-2 pt-1 justify-center sm:justify-start">
                       <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-lime-600 hover:bg-lime-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs">
                         <Upload className="w-3.5 h-3.5" />
-                        <span>Upload Photo / Shaka Foto</span>
+                        <span>Upload Custom Photo / Shaka Foto</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -1521,7 +1870,7 @@ Write 2-3 formal elegant sentences honoring their achievement. Output ONLY the c
                           onClick={() => setRecipientPhoto('')}
                           className="px-2.5 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl border border-red-200"
                         >
-                          Siba Foto
+                          Siba Foto (Koresha AI Avatar)
                         </button>
                       )}
                     </div>
@@ -1583,32 +1932,110 @@ Write 2-3 formal elegant sentences honoring their achievement. Output ONLY the c
                   />
                 </div>
 
-                <div className="sm:col-span-2">
+                {/* Gender & Age Group Selectors */}
+                <div className="sm:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                  {/* Gender / Avatar Emblem Selector */}
+                  <div>
+                    <label className="block text-xs font-extrabold text-slate-800 mb-1">
+                      {lang === 'Kinyarwanda' ? "Ishusho y'Icyemezo (Graphic / Avatar)" : t.labelGender}
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[
+                        { id: 'academic_emblem', label: '📚 Igitabo & Ingofero' },
+                        { id: 'auto', label: '✨ Auto Emblem' },
+                        { id: 'special_coach_logo', label: '🏆 Special Coach' },
+                        { id: 'female', label: '👧 Umukobwa' },
+                        { id: 'male', label: '👦 Umuhungu' }
+                      ].map((g) => (
+                        <button
+                          key={g.id}
+                          type="button"
+                          onClick={() => setGender(g.id as any)}
+                          className={`py-2 px-2 border rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1 ${
+                            gender === g.id
+                              ? 'bg-lime-500/20 border-lime-500 text-slate-900 ring-2 ring-lime-400/40 shadow-2xs'
+                              : 'bg-white border-slate-300 text-slate-700 hover:border-lime-400'
+                          }`}
+                        >
+                          <span className="truncate">{g.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Age Level Selector */}
+                  <div>
+                    <label className="block text-xs font-extrabold text-slate-800 mb-1">
+                      {(t as any).labelAgeGroup || "Urwego ry'Imyaka / Persona"}
+                    </label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[
+                        { id: 'auto', label: 'Auto' },
+                        { id: 'child', label: 'Umwana 🎒' },
+                        { id: 'adult', label: 'Mukuru 🎓' }
+                      ].map((a) => (
+                        <button
+                          key={a.id}
+                          type="button"
+                          onClick={() => setAgeGroup(a.id as any)}
+                          className={`py-2 px-2 border rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1 ${
+                            ageGroup === a.id
+                              ? 'bg-emerald-500/20 border-emerald-500 text-slate-900 ring-2 ring-emerald-400/40 shadow-2xs'
+                              : 'bg-white border-slate-300 text-slate-700 hover:border-lime-400'
+                          }`}
+                        >
+                          {a.id === 'auto' && <Sparkles className="w-3 h-3 text-emerald-600 shrink-0" />}
+                          <span className="truncate">{a.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    {t.labelGender}
+                    {lang === 'Kinyarwanda' ? "Izina ry'amahugurwa cyangwa gahunda" : "Course or Training Program Completed"} <span className="text-red-500">*</span>
                   </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {[
-                      { id: 'auto', label: t.genderAuto },
-                      { id: 'female', label: t.genderFemale },
-                      { id: 'male', label: t.genderMale }
-                    ].map((g) => (
-                      <button
-                        key={g.id}
-                        type="button"
-                        onClick={() => setGender(g.id as any)}
-                        className={`py-2 px-3 border rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 ${
-                          gender === g.id
-                            ? 'bg-lime-500/10 border-lime-500 text-slate-900 ring-2 ring-lime-400/30'
-                            : 'bg-slate-50/50 border-slate-300 text-slate-700 hover:border-lime-400/30'
-                        }`}
-                      >
-                        {g.id === 'female' && <FemaleGraduateSvg className="w-5 h-5" />}
-                        {g.id === 'male' && <MaleGraduateSvg className="w-5 h-5" />}
-                        {g.id === 'auto' && <Sparkles className="w-3.5 h-3.5 text-lime-600 shrink-0" />}
-                        <span>{g.label}</span>
-                      </button>
-                    ))}
+                  <input
+                    type="text"
+                    required
+                    value={courseName}
+                    onChange={(e) => setCourseName(e.target.value)}
+                    placeholder="e.g. Web Development, Accounting, Advanced Pedagogy"
+                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-lime-500 focus:outline-hidden bg-slate-50/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {lang === 'Kinyarwanda' ? "Ikirango cy'Ikigo (School Logo)" : "School or Institution Logo"}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={schoolLogo}
+                      onChange={(e) => setSchoolLogo(e.target.value)}
+                      placeholder="Paste logo image URL..."
+                      className="flex-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-lime-500 focus:outline-hidden bg-slate-50/50"
+                    />
+                    <label className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-black rounded-xl cursor-pointer transition-colors border border-slate-300 whitespace-nowrap">
+                      <span>📤 Upload Logo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setSchoolLogo(reader.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
                   </div>
                 </div>
               </div>
@@ -1713,6 +2140,94 @@ Write 2-3 formal elegant sentences honoring their achievement. Output ONLY the c
                     <option value="French">Français</option>
                     <option value="Swahili">Kiswahili</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {lang === 'Kinyarwanda' ? "Umukono wa 1 (Signatory 1 Image)" : "Signatory 1 Digital Signature Image"}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={issuer1Signature}
+                      onChange={(e) => setIssuer1Signature(e.target.value)}
+                      placeholder="Paste signature image URL..."
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:ring-2 focus:ring-lime-500 focus:outline-hidden bg-slate-50/50"
+                    />
+                    <label className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-black rounded-xl cursor-pointer transition-colors border border-slate-300 whitespace-nowrap">
+                      <span>📤 Sign 1</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setIssuer1Signature(reader.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {lang === 'Kinyarwanda' ? "Umukono wa 2 (Signatory 2 Image)" : "Signatory 2 Digital Signature Image"}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={issuer2Signature}
+                      onChange={(e) => setIssuer2Signature(e.target.value)}
+                      placeholder="Paste signature image URL..."
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:ring-2 focus:ring-lime-500 focus:outline-hidden bg-slate-50/50"
+                    />
+                    <label className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-black rounded-xl cursor-pointer transition-colors border border-slate-300 whitespace-nowrap">
+                      <span>📤 Sign 2</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setIssuer2Signature(reader.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-xs font-black text-slate-800">
+                        {lang === 'Kinyarwanda' ? "Gukoresha Imikono y'Imitako (Cursive digital signatures)" : "Enable Handwriting/Cursive Signatures"}
+                      </h4>
+                      <p className="text-[10px] text-slate-500 font-medium leading-relaxed">
+                        {lang === 'Kinyarwanda' ? "Sisteme izakorera umukono mu buryo bwa mudasobwa uhuye n'amazina mu kiganza cyiza" : "If checked, a realistic cursive signature will be auto-rendered for both signatories in blue ink."}
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={useCursiveSignatures}
+                        onChange={(e) => setUseCursiveSignatures(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-lime-500"></div>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1885,38 +2400,100 @@ Write 2-3 formal elegant sentences honoring their achievement. Output ONLY the c
           <div className="flex justify-center overflow-x-auto p-2">
             <div
               ref={certPrintRef}
-              className={`printable-certificate-frame w-[1000px] h-[707px] min-h-[707px] max-h-[707px] bg-white text-slate-900 p-5 relative flex flex-col justify-between shadow-2xl rounded-xl border-[12px] overflow-hidden print:w-[297mm] print:h-[210mm] print:max-w-[297mm] print:max-h-[210mm] print:p-5 print:border-[10px] print:shadow-none print:rounded-none select-text ${
+              className={`printable-certificate-frame w-[1000px] h-[707px] min-h-[707px] max-h-[707px] p-6 relative flex flex-col justify-between shadow-2xl rounded-xl border-[16px] overflow-hidden print:w-[297mm] print:h-[210mm] print:max-w-[297mm] print:max-h-[210mm] print:p-5 print:border-[12px] print:ring-0 print:m-0 print:box-border print:shadow-none print:rounded-none select-text transition-all ${
                 currentCert.borderStyle === 'lime_gold_luxury'
-                  ? 'border-lime-500 border-double ring-8 ring-amber-400/80'
+                  ? 'bg-[#FAF6EE] text-slate-900 border-amber-600 border-double ring-8 ring-amber-500/50'
                   : currentCert.borderStyle === 'reb_academic'
-                  ? 'border-emerald-800 border-solid ring-8 ring-amber-300'
-                  : 'border-slate-900 border-dashed ring-8 ring-lime-400'
+                  ? 'bg-[#FCFDFE] text-slate-900 border-emerald-800 border-solid ring-8 ring-amber-400/80'
+                  : 'bg-[#F4F9F6] text-slate-900 border-emerald-950 border-solid ring-8 ring-lime-400/60'
               }`}
             >
-              {/* Background Luxury Emblem Watermark */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-                <Award className="w-[400px] h-[400px] text-lime-700" />
+              {/* Elegant Dual Concentric Inner Border Frame */}
+              <div className={`absolute inset-[6px] border-2 rounded-md pointer-events-none z-10 ${
+                currentCert.borderStyle === 'lime_gold_luxury' 
+                  ? 'border-amber-500/50' 
+                  : currentCert.borderStyle === 'reb_academic' 
+                  ? 'border-amber-400/55' 
+                  : 'border-lime-500/40'
+              }`} />
+              <div className={`absolute inset-[12px] border pointer-events-none z-10 ${
+                currentCert.borderStyle === 'lime_gold_luxury' 
+                  ? 'border-amber-600/30 border-dashed' 
+                  : currentCert.borderStyle === 'reb_academic' 
+                  ? 'border-emerald-800/20 border-dashed' 
+                  : 'border-emerald-600/20 border-dashed'
+              }`} />
+
+              {/* High-security guilloche watermark mesh pattern background */}
+              <div className="absolute inset-0 pointer-events-none opacity-[0.035] z-0">
+                <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <pattern id="guilloche-mesh" width="80" height="80" patternUnits="userSpaceOnUse">
+                      <path d="M0 40 Q 20 20, 40 40 T 80 40" fill="none" stroke="currentColor" strokeWidth="1" className={currentCert.borderStyle === 'lime_gold_luxury' ? 'text-amber-800' : 'text-emerald-900'} />
+                      <path d="M0 40 Q 20 60, 40 40 T 80 40" fill="none" stroke="currentColor" strokeWidth="1" className={currentCert.borderStyle === 'lime_gold_luxury' ? 'text-amber-800' : 'text-emerald-900'} />
+                      <path d="M40 0 Q 20 20, 40 40 T 40 80" fill="none" stroke="currentColor" strokeWidth="1" className={currentCert.borderStyle === 'lime_gold_luxury' ? 'text-amber-800' : 'text-emerald-900'} />
+                      <path d="M40 0 Q 60 20, 40 40 T 40 80" fill="none" stroke="currentColor" strokeWidth="1" className={currentCert.borderStyle === 'lime_gold_luxury' ? 'text-amber-800' : 'text-emerald-900'} />
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#guilloche-mesh)" />
+                </svg>
               </div>
 
-              {/* Decorative Corner Ornaments */}
-              <div className="absolute top-3 left-3 w-10 h-10 border-t-4 border-l-4 border-lime-600"></div>
-              <div className="absolute top-3 right-3 w-10 h-10 border-t-4 border-r-4 border-lime-600"></div>
-              <div className="absolute bottom-3 left-3 w-10 h-10 border-b-4 border-l-4 border-lime-600"></div>
-              <div className="absolute bottom-3 right-3 w-10 h-10 border-b-4 border-r-4 border-lime-600"></div>
+              {/* Background Central Translucent Watermark Badge */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-[0.045] pointer-events-none z-0">
+                <Award className="w-[420px] h-[420px] text-lime-900" />
+              </div>
+
+              {/* High-Fidelity Custom Vector Flourish Corner Ornaments */}
+              {(() => {
+                const ornColor = currentCert.borderStyle === 'lime_gold_luxury' ? '#D97706' : currentCert.borderStyle === 'reb_academic' ? '#047857' : '#10B981';
+                return (
+                  <>
+                    {/* Top-Left */}
+                    <svg className="absolute top-4 left-4 w-12 h-12 pointer-events-none z-10 opacity-75" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4 4 H80 M4 4 V80 M4 4 L40 40 M12 12 H60 M12 12 V60 M12 12 L30 30" stroke={ornColor} strokeWidth="3" strokeLinecap="round" />
+                      <circle cx="12" cy="12" r="3" fill={ornColor} />
+                      <path d="M30 12 C30 20, 20 30, 12 30" stroke={ornColor} strokeWidth="1.5" fill="none" />
+                    </svg>
+                    {/* Top-Right */}
+                    <svg className="absolute top-4 right-4 w-12 h-12 pointer-events-none z-10 opacity-75 rotate-90" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4 4 H80 M4 4 V80 M4 4 L40 40 M12 12 H60 M12 12 V60 M12 12 L30 30" stroke={ornColor} strokeWidth="3" strokeLinecap="round" />
+                      <circle cx="12" cy="12" r="3" fill={ornColor} />
+                      <path d="M30 12 C30 20, 20 30, 12 30" stroke={ornColor} strokeWidth="1.5" fill="none" />
+                    </svg>
+                    {/* Bottom-Left */}
+                    <svg className="absolute bottom-4 left-4 w-12 h-12 pointer-events-none z-10 opacity-75 -rotate-90" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4 4 H80 M4 4 V80 M4 4 L40 40 M12 12 H60 M12 12 V60 M12 12 L30 30" stroke={ornColor} strokeWidth="3" strokeLinecap="round" />
+                      <circle cx="12" cy="12" r="3" fill={ornColor} />
+                      <path d="M30 12 C30 20, 20 30, 12 30" stroke={ornColor} strokeWidth="1.5" fill="none" />
+                    </svg>
+                    {/* Bottom-Right */}
+                    <svg className="absolute bottom-4 right-4 w-12 h-12 pointer-events-none z-10 opacity-75 rotate-180" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4 4 H80 M4 4 V80 M4 4 L40 40 M12 12 H60 M12 12 V60 M12 12 L30 30" stroke={ornColor} strokeWidth="3" strokeLinecap="round" />
+                      <circle cx="12" cy="12" r="3" fill={ornColor} />
+                      <path d="M30 12 C30 20, 20 30, 12 30" stroke={ornColor} strokeWidth="1.5" fill="none" />
+                    </svg>
+                  </>
+                );
+              })()}
 
               {/* Certificate Header */}
               <div className="text-center space-y-1 relative z-10 pt-1">
                 <div className="flex items-center justify-center gap-2.5">
-                  <div className="w-10 h-10 rounded-full bg-lime-400 text-slate-950 font-black flex items-center justify-center text-lg shadow-md border-2 border-lime-600">
-                    🇷🇼
-                  </div>
-                  <div>
+                  {currentCert.schoolLogo ? (
+                    <img
+                      src={currentCert.schoolLogo}
+                      alt={currentCert.schoolName}
+                      className="w-10 h-10 rounded-full object-cover border border-amber-400 shadow-md"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <SchoolCrestSvg className="w-10 h-10" />
+                  )}
+                  <div className="text-left">
                     <h2 className="text-lg font-black text-slate-900 uppercase tracking-widest leading-tight">
                       {currentCert.schoolName}
                     </h2>
-                    <p className="text-[10px] text-slate-600 font-bold tracking-wider uppercase">
-                      {(CERT_I18N[currentCert.language || lang] || t).certCompliantTag}
-                    </p>
                   </div>
                 </div>
 
@@ -1932,37 +2509,48 @@ Write 2-3 formal elegant sentences honoring their achievement. Output ONLY the c
 
               {/* Recipient Citation Body */}
               <div className="text-center space-y-2 my-auto relative z-10 px-6">
-                {/* Prominent Visible Human Person Avatar & Verified Badge */}
-                <div className="flex flex-col items-center justify-center">
-                  <div className="relative group inline-block">
-                    <div className="w-20 h-20 rounded-full border-4 border-amber-400 p-0.5 bg-gradient-to-tr from-lime-100 via-white to-emerald-100 shadow-md flex items-center justify-center overflow-hidden">
+                {/* Prominent Visible Logo Emblem Badge & Verified Seal */}
+                <div className="flex flex-col items-center justify-center relative z-20">
+                  <div className="relative group inline-block z-20">
+                    <div className="w-22 h-22 rounded-full border-4 border-amber-400 p-0.5 bg-gradient-to-tr from-amber-300 via-yellow-100 to-amber-500 shadow-xl flex items-center justify-center overflow-hidden relative z-20 ring-4 ring-amber-300/40 transform hover:scale-105 transition-all">
                       {currentCert.recipientPhoto ? (
                         <img
                           src={currentCert.recipientPhoto}
                           alt={currentCert.recipientName}
-                          className="w-full h-full object-cover rounded-full"
+                          className="w-full h-full object-cover rounded-full relative z-20"
+                          referrerPolicy="no-referrer"
                         />
                       ) : (
-                        (() => {
-                          const selectedGender = currentCert.gender || 'auto';
-                          const activeGender = selectedGender === 'auto'
-                            ? detectGenderFromName(currentCert.recipientName || '')
-                            : selectedGender;
-                          
-                          return activeGender === 'female'
-                            ? <FemaleGraduateSvg className="w-16 h-16 drop-shadow-md" />
-                            : <MaleGraduateSvg className="w-16 h-16 drop-shadow-md" />;
-                        })()
+                        <img
+                          src={
+                            getGraduateAvatarInfo(
+                              currentCert.recipientName,
+                              currentCert.recipientRole,
+                              currentCert.category,
+                              currentCert.gender,
+                              currentCert.ageGroup
+                            ).url
+                          }
+                          alt={currentCert.recipientName}
+                          className="w-full h-full object-cover rounded-full relative z-20"
+                          referrerPolicy="no-referrer"
+                        />
                       )}
-                    </div>
-                    {/* Official Verified Person Badge Icon */}
-                    <div className="absolute -bottom-1 -right-1 bg-emerald-600 text-white rounded-full p-0.5 border-2 border-white shadow-md flex items-center justify-center">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-white" />
                     </div>
                   </div>
                   <div className="mt-1 inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-300 rounded-full text-[9px] font-black uppercase tracking-wider shadow-2xs">
                     <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
-                    <span>VERIFIED RECIPIENT • UMUNTU W'UMWIMERERE</span>
+                    <span>
+                      {
+                        getGraduateAvatarInfo(
+                          currentCert.recipientName,
+                          currentCert.recipientRole,
+                          currentCert.category,
+                          currentCert.gender,
+                          currentCert.ageGroup
+                        ).label
+                      }
+                    </span>
                   </div>
                 </div>
 
@@ -1970,16 +2558,29 @@ Write 2-3 formal elegant sentences honoring their achievement. Output ONLY the c
                   {(CERT_I18N[currentCert.language || lang] || t).certPresentedTo}
                 </p>
 
-                <div className="border-b-2 border-lime-500 pb-1 max-w-xl mx-auto">
-                  <h3 className="text-2xl sm:text-3xl font-black text-emerald-950 font-serif tracking-tight leading-none">
+                <div className="max-w-xl mx-auto flex items-center justify-center gap-3">
+                  <span className="text-xl text-amber-500 font-bold select-none">⚜️</span>
+                  <h3 className="text-2xl sm:text-3xl font-black text-emerald-950 font-serif tracking-tight leading-none border-b-2 border-lime-500 pb-1">
                     {currentCert.recipientName || 'Mukamana Angelique'}
                   </h3>
-                  {currentCert.recipientRole && (
-                    <p className="text-[11px] font-bold text-lime-800 uppercase tracking-wide mt-1">
-                      {currentCert.recipientRole}
-                    </p>
-                  )}
+                  <span className="text-xl text-amber-500 font-bold select-none">⚜️</span>
                 </div>
+                {currentCert.recipientRole && (
+                  <p className="text-[11px] font-bold text-lime-800 uppercase tracking-wide -mt-1">
+                    {currentCert.recipientRole}
+                  </p>
+                )}
+
+                {currentCert.courseName && (
+                  <div className="py-1">
+                    <p className="text-xs font-extrabold text-slate-700 tracking-wide uppercase">
+                      {currentCert.language === 'Kinyarwanda' ? 'Amaze kurangiza neza gahunda ya:' : 'For successfully completing the course:'}{' '}
+                      <span className="text-emerald-950 font-black normal-case text-sm bg-gradient-to-r from-lime-50 to-emerald-50 px-3 py-1 rounded-full border border-emerald-200 shadow-3xs inline-block">
+                        {currentCert.courseName}
+                      </span>
+                    </p>
+                  </div>
+                )}
 
                 <p className="text-xs sm:text-sm text-slate-800 font-serif leading-relaxed max-w-2xl mx-auto italic px-2">
                   "{currentCert.citationText || 'For outstanding performance and dedication.'}"
@@ -1988,39 +2589,82 @@ Write 2-3 formal elegant sentences honoring their achievement. Output ONLY the c
 
               {/* Certificate Footer / Signatures & Seal */}
               <div className="grid grid-cols-4 items-end pt-3 border-t border-slate-200 relative z-10 gap-2">
-                {/* Signatory 1 */}
-                <div className="text-center space-y-0.5">
-                  <div className="h-8 flex items-center justify-center">
-                    <span className="font-serif italic text-slate-400 text-[11px]">
-                      {(CERT_I18N[currentCert.language || lang] || t).certSignatureLabel}
-                    </span>
+                {/* Signatory 1 with overlapping stamp */}
+                <div className="text-center space-y-0.5 relative">
+                  {/* Overlapping Blue Stamp */}
+                  <div className="absolute -top-7 -right-2 opacity-80 pointer-events-none print:opacity-90">
+                    <OfficialStampSvg text={currentCert.schoolName} date={currentCert.issueDate ? currentCert.issueDate.split('-')[0] : '2026'} color="#1d4ed8" className="w-14 h-14" />
                   </div>
-                  <div className="border-t border-slate-400 pt-0.5 max-w-[170px] mx-auto">
-                    <p className="text-xs font-black text-slate-900 leading-tight">{currentCert.issuer1Name || 'NKUNDIMANA Theogene'}</p>
-                    <p className="text-[10px] text-slate-600 font-semibold leading-tight">{currentCert.issuer1Title || 'Head Teacher / Director'}</p>
+
+                  <div className="h-8 flex items-center justify-center relative z-10">
+                    {currentCert.issuer1Signature ? (
+                      <img
+                        src={currentCert.issuer1Signature}
+                        alt="Signature 1"
+                        className="h-8 object-contain max-w-[120px] mx-auto"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : currentCert.useCursiveSignatures !== false ? (
+                      <span className="italic text-blue-800 text-lg font-bold select-none relative -top-1.5" style={{ fontFamily: "'Great Vibes', 'Alex Brush', cursive" }}>
+                        {currentCert.issuer1Name || 'NKUNDIMANA Theogene'}
+                      </span>
+                    ) : (
+                      <span className="font-serif italic text-slate-400 text-[11px]">
+                        {(CERT_I18N[currentCert.language || lang] || t).certSignatureLabel}
+                      </span>
+                    )}
+                  </div>
+                  <div className="border-t border-slate-400 pt-0.5 max-w-[170px] mx-auto relative z-10">
+                    <p className="text-xs font-black text-slate-900 leading-tight">
+                      {currentCert.issuer1Name || 'NKUNDIMANA Theogene'}
+                    </p>
+                    <p className="text-[10px] text-slate-600 font-semibold leading-tight">
+                      {currentCert.issuer1Title || 'Director / Headteacher'}
+                    </p>
                   </div>
                 </div>
 
                 {/* Central Gold & Lime Ribbon Seal */}
-                <div className="flex flex-col items-center justify-center space-y-0.5">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-lime-400 via-amber-300 to-lime-500 border-2 border-white shadow-lg flex items-center justify-center text-slate-950 font-black relative">
+                <div className="flex flex-col items-center justify-center space-y-0.5 relative">
+                  {/* Real Hanging Blue & Gold Ribbon Accents */}
+                  <div className="absolute -bottom-5 w-4 h-11 bg-amber-500 transform -rotate-12 origin-top rounded-b-sm shadow-md border-r border-amber-600/30 z-0"></div>
+                  <div className="absolute -bottom-5 w-4 h-11 bg-lime-600 transform rotate-12 origin-top rounded-b-sm shadow-md border-l border-lime-700/30 z-0"></div>
+
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-amber-500 via-yellow-300 to-amber-600 border-2 border-white shadow-lg flex items-center justify-center text-slate-950 font-black relative z-10">
                     <Award className="w-7 h-7 text-slate-950" />
-                    <span className="absolute -bottom-1.5 px-2 py-0.5 bg-slate-900 text-lime-400 text-[7px] font-black rounded-md tracking-wider whitespace-nowrap">
+                    <span className="absolute -bottom-1.5 px-2 py-0.5 bg-slate-900 text-amber-300 text-[7px] font-black rounded-md tracking-wider whitespace-nowrap border border-amber-500/20">
                       {(CERT_I18N[currentCert.language || lang] || t).certOfficialSeal}
                     </span>
                   </div>
                 </div>
 
                 {/* Signatory 2 */}
-                <div className="text-center space-y-0.5">
-                  <div className="h-8 flex items-center justify-center">
-                    <span className="font-serif italic text-slate-400 text-[11px]">
-                      {(CERT_I18N[currentCert.language || lang] || t).certSignatureLabel}
-                    </span>
+                <div className="text-center space-y-0.5 relative">
+                  <div className="h-8 flex items-center justify-center relative z-10">
+                    {currentCert.issuer2Signature ? (
+                      <img
+                        src={currentCert.issuer2Signature}
+                        alt="Signature 2"
+                        className="h-8 object-contain max-w-[120px] mx-auto"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : currentCert.useCursiveSignatures !== false ? (
+                      <span className="italic text-blue-800 text-lg font-bold select-none relative -top-1.5" style={{ fontFamily: "'Alex Brush', 'Great Vibes', cursive" }}>
+                        {currentCert.issuer2Name || 'Uwimana Marie Rose'}
+                      </span>
+                    ) : (
+                      <span className="font-serif italic text-slate-400 text-[11px]">
+                        {(CERT_I18N[currentCert.language || lang] || t).certSignatureLabel}
+                      </span>
+                    )}
                   </div>
-                  <div className="border-t border-slate-400 pt-0.5 max-w-[170px] mx-auto">
-                    <p className="text-xs font-black text-slate-900 leading-tight">{currentCert.issuer2Name || 'Uwimana Marie Rose'}</p>
-                    <p className="text-[10px] text-slate-600 font-semibold leading-tight">{currentCert.issuer2Title || 'Director of Studies (DOS)'}</p>
+                  <div className="border-t border-slate-400 pt-0.5 max-w-[170px] mx-auto relative z-10">
+                    <p className="text-xs font-black text-slate-900 leading-tight">
+                      {currentCert.issuer2Name || 'Uwimana Marie Rose'}
+                    </p>
+                    <p className="text-[10px] text-slate-600 font-semibold leading-tight">
+                      {currentCert.issuer2Title || 'Teacher'}
+                    </p>
                     <p className="text-[9px] text-slate-500 font-medium pt-0.5 leading-tight">
                       {(CERT_I18N[currentCert.language || lang] || t).certDateLabel} {currentCert.issueDate || new Date().toISOString().split('T')[0]}
                     </p>
@@ -2038,8 +2682,8 @@ Write 2-3 formal elegant sentences honoring their achievement. Output ONLY the c
                   <div className="bg-white p-1 rounded-md border border-slate-200 shadow-2xs flex items-center justify-center">
                     <QRCodeSVG 
                       value={getCertVerificationUrl(currentCert.certificateNumber)} 
-                      size={40} 
-                      level="H"
+                      size={44} 
+                      level="M"
                     />
                   </div>
                   <span className="text-[7px] font-black text-slate-600 uppercase tracking-wider leading-none block">
@@ -2946,6 +3590,82 @@ Write 2-3 formal elegant sentences honoring their achievement. Output ONLY the c
           </div>
         </div>
       )}
+
+      {/* PRINT PREVIEW MODAL */}
+      <PrintPreviewModal
+        isOpen={showPrintPreviewModal}
+        onClose={() => setShowPrintPreviewModal(false)}
+        title={lang === 'Kinyarwanda' ? "Iboneza ry'Icapa na Preview (Certificate Print Preview)" : "Certificate Print Preview & Page Layout"}
+        documentName={currentCert ? `Certificate_${(currentCert.recipientName || 'Official').replace(/\s+/g, '_')}.pdf` : 'Certificate.pdf'}
+        defaultOrientation="landscape"
+        isLocked={!isCertDownloadUnlocked}
+        onUnlockRequest={() => {
+          setShowPrintPreviewModal(false);
+          setShowLockModal(true);
+        }}
+        onConfirmPrint={handleConfirmPrint}
+        onDownloadPdf={handleDownloadPDF}
+      >
+        {currentCert && (
+          <div className="w-full h-full bg-white text-slate-900 p-4 relative flex flex-col justify-between overflow-hidden rounded border border-slate-200">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+              <div className="flex items-center gap-2">
+                {currentCert.schoolLogo ? (
+                  <img src={currentCert.schoolLogo} alt="Logo" className="w-9 h-9 object-contain" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 font-black text-xs flex items-center justify-center">
+                    REB
+                  </div>
+                )}
+                <div>
+                  <h4 className="font-black text-xs text-slate-900">{currentCert.schoolName || 'G.S. SAINT ANDRÉ KIGALI'}</h4>
+                  <p className="text-[10px] text-slate-500 font-bold">{currentCert.subHeading || 'MINISTRY OF EDUCATION COMPLIANT'}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-[9px] font-black uppercase text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                  OFFICIAL RECOGNITION
+                </span>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="text-center py-4 space-y-2">
+              <h2 className="text-base font-black text-slate-900 uppercase tracking-widest" style={{ fontFamily: 'Cinzel, Georgia, serif' }}>
+                {currentCert.title || 'CERTIFICATE OF ACADEMIC EXCELLENCE'}
+              </h2>
+              <p className="text-[11px] text-slate-500 italic">This Certificate is proudly presented to:</p>
+              <h1 className="text-xl font-black text-amber-800" style={{ fontFamily: 'Playfair Display, Georgia, serif' }}>
+                {currentCert.recipientName || 'Mukamana Angelique'}
+              </h1>
+              <p className="text-[10px] font-black text-slate-700 uppercase tracking-wide">
+                {currentCert.recipientRole || 'LEARNER - SENIOR 3 A'}
+              </p>
+              <div className="text-[10px] text-slate-600 max-w-lg mx-auto italic pt-1 leading-relaxed">
+                "{currentCert.bodyText || 'In recognition of outstanding scholastic achievement, exemplary dedication, and superior performance.'}"
+              </div>
+            </div>
+
+            {/* Footer Signatures */}
+            <div className="border-t border-slate-200 pt-2 grid grid-cols-3 gap-2 text-center text-[10px]">
+              <div>
+                <p className="font-bold text-slate-900">{currentCert.issuer1Name || 'NKUNDIMANA Theogene'}</p>
+                <p className="text-[9px] text-slate-500">{currentCert.issuer1Title || 'Director / Headteacher'}</p>
+              </div>
+              <div className="flex justify-center items-center">
+                <div className="w-9 h-9 rounded-full border-2 border-amber-500/60 bg-amber-50 text-amber-800 text-[8px] font-black flex items-center justify-center text-center p-0.5">
+                  OFFICIAL SEAL
+                </div>
+              </div>
+              <div>
+                <p className="font-bold text-slate-900">{currentCert.issuer2Name || 'Uwimana Marie Rose'}</p>
+                <p className="text-[9px] text-slate-500">{currentCert.issuer2Title || 'Teacher'}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </PrintPreviewModal>
     </div>
   );
 };

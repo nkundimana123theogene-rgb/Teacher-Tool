@@ -222,11 +222,20 @@ export const ExercisesCreator: React.FC<ExercisesCreatorProps> = ({
       const response = await fetch('/api/generate-exercises', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestData)
+        body: JSON.stringify({
+          ...requestData,
+          userEmail: user?.email,
+          sessionToken: user?.sessionToken
+        })
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        if (response.status === 403 && errorData.code === 'PREMIUM_LIMIT_EXCEEDED') {
+          setErrorMsg(errorData.error || "Ntabwo wemerewe gukora Exercises & Quizzes zirenga 5 ku kwezi z'ubuntu. Koresha izo wakoze cyangwa ugure ifatabuguzi (Premium Tools Sub) rya 2,500 Rwf muri Subscription page!");
+          setIsGenerating(false);
+          return;
+        }
         throw new Error(errorData.error || 'Server returned error during exercise generation');
       }
 
@@ -239,7 +248,7 @@ export const ExercisesCreator: React.FC<ExercisesCreatorProps> = ({
       setSavedExercises(prev => [result, ...prev]);
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || 'Havutse ikibazo mu kurema iyi myitozo. Ongera ugerageze.');
+      setErrorMsg(err.message || 'An error occurred while generating exercises. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -386,6 +395,33 @@ export const ExercisesCreator: React.FC<ExercisesCreatorProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Unlimited Premium Access Banner */}
+      {!user?.isAdmin && !user?.hasPremiumToolsSub && (user?.monthlyExercisesCount || 0) >= 5 && (
+        <div className="p-6 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-600/10 border-2 border-dashed border-orange-300 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-start gap-3 text-left">
+            <div className="w-10 h-10 rounded-xl bg-orange-500 text-slate-950 flex items-center justify-center shrink-0 shadow-md">
+              <Sparkles className="w-5 h-5 fill-amber-300 animate-pulse" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-slate-950">Wamaze gukoresha imfashanyigisho 5 z'ubuntu kuri uku kwezi!</h4>
+              <p className="text-xs text-slate-600 font-bold mt-1">
+                Gura ifatabuguzi (Premium Tools Sub) rya 2,500 Rwf/mo gusa kugira ngo ukore Exercises & Quizzes zitemewe umubare (Unlimited)!
+              </p>
+            </div>
+          </div>
+          {onOpenSubscription && (
+            <button
+              type="button"
+              onClick={onOpenSubscription}
+              className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-slate-950 text-xs font-extrabold rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer border border-orange-600 shrink-0 flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <Sparkles className="w-4 h-4 text-slate-950 fill-amber-200" />
+              <span>GURA IFATABUGUZI (2,500 Rwf)</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Error Banner */}
       {errorMsg && (
@@ -918,24 +954,37 @@ export const ExercisesCreator: React.FC<ExercisesCreatorProps> = ({
             </div>
 
             {/* BIG ACTION SUBMIT BUTTON */}
-            <button
-              type="button"
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white font-black py-4 rounded-2xl shadow-lg hover:shadow-cyan-500/20 active:scale-98 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50"
-            >
-              {isGenerating ? (
-                <>
-                  <span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin"></span>
-                  <span>{getLabel('Generating Assessment...', 'Iri kurema Ibibazo... Please wait')}</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  <span>{getLabel('Create Assessment Now', 'REMA IMYITOZO / IKIZAMINI')}</span>
-                </>
-              )}
-            </button>
+            {!user?.isAdmin && !user?.hasPremiumToolsSub && (user?.monthlyExercisesCount || 0) >= 5 ? (
+              onOpenSubscription && (
+                <button
+                  type="button"
+                  onClick={onOpenSubscription}
+                  className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-slate-950 font-black py-4 rounded-2xl shadow-lg hover:shadow-orange-550/20 active:scale-98 transition-all flex items-center justify-center gap-2 text-sm border border-orange-600 animate-pulse"
+                >
+                  <Sparkles className="w-5 h-5 text-slate-950 fill-amber-200" />
+                  <span>{getLabel('Get Unlimited Access (2,500 Rwf)', 'Gura Ifatabuguzi (Umutekano n’uburenganzira bwose)')}</span>
+                </button>
+              )
+            ) : (
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white font-black py-4 rounded-2xl shadow-lg hover:shadow-cyan-500/20 active:scale-98 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+              >
+                {isGenerating ? (
+                  <>
+                    <span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin"></span>
+                    <span>{getLabel('Generating Assessment...', 'Iri kurema Ibibazo... Please wait')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    <span>{getLabel('Create Assessment Now', 'REMA IMYITOZO / IKIZAMINI')}</span>
+                  </>
+                )}
+              </button>
+            )}
 
             <p className="text-[10px] text-center text-slate-400 font-bold leading-tight">
               ⚡ Powered by Gemini 3.6 Flash. Aligned directly with the Rwanda Education Board (REB) & RTB TVET standards.
@@ -1303,12 +1352,12 @@ export const ExercisesCreator: React.FC<ExercisesCreatorProps> = ({
             {/* Footer stamp (Signature Area) */}
             <div className="pt-10 border-t border-slate-200 grid grid-cols-2 gap-8 text-xs text-slate-500 text-center" style={{ fontFamily: 'sans-serif' }}>
               <div>
-                <p className="font-bold text-slate-700">PREPARED BY (Umwarimu):</p>
+                <p className="font-bold text-slate-700">PREPARED BY (Teacher):</p>
                 <div className="h-10 mt-2 border-b border-slate-400 max-w-xs mx-auto"></div>
-                <p className="mt-1">Nkundimana Theogene</p>
+                <p className="mt-1">Teacher</p>
               </div>
               <div>
-                <p className="font-bold text-slate-700">APPROVED BY (Ubuyobozi):</p>
+                <p className="font-bold text-slate-700">APPROVED BY (Head Teacher / DOS):</p>
                 <div className="h-10 mt-2 border-b border-slate-400 max-w-xs mx-auto"></div>
                 <p className="mt-1">{getLabel('Dean of Studies / Head Teacher', 'Ushinzwe Amasomo / Umuyobozi')}</p>
               </div>

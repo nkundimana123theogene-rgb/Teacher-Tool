@@ -28,13 +28,15 @@ interface ClassDiaryCreatorProps {
   selectedLanguage: LanguageOption;
   onOpenSignIn?: () => void;
   onBackToDashboard?: () => void;
+  onOpenSubscription?: () => void;
 }
 
 export const ClassDiaryCreator: React.FC<ClassDiaryCreatorProps> = ({
   user,
   selectedLanguage,
   onOpenSignIn,
-  onBackToDashboard
+  onBackToDashboard,
+  onOpenSubscription
 }) => {
   // Locale state
   const [lang, setLang] = useState<LanguageOption>(selectedLanguage || 'English');
@@ -190,10 +192,25 @@ export const ClassDiaryCreator: React.FC<ClassDiaryCreatorProps> = ({
       const response = await fetch('/api/class-diary/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ request: requestPayload, userEmail: user.email })
+        body: JSON.stringify({
+          request: requestPayload,
+          userEmail: user.email,
+          sessionToken: user.sessionToken
+        })
       });
 
       if (!response.ok) {
+        if (response.status === 403) {
+          const errData = await response.json().catch(() => ({}));
+          if (errData.code === 'PREMIUM_LIMIT_EXCEEDED') {
+            setStatusMsg({
+              type: 'error',
+              text: errData.error || "Ntabwo wemerewe gukora Class Diary (Cahier de Textes) zirenga 5 ku kwezi z'ubuntu. Koresha izo wakoze cyangwa ugure ifatabuguzi (Premium Tools Sub) rya 2,500 Rwf muri Subscription page!"
+            });
+            setIsGenerating(false);
+            return;
+          }
+        }
         throw new Error('Server error generating diary entry');
       }
 
@@ -530,6 +547,33 @@ Generated via Nkorera Education / Teacher Tool
               {lang === 'Kinyarwanda' ? 'Ibisobanuro by\'Ishuri n\'Isomo' : 'Enter Session Details'}
             </h2>
 
+            {/* Unlimited Premium Access Banner */}
+            {!user?.isAdmin && !user?.hasPremiumToolsSub && (user?.monthlyDiaryCount || 0) >= 5 && (
+              <div className="mb-6 p-6 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-600/10 border-2 border-dashed border-orange-300 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
+                <div className="flex items-start gap-3 text-left">
+                  <div className="w-10 h-10 rounded-xl bg-orange-500 text-slate-950 flex items-center justify-center shrink-0 shadow-md">
+                    <Sparkles className="w-5 h-5 fill-amber-300 animate-pulse" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-950">Wamaze gukoresha imfashanyigisho 5 z'ubuntu kuri uku kwezi!</h4>
+                    <p className="text-xs text-slate-600 font-bold mt-1">
+                      Gura ifatabuguzi (Premium Tools Sub) rya 2,500 Rwf/mo gusa kugira ngo ukore Class Diary / Cahier de Textes zitemewe umubare (Unlimited)!
+                    </p>
+                  </div>
+                </div>
+                {onOpenSubscription && (
+                  <button
+                    type="button"
+                    onClick={onOpenSubscription}
+                    className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-slate-950 text-xs font-extrabold rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer border border-orange-600 shrink-0 flex items-center gap-1.5 whitespace-nowrap"
+                  >
+                    <Sparkles className="w-4 h-4 text-slate-950 fill-amber-200" />
+                    <span>GURA IFATABUGUZI (2,500 Rwf)</span>
+                  </button>
+                )}
+              </div>
+            )}
+
             <form onSubmit={handleGenerateDiary} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -645,23 +689,36 @@ Generated via Nkorera Education / Teacher Tool
 
               {/* ACTION BUTTONS */}
               <div className="pt-4 flex flex-col sm:flex-row gap-3">
-                <button
-                  type="submit"
-                  disabled={isGenerating}
-                  className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium py-3 px-4 rounded-xl shadow-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span>{lang === 'Kinyarwanda' ? 'AI iri kubyaza...' : 'Generating Class Diary...'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-5 w-5" />
-                      <span>{lang === 'Kinyarwanda' ? 'Genera ifishi na AI' : 'Generate with Gemini AI'}</span>
-                    </>
-                  )}
-                </button>
+                {!user?.isAdmin && !user?.hasPremiumToolsSub && (user?.monthlyDiaryCount || 0) >= 5 ? (
+                  onOpenSubscription && (
+                    <button
+                      type="button"
+                      onClick={onOpenSubscription}
+                      className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-slate-950 font-black py-3 px-4 rounded-xl shadow-md border border-orange-600 animate-pulse transition-all duration-200 flex items-center justify-center gap-2"
+                    >
+                      <Sparkles className="h-5 w-5 text-slate-950 fill-amber-200" />
+                      <span>{lang === 'Kinyarwanda' ? 'Get Unlimited Access (2,500 Rwf)' : 'Get Unlimited Access (2,500 Rwf)'}</span>
+                    </button>
+                  )
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={isGenerating}
+                    className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium py-3 px-4 rounded-xl shadow-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span>{lang === 'Kinyarwanda' ? 'AI iri kubyaza...' : 'Generating Class Diary...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-5 w-5" />
+                        <span>{lang === 'Kinyarwanda' ? 'Genera ifishi na AI' : 'Generate with Gemini AI'}</span>
+                      </>
+                    )}
+                  </button>
+                )}
 
                 <button
                   type="button"

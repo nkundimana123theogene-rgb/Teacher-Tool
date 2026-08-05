@@ -240,6 +240,462 @@ interface LessonPlanFormProps {
   initialFormat?: PlanFormatOption;
 }
 
+function getLessonPlanUILocalization(language: string, format: string) {
+  const isKiny = language.toLowerCase().includes('kiny') || language.toLowerCase().includes('rwanda');
+  const isFrench = language.toLowerCase().includes('fren') || language.toLowerCase().includes('fran');
+  const isSwahili = language.toLowerCase().includes('swah') || language.toLowerCase().includes('kisw');
+
+  if (isKiny) {
+    return {
+      topBannerTitle: "Hitamo Ururimi rwa Lesson Plan (REB / CBC)",
+      topBannerSubtitle: "Kanda ku rurimi rwo kuremeramo lesson plan. Amakuru yose azahita asohoka mu rurimi yahisemo.",
+      generatorBadge: format === 'remedial_grid'
+        ? 'REMEDIAL LEARNING PROGRAM (RLP) GENERATOR'
+        : 'OFFICIAL REB / CBC LESSON PLAN GENERATOR',
+      generatorTitle: format === 'remedial_grid'
+        ? 'Isomo ryo Kungora no Kuzahura (Remedial Learning Program)'
+        : 'Tegura REB / CBC Lesson Plan Yuzuye',
+      generatorSubtitle: format === 'remedial_grid'
+        ? 'Gahunda y\'isomo ryo kungorwa no kuzahura abanyeshuri bafite inyunganira zitandukanye (Remediation, Consolidation & Extension).'
+        : 'Tegura lesson plans zo gucapa ku rupapuro 1 mu rurimi rwose wahitamo.',
+      formatLabel: "✓ Hitamo Imiterere ya Lesson Plan (Format):",
+      formatRebGrid: "REB Standard Grid",
+      formatRemedialGrid: "Remedial Program (RLP)",
+      formatOpenFormat: "Flexible Open Format",
+      sec1Title: "1. Amakuru y'Ishuri n'Ikirasi (School & Class Information)",
+      schoolName: "Izina ry'Ishuri (School Name)",
+      district: "Akarere (District)",
+      teacherName: "Izina rya Mwarimu (Teacher's Name)",
+      languageLabel: "Ururimi rwa Lesson Plan",
+      subject: "Isomo (Subject)",
+      classGrade: "Umwaka w'Ishuri / Icyasi (Class / Grade)",
+      term: "Igihe / Trimestre (Term)",
+      date: "Itariki (Date)",
+      unitNo: "Inomero y'Umutwe (Unit N°)",
+      lessonNo: "Inomero y'Isomo (Lesson N°)",
+      duration: "Igihe Cy'Isomo (Duration)",
+      classSize: "Umubare w'Abanyeshuri (Class Size)",
+      location: "Ahantu Isomo Ribera (Class Location)",
+      specialNeeds: "Abanyeshuri Bakeneye Inyunganira Yihariye (Special Educational Needs)",
+      sec2Title: "2. Umutwe w'Isomo n'Intego (Unit & Competence Objectives)",
+      unitTitle: "Umutwe w'Isomo (Unit Title)",
+      lessonTitle: "Izina ry'Isomo (Title of the Lesson)",
+      keyUnitCompetence: "Ubushobozi bw'Umutwe (Key Unit Competence)",
+      instructionalObjective: "Intego y'Isomo (Instructional Objective - 5 Models)",
+      learningMaterials: "Ibikoresho by'Inyigisho (Learning Materials)",
+      references: "Izindi Mfashanyigisho / Bitabo (References)",
+      generateBtn: "🚀 Tegura REB Lesson Plan mu Kinyarwanda",
+      generatingBtn: "Iri kutegura REB Lesson Plan mu Kinyarwanda...",
+      primaryLessonsLabel: "🎒 I. Amasomo y'Amashuri Abanza (Primary 1 - 6):",
+      primaryGradeSpan: "Primary 1 - Primary 6",
+      oLevelLessonsLabel: "📚 II. Amasomo y'Icyiciro Rusange (O-Level S1 - S3):",
+      oLevelGradeSpan: "Senior 1 - Senior 3",
+      aLevelLessonsLabel: "🎓 III. Amasomo y'Icyiciro Yisumbuye (A-Level S4 - S6):",
+      aLevelGradeSpan: "Senior 4 - Senior 6",
+      primarySubjects: [
+        'Imibare',
+        'Sayansi n\'Ikoranabuhanga',
+        'Kinyarwanda',
+        'Icyongereza',
+        'Inyigisho z\'Imbonezabupfura n\'Amadini',
+        'Igifaransa',
+        'Ubuhanzi n\'Muzika',
+        'Imyitozo Ngororamutimba'
+      ],
+      oLevelSubjects: [
+        'Imibare',
+        'Ubwihangaguzi',
+        'Icyongereza',
+        'Kinyarwanda',
+        'Amateka',
+        'Ubutaka n\'Ikirere',
+        'Ubugenge',
+        'Igifaransa',
+        'Ubumenyi bw\'Ibinyabutabire',
+        'Ubumenyi bw\'Ibinyabuzima',
+        'Ikiswahili',
+        'MDD',
+        'Ikoranabuhanga (I.C.T)'
+      ],
+      aLevelSubjects: [
+        'Imibare',
+        'Ubwihangaguzi',
+        'Kinyarwanda',
+        'Icyongereza',
+        'Amateka',
+        'Ubutaka n\'Ikirere',
+        'Ubugenge',
+        'Igifaransa',
+        'Ubumenyi bw\'Ibinyabutabire',
+        'Ubumenyi bw\'Ibinyabuzima',
+        'Ikiswahili',
+        'Muzika',
+        'Ikoranabuhanga (I.C.T)'
+      ],
+      schoolNamePlaceholder: "Urugero: G.S. Remera Catholic",
+      districtPlaceholder: "Urugero: Gasabo",
+      teacherNamePlaceholder: "Urugero: NKUNDIMANA Théogène",
+      subjectPlaceholder: "Urugero: Kinyarwanda",
+      classGradePlaceholder: "Urugero: P5 cyangwa S3 MCB",
+      termPlaceholder: "Urugero: Igihe cya 1 (Term 1)",
+      unitNoPlaceholder: "Urugero: Umutwe wa 3",
+      lessonNoPlaceholder: "Urugero: Isomo rya 1 muri 2",
+      classSizePlaceholder: "Urugero: Abanyeshuri 45",
+      specialNeedsPlaceholder: "Urugero: Umunyeshuri 1 ufite ikibazo cy'amaso (Cyangwa: Nta n'umwe)",
+      unitTitlePlaceholder: "Urugero: Iminyosho n'Ibibara",
+      lessonTitlePlaceholder: "Urugero: Guteranya Iminyosho Boneye",
+      keyUnitCompetencePlaceholder: "Urugero: Guteranya no gukuba iminyosho mu buryo bw'ukuri mu bibazo byo mu buzima bwa buri munsi...",
+      instructionalObjectivePlaceholder: "Urugero: Bahawe imfashanyigisho z'iminyosho [Condition], abanyeshuri [Who] bazaba bashoboye kubara no gukora [Action/Behavior] igiteranyo cy'iminyosho [Content] mu buryo bw'ukuri no kumpamo [Degree] mu minota 40.",
+      learningMaterialsPlaceholder: "Urugero: Amakaye, ingwa, ikibaho, n'amashusho y'iminyosho",
+      referencesPlaceholder: "Urugero: Igitabo cy'Umunyeshuri P5 Mathematics, Urupapuro rwa 42",
+      durationTip: "⏱️ Igihe cy'isomo isanzwe ni iminota 40 ku isomo rimwe (Standard lesson period max 40 min).",
+      objectiveBadge: "Intego Ikorerwa na AI mu Kinyarwanda",
+      modelsGuideTitle: "🎯 Ingingo Zingenzi 5 Zikora Intego y'Isomo (5 Models):",
+      m1: "1. Condition (Imfashanyigisho)",
+      m2: "2. Who (Umwigishwa)",
+      m3: "3. Action/Behavior (Igikorwa/Inshinga)",
+      m4: "4. Content (Mubiri w'isomo)",
+      m5: "5. Degree (Ipimo/Urugero)",
+    };
+  } else if (isFrench) {
+    return {
+      topBannerTitle: "Choisissez la Langue de la Fiche de Leçon (REB / CBC)",
+      topBannerSubtitle: "Cliquez sur la langue souhaitée. Toute la fiche de leçon sera générée dans la langue choisie.",
+      generatorBadge: format === 'remedial_grid'
+        ? 'GÉNÉRATEUR DE REMÉDIATION (RLP)'
+        : 'GÉNÉRATEUR OFFICIEL DE FICHE DE LEÇON REB / CBC',
+      generatorTitle: format === 'remedial_grid'
+        ? 'Programme de Remédiation (RLP)'
+        : 'Créer une Fiche de Leçon Officielle REB / CBC',
+      generatorSubtitle: format === 'remedial_grid'
+        ? 'Plan de leçon de remédiation, consolidation et enrichissement.'
+        : 'Générez des fiches de leçon imprimables sur 1 page dans la langue de votre choix.',
+      formatLabel: "✓ Sélectionnez le Format de la Fiche de Leçon:",
+      formatRebGrid: "Grille Standard REB",
+      formatRemedialGrid: "Programme de Remédiation (RLP)",
+      formatOpenFormat: "Format Ouvert Flexible",
+      sec1Title: "1. Informations sur l'École et la Classe",
+      schoolName: "Nom de l'École",
+      district: "District",
+      teacherName: "Nom de l'Enseignant",
+      languageLabel: "Langue de la Fiche",
+      subject: "Matière (Subject)",
+      classGrade: "Classe / Niveau",
+      term: "Trimestre (Term)",
+      date: "Date",
+      unitNo: "Unité N°",
+      lessonNo: "Leçon N°",
+      duration: "Durée du Cours",
+      classSize: "Effectif des Élèves",
+      location: "Lieu du Cours",
+      specialNeeds: "Besoins Éducatifs Particuliers",
+      sec2Title: "2. Titre de l'Unité et Compétences",
+      unitTitle: "Titre de l'Unité",
+      lessonTitle: "Titre de la Leçon",
+      keyUnitCompetence: "Compétence Clé de l'Unité",
+      instructionalObjective: "Objectif Pédagogique (Modèle à 5 Éléments)",
+      learningMaterials: "Matériel Didactique",
+      references: "Manuel et Références",
+      generateBtn: "🚀 Générer la Fiche de Leçon REB en Français",
+      generatingBtn: "Génération de la fiche REB en Français...",
+      primaryLessonsLabel: "🎒 I. Matières de l'Enseignement Primaire (P1 - P6):",
+      primaryGradeSpan: "Primary 1 - Primary 6",
+      oLevelLessonsLabel: "📚 II. Matières du Secondaire Inférieur (O-Level S1 - S3):",
+      oLevelGradeSpan: "Senior 1 - Senior 3",
+      aLevelLessonsLabel: "🎓 III. Matières du Secondaire Supérieur (A-Level S4 - S6):",
+      aLevelGradeSpan: "Senior 4 - Senior 6",
+      primarySubjects: [
+        'Mathématiques',
+        'Sciences et Technologie Élémentaire',
+        'Kinyarwanda',
+        'Anglais',
+        'Études Sociales et Religieuses',
+        'Français',
+        'Arts Créatifs et Musique',
+        'Éducation Physique et Sportive'
+      ],
+      oLevelSubjects: [
+        'Mathématiques',
+        'Entrepreneuriat',
+        'Anglais',
+        'Kinyarwanda',
+        'Histoire',
+        'Géographie',
+        'Physique',
+        'Français',
+        'Chimie',
+        'Biologie',
+        'Swahili',
+        'MDD',
+        'Technologies de l\'Information et de la Communication (T.I.C)'
+      ],
+      aLevelSubjects: [
+        'Mathématiques',
+        'Entrepreneuriat',
+        'Kinyarwanda',
+        'Anglais',
+        'Histoire',
+        'Géographie',
+        'Physique',
+        'Français',
+        'Chimie',
+        'Biologie',
+        'Swahili',
+        'Musique',
+        'Technologies de l\'Information et de la Communication (T.I.C)'
+      ],
+      schoolNamePlaceholder: "Ex: G.S. Remera Catholique",
+      districtPlaceholder: "Ex: Gasabo",
+      teacherNamePlaceholder: "Ex: NKUNDIMANA Théogène",
+      subjectPlaceholder: "Ex: Français ou Mathématiques",
+      classGradePlaceholder: "Ex: P5 ou S3 MCB",
+      termPlaceholder: "Ex: Trimestre 1",
+      unitNoPlaceholder: "Ex: Unité 3",
+      lessonNoPlaceholder: "Ex: Leçon 1 sur 2",
+      classSizePlaceholder: "Ex: 45 élèves",
+      specialNeedsPlaceholder: "Ex: 1 élève malvoyant (ou Aucun)",
+      unitTitlePlaceholder: "Ex: Fractions et Décimales",
+      lessonTitlePlaceholder: "Ex: Addition de Fractions Propres",
+      keyUnitCompetencePlaceholder: "Ex: Additionner et soustraire correctement les fractions propres dans les problèmes de la vie quotidienne...",
+      instructionalObjectivePlaceholder: "Ex: À l'aide de schémas de fractions [Condition], les apprenants [Who] seront capables de calculer et résoudre [Action/Behavior] l'addition de fractions propres [Content] avec précision en 40 minutes [Degree].",
+      learningMaterialsPlaceholder: "Ex: Bandes de fractions, affiches, tableau noir",
+      referencesPlaceholder: "Ex: Livre de l'Élève REB P5 Mathématiques, Page 42",
+      durationTip: "⏱️ La durée standard d'une leçon est de 40 minutes maximum.",
+      objectiveBadge: "Objectif Généré Automatiquement en Français par l'IA",
+      modelsGuideTitle: "🎯 Les 5 Éléments d'un Objectif Pédagogique (5 Models):",
+      m1: "1. Condition (Contexte/Matériel)",
+      m2: "2. Who (Apprenants)",
+      m3: "3. Action/Behavior (Verbe d'action)",
+      m4: "4. Content (Contenu du cours)",
+      m5: "5. Degree (Critère de réussite)",
+    };
+  } else if (isSwahili) {
+    return {
+      topBannerTitle: "Chagua Lugha ya Mpango wa Somo (REB / CBC)",
+      topBannerSubtitle: "Bofya lugha unayotaka. Mpango wote wa somo utaundwa kwa lugha uliyochagua.",
+      generatorBadge: format === 'remedial_grid'
+        ? 'MTAFITI WA PROGRAMU YA KUREKEBISHA (RLP)'
+        : 'MTAFITI RASMI WA MPANGO WA SOMO REB / CBC',
+      generatorTitle: format === 'remedial_grid'
+        ? 'Mpango wa Somo la Kurekebisha (RLP)'
+        : 'Tengeneza Mpango Rasmi wa Somo REB / CBC',
+      generatorSubtitle: format === 'remedial_grid'
+        ? 'Mpango wa usaidizi, kuimarisha na shughuli za ziada.'
+        : 'Unda mipango ya somo inayoweza kuchapishwa kwenye ukurasa 1 kwa lugha yoyote.',
+      formatLabel: "✓ Chagua Muundo wa Mpango wa Somo:",
+      formatRebGrid: "Kigezo cha Kawaida cha REB",
+      formatRemedialGrid: "Programu ya Kurekebisha (RLP)",
+      formatOpenFormat: "Muundo Flexible wa Wazi",
+      sec1Title: "1. Taarifa za Shule na Darasa",
+      schoolName: "Jina la Shule",
+      district: "Wilaya",
+      teacherName: "Jina la Mwalimu",
+      languageLabel: "Lugha ya Mpango",
+      subject: "Somo (Subject)",
+      classGrade: "Darasa",
+      term: "Muhula (Term)",
+      date: "Tarehe",
+      unitNo: "Nambari ya Mada (Unit N°)",
+      lessonNo: "Nambari ya Somo (Lesson N°)",
+      duration: "Muda wa Somo",
+      classSize: "Idadi ya Wanafunzi",
+      location: "Eneo la Somo",
+      specialNeeds: "Mahitaji Maalum ya Kujifunza",
+      sec2Title: "2. Mada na Umakini wa Somo",
+      unitTitle: "Anwani ya Mada",
+      lessonTitle: "Anwani ya Somo",
+      keyUnitCompetence: "Uwezo Mkuu wa Mada",
+      instructionalObjective: "Lengo la Somo (Muundo wa Sehemu 5)",
+      learningMaterials: "Zana za Kufundishia",
+      references: "Marejeleo na Vitabu",
+      generateBtn: "🚀 Tengeneza Mpango wa Somo kwa Kiswahili",
+      generatingBtn: "Inatengeneza Mpango wa Somo kwa Kiswahili...",
+      primaryLessonsLabel: "🎒 I. Masomo ya Shule ya Msingi (P1 - P6):",
+      primaryGradeSpan: "Primary 1 - Primary 6",
+      oLevelLessonsLabel: "📚 II. Masomo ya Sekondari ya Chini (O-Level S1 - S3):",
+      oLevelGradeSpan: "Senior 1 - Senior 3",
+      aLevelLessonsLabel: "🎓 III. Masomo ya Sekondari ya Juu (A-Level S4 - S6):",
+      aLevelGradeSpan: "Senior 4 - Senior 6",
+      primarySubjects: [
+        'Hisabati',
+        'Sayansi na Teknolojia',
+        'Kinyarwanda',
+        'Kiingereza',
+        'Maarifa ya Jamii na Dini',
+        'Kifaransa',
+        'Sanaa na Muziki',
+        'Elimu ya Viungo na Michezo'
+      ],
+      oLevelSubjects: [
+        'Hisabati',
+        'Ujasiriamali',
+        'Kiingereza',
+        'Kinyarwanda',
+        'Historia',
+        'Jiografia',
+        'Fizikia',
+        'Kifaransa',
+        'Kemia',
+        'Biyolojia',
+        'Kiswahili',
+        'MDD',
+        'Teknolojia ya Habari na Mawasiliano (T.I.C)'
+      ],
+      aLevelSubjects: [
+        'Hisabati',
+        'Ujasiriamali',
+        'Kinyarwanda',
+        'Kiingereza',
+        'Historia',
+        'Jiografia',
+        'Fizikia',
+        'Kifaransa',
+        'Kemia',
+        'Biyolojia',
+        'Kiswahili',
+        'Muziki',
+        'Teknolojia ya Habari na Mawasiliano (T.I.C)'
+      ],
+      schoolNamePlaceholder: "Mfano: G.S. Remera Catholic",
+      districtPlaceholder: "Mfano: Gasabo",
+      teacherNamePlaceholder: "Mfano: NKUNDIMANA Théogène",
+      subjectPlaceholder: "Mfano: Kiswahili au Hisabati",
+      classGradePlaceholder: "Mfano: P5 au S3 MCB",
+      termPlaceholder: "Mfano: Muhula wa 1",
+      unitNoPlaceholder: "Mfano: Mada ya 3",
+      lessonNoPlaceholder: "Mfano: Somo la 1 kati ya 2",
+      classSizePlaceholder: "Mfano: Wanafunzi 45",
+      specialNeedsPlaceholder: "Mfano: Mwanafunzi 1 mwenye matatizo ya kuona (au Hakuna)",
+      unitTitlePlaceholder: "Mfano: Sehemu na Desimali",
+      lessonTitlePlaceholder: "Mfano: Kujumlisha Sehemu Sahihi",
+      keyUnitCompetencePlaceholder: "Mfano: Kujumlisha na kutoa sehemu sahihi kwa usahihi katika matatizo ya maisha halisi...",
+      instructionalObjectivePlaceholder: "Mfano: Kwa kutumia chati za sehemu [Condition], wanafunzi [Who] wataweza kukokotoa na kutatua [Action/Behavior] ujumlishaji wa sehemu sahihi [Content] kwa usahihi ndani ya dakika 40 [Degree].",
+      learningMaterialsPlaceholder: "Mfano: Vifaa vya sehemu, chati za ukutani, ubao",
+      referencesPlaceholder: "Mfano: Kitabu cha Mwanafunzi cha Hisabati P5 REB, Ukurasa wa 42",
+      durationTip: "⏱️ Muda wa kawaida wa somo ni dakika 40 pekee.",
+      objectiveBadge: "Lengo Linaloundwa na AI kwa Kiswahili",
+      modelsGuideTitle: "🎯 Vigezo 5 vya Lengo la Somo (5 Models):",
+      m1: "1. Condition (Zana/Muktadha)",
+      m2: "2. Who (Wanafunzi)",
+      m3: "3. Action/Behavior (Kitendo/Kitenzi)",
+      m4: "4. Content (Yaliyomo)",
+      m5: "5. Degree (Kiwango cha Usahihi)",
+    };
+  } else {
+    return {
+      topBannerTitle: "Select Lesson Plan Language (REB / CBC)",
+      topBannerSubtitle: "Click your preferred language below. The entire generated lesson plan will be output in your chosen language.",
+      generatorBadge: format === 'remedial_grid'
+        ? 'REMEDIAL LEARNING PROGRAM (RLP) GENERATOR'
+        : 'OFFICIAL REB / CBC LESSON PLAN GENERATOR',
+      generatorTitle: format === 'remedial_grid'
+        ? 'Remedial Learning Program (RLP) Generator'
+        : 'Create Official REB / CBC Lesson Plan',
+      generatorSubtitle: format === 'remedial_grid'
+        ? 'Differentiated lesson plan for Remediation, Consolidation & Extension.'
+        : 'Generate 1-page printable lesson plans instantly in any language.',
+      formatLabel: "✓ Select Lesson Plan Format:",
+      formatRebGrid: "REB Standard Grid",
+      formatRemedialGrid: "Remedial Program (RLP)",
+      formatOpenFormat: "Flexible Open Format",
+      sec1Title: "1. School & Class Information",
+      schoolName: "School Name",
+      district: "District / Akarere",
+      teacherName: "Teacher's Name",
+      languageLabel: "Lesson Plan Language",
+      subject: "Subject (Isomo)",
+      classGrade: "Class / Grade",
+      term: "Term",
+      date: "Date",
+      unitNo: "Unit N°",
+      lessonNo: "Lesson N°",
+      duration: "Duration",
+      classSize: "Class Size",
+      location: "Class Location",
+      specialNeeds: "Special Educational Needs",
+      sec2Title: "2. Unit & Competences",
+      unitTitle: "Unit Title",
+      lessonTitle: "Title of the Lesson",
+      keyUnitCompetence: "Key Unit Competence",
+      instructionalObjective: "Instructional Objective (5 Models: Condition, Who, Action, Content, Degree)",
+      learningMaterials: "Learning Materials",
+      references: "References",
+      generateBtn: "🚀 Generate Official REB Lesson Plan",
+      generatingBtn: "Generating Official REB Lesson Plan...",
+      primaryLessonsLabel: "🎒 I. Lessons of Primary (Amashuri Abanza - 8):",
+      primaryGradeSpan: "Primary 1 - Primary 6",
+      oLevelLessonsLabel: "📚 II. Lessons of Secondary (Ordinary Level - O-Level - 13):",
+      oLevelGradeSpan: "Senior 1 - Senior 3",
+      aLevelLessonsLabel: "🎓 III. Lessons of Secondary (A-Level - 13):",
+      aLevelGradeSpan: "Senior 4 - Senior 6",
+      primarySubjects: [
+        'Mathematics',
+        'Science and Elementary Technology',
+        'Kinyarwanda',
+        'English',
+        'Social and Religious Studies',
+        'Francais',
+        'Creative Arts and Musics',
+        'Physical Education and Sports'
+      ],
+      oLevelSubjects: [
+        'Mathematics',
+        'Entrepreneurship',
+        'English',
+        'Kinyarwanda',
+        'History',
+        'Geography',
+        'Physics',
+        'Francais',
+        'Chemistry',
+        'Biology',
+        'Kiswahili',
+        'MDD',
+        'Information Communication and Technology( I.C.T)'
+      ],
+      aLevelSubjects: [
+        'Mathematics',
+        'Entrepreneurship',
+        'Kinyarwanda',
+        'English',
+        'History',
+        'Geography',
+        'Physics',
+        'Francais',
+        'Chemistry',
+        'Biology',
+        'Kiswahili',
+        'Musics',
+        'Information Communication and Technology( I.C.T)'
+      ],
+      schoolNamePlaceholder: "e.g. G.S. Remera Catholic",
+      districtPlaceholder: "e.g. Gasabo",
+      teacherNamePlaceholder: "e.g. NKUNDIMANA Théogène",
+      subjectPlaceholder: "e.g. Mathematics",
+      classGradePlaceholder: "e.g. P5 or S3 MCB",
+      termPlaceholder: "e.g. Term 1",
+      unitNoPlaceholder: "e.g. Unit 3",
+      lessonNoPlaceholder: "e.g. 1 of 2",
+      classSizePlaceholder: "e.g. 45 learners",
+      specialNeedsPlaceholder: "e.g. 1 learner with low vision (or None)",
+      unitTitlePlaceholder: "e.g. Fractions and Decimals",
+      lessonTitlePlaceholder: "e.g. Addition of Proper Fractions",
+      keyUnitCompetencePlaceholder: "e.g. To add and subtract proper fractions correctly in real-life problems...",
+      instructionalObjectivePlaceholder: "e.g. Given illustrative fraction charts [Condition], learners [Who] will be able to calculate and solve [Action/Behavior] addition of proper fractions [Content] accurately without error within 40 minutes [Degree of Performance].",
+      learningMaterialsPlaceholder: "e.g. Fraction strips, wall charts, chalkboard",
+      referencesPlaceholder: "e.g. REB Primary 5 Mathematics Pupil's Book Page 42",
+      durationTip: "⏱️ Standard lesson period is max 40 min.",
+      objectiveBadge: "AI 5-Model Objective Auto-Generated",
+      modelsGuideTitle: "🎯 Five (5) Models of Instructional Objectives:",
+      m1: "1. Condition (Materials/Context)",
+      m2: "2. Who (Learners)",
+      m3: "3. Action/Behavior (Action Verb)",
+      m4: "4. Content (Lesson Body)",
+      m5: "5. Degree (Criterion/Standard)",
+    };
+  }
+}
+
 // Primary and Secondary (Ordinary Level) Subject Lists
 const PRIMARY_SUBJECTS = [
   'Mathematics',
@@ -297,18 +753,48 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
   const savedDraft = getSavedDraft();
 
   const [format, setFormat] = useState<PlanFormatOption>(initialFormat || savedDraft?.format || 'reb_grid');
+  const loc = getLessonPlanUILocalization(selectedLanguage, format);
 
   useEffect(() => {
     if (initialFormat) {
       setFormat(initialFormat);
     }
   }, [initialFormat]);
+
   const [schoolName, setSchoolName] = useState(savedDraft?.schoolName || '');
   const [district, setDistrict] = useState(savedDraft?.district || localStorage.getItem('tegura_saved_district') || '');
   const [teacherName, setTeacherName] = useState(savedDraft?.teacherName || user?.name || '');
   const [term, setTerm] = useState(savedDraft?.term || '');
   const [date, setDate] = useState(savedDraft?.date || new Date().toISOString().split('T')[0]);
   const [subject, setSubject] = useState(savedDraft?.subject || '');
+
+  const prevLangRef = useRef(selectedLanguage);
+  useEffect(() => {
+    if (prevLangRef.current === selectedLanguage) return;
+    const oldLang = prevLangRef.current;
+    prevLangRef.current = selectedLanguage;
+
+    if (!subject) return;
+
+    const oldLoc = getLessonPlanUILocalization(oldLang, format);
+    const newLoc = getLessonPlanUILocalization(selectedLanguage, format);
+
+    const pIdx = oldLoc.primarySubjects.indexOf(subject);
+    if (pIdx !== -1 && newLoc.primarySubjects[pIdx]) {
+      setSubject(newLoc.primarySubjects[pIdx]);
+      return;
+    }
+    const oIdx = oldLoc.oLevelSubjects.indexOf(subject);
+    if (oIdx !== -1 && newLoc.oLevelSubjects[oIdx]) {
+      setSubject(newLoc.oLevelSubjects[oIdx]);
+      return;
+    }
+    const aIdx = oldLoc.aLevelSubjects.indexOf(subject);
+    if (aIdx !== -1 && newLoc.aLevelSubjects[aIdx]) {
+      setSubject(newLoc.aLevelSubjects[aIdx]);
+      return;
+    }
+  }, [selectedLanguage, subject, format]);
   const [classGrade, setClassGrade] = useState(savedDraft?.classGrade || '');
   const [unitNo, setUnitNo] = useState(savedDraft?.unitNo || '');
   const [lessonNo, setLessonNo] = useState(savedDraft?.lessonNo || '');
@@ -737,6 +1223,50 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-md p-6 sm:p-8 max-w-4xl mx-auto space-y-6">
+      {/* PROMINENT TOP LANGUAGE SELECTOR BANNER */}
+      <div className="p-5 bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 rounded-2xl border border-emerald-500/30 text-white shadow-lg print:hidden">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Globe className="w-5 h-5 text-emerald-400 shrink-0" />
+              <h3 className="text-sm font-black tracking-wide text-emerald-300 uppercase">
+                {loc.topBannerTitle}
+              </h3>
+            </div>
+            <p className="text-xs text-slate-300 font-medium">
+              {loc.topBannerSubtitle}
+            </p>
+          </div>
+
+          {/* LANGUAGE QUICK-SELECT BUTTONS */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 shrink-0">
+            {[
+              { code: 'English', label: 'English', flag: '🇬🇧' },
+              { code: 'Kinyarwanda', label: 'Ikinyarwanda', flag: '🇷🇼' },
+              { code: 'French', label: 'Français', flag: '🇫🇷' },
+              { code: 'Swahili', label: 'Kiswahili', flag: '🇹🇿' },
+            ].map((lang) => {
+              const isActive = selectedLanguage === lang.code;
+              return (
+                <button
+                  key={lang.code}
+                  type="button"
+                  onClick={() => onLanguageChange(lang.code as LanguageOption)}
+                  className={`px-3.5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
+                    isActive
+                      ? 'bg-emerald-500 text-slate-950 ring-2 ring-emerald-300 shadow-emerald-500/40 scale-105 font-extrabold'
+                      : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700'
+                  }`}
+                >
+                  <span className="text-base leading-none">{lang.flag}</span>
+                  <span>{lang.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* Header Banner */}
       <div className={`p-5 rounded-2xl border transition-all ${
         format === 'remedial_grid'
@@ -752,24 +1282,18 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
             }`}>
               <Sparkles className="w-3.5 h-3.5 fill-current" />
               <span>
-                {format === 'remedial_grid'
-                  ? 'REMEDIAL LEARNING PROGRAM (RLP) GENERATOR'
-                  : 'OFFICIAL REB / CBC LESSON PLAN GENERATOR'}
+                {loc.generatorBadge}
               </span>
             </div>
             <h1 className={`text-2xl sm:text-3xl font-black tracking-tight ${
               format === 'remedial_grid' ? 'text-white' : 'text-slate-950'
             }`}>
-              {format === 'remedial_grid'
-                ? 'Isomo ryo Kungoza (Remedial Learning Program)'
-                : 'Create Official REB Lesson Plan'}
+              {loc.generatorTitle}
             </h1>
             <p className={`text-xs mt-1 ${
               format === 'remedial_grid' ? 'text-amber-100 font-medium' : 'text-slate-500'
             }`}>
-              {format === 'remedial_grid'
-                ? 'Gahunda y\'isomo ryo kungoza no kuzahura abanyeshuri bafite inyunganira zitandukanye (Remediation, Consolidation & Extension).'
-                : 'Generate 1-page printable lesson plans instantly in any language.'}
+              {loc.generatorSubtitle}
             </p>
           </div>
 
@@ -1054,7 +1578,7 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
       {/* Format Selector */}
       <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 col-span-1 md:col-span-2">
         <label className="block text-xs font-bold text-slate-700 mb-2">
-          ✓ Select Lesson Plan Format:
+          {loc.formatLabel}
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <button
@@ -1068,7 +1592,7 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
             id="format-reb-grid-btn"
           >
             <LayoutGrid className="w-4 h-4" />
-            <span>REB Standard Grid</span>
+            <span>{loc.formatRebGrid}</span>
           </button>
 
           <button
@@ -1082,7 +1606,7 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
             id="format-remedial-grid-btn"
           >
             <Sparkles className="w-4 h-4 text-amber-200" />
-            <span>Remedial Program (RLP)</span>
+            <span>{loc.formatRemedialGrid}</span>
           </button>
 
           <button
@@ -1096,7 +1620,7 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
             id="format-open-format-btn"
           >
             <FileText className="w-4 h-4" />
-            <span>Flexible Open Format</span>
+            <span>{loc.formatOpenFormat}</span>
           </button>
         </div>
       </div>
@@ -1107,14 +1631,14 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-black text-emerald-900 flex items-center gap-1.5">
-                <span>🎒 I. Lessons of Primary (Amashuri Abanza - 8):</span>
+                <span>{loc.primaryLessonsLabel}</span>
               </label>
               <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-100/80 px-2 py-0.5 rounded-full">
-                Primary 1 - Primary 6
+                {loc.primaryGradeSpan}
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {PRIMARY_SUBJECTS.map((pSub) => (
+              {loc.primarySubjects.map((pSub) => (
                 <button
                   key={`primary-${pSub}`}
                   type="button"
@@ -1140,14 +1664,14 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
           <div className="pt-2 border-t border-slate-200">
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-black text-blue-900 flex items-center gap-1.5">
-                <span>📚 II. Lessons of Secondary (Ordinary Level - O-Level - 13):</span>
+                <span>{loc.oLevelLessonsLabel}</span>
               </label>
               <span className="text-[10px] text-blue-700 font-semibold bg-blue-100/80 px-2 py-0.5 rounded-full">
-                Senior 1 - Senior 3
+                {loc.oLevelGradeSpan}
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {SECONDARY_O_LEVEL_SUBJECTS.map((sSub) => (
+              {loc.oLevelSubjects.map((sSub) => (
                 <button
                   key={`secondary-o-${sSub}`}
                   type="button"
@@ -1173,14 +1697,14 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
           <div className="pt-2 border-t border-slate-200">
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-black text-purple-900 flex items-center gap-1.5">
-                <span>🎓 III. Lessons of Secondary ( A-Level - 13):</span>
+                <span>{loc.aLevelLessonsLabel}</span>
               </label>
               <span className="text-[10px] text-purple-700 font-semibold bg-purple-100/80 px-2 py-0.5 rounded-full">
-                Senior 4 - Senior 6
+                {loc.aLevelGradeSpan}
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {SECONDARY_A_LEVEL_SUBJECTS.map((aSub) => (
+              {loc.aLevelSubjects.map((aSub) => (
                 <button
                   key={`secondary-a-${aSub}`}
                   type="button"
@@ -1208,55 +1732,71 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
         <div className="space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-800 border-b border-emerald-100 pb-1 flex items-center gap-1.5">
             <BookOpen className="w-4 h-4 text-emerald-600" />
-            1. School & Class Information
+            {loc.sec1Title}
           </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                School Name <span className="text-red-500 font-bold">*</span>
+                {loc.schoolName} <span className="text-red-500 font-bold">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={schoolName}
                 onChange={(e) => setSchoolName(e.target.value)}
-                placeholder="e.g. G.S. Remera Catholic"
+                placeholder={loc.schoolNamePlaceholder}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden placeholder:text-slate-500"
               />
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                District / Akarere <span className="text-red-500 font-bold">*</span>
+                {loc.district} <span className="text-red-500 font-bold">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={district}
                 onChange={(e) => setDistrict(e.target.value)}
-                placeholder="e.g. Gasabo"
+                placeholder={loc.districtPlaceholder}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden placeholder:text-slate-500 font-semibold text-slate-800"
               />
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Teacher's Name <span className="text-red-500 font-bold">*</span>
+                {loc.teacherName} <span className="text-red-500 font-bold">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={teacherName}
                 onChange={(e) => setTeacherName(e.target.value)}
-                placeholder="e.g. Teacher Eric"
+                placeholder={loc.teacherNamePlaceholder}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden placeholder:text-slate-500"
               />
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Subject (Isomo) <span className="text-red-500 font-bold">*</span>
+                {loc.languageLabel} <span className="text-red-500 font-bold">*</span>
+              </label>
+              <select
+                value={selectedLanguage}
+                onChange={(e) => onLanguageChange(e.target.value as LanguageOption)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden bg-white font-bold text-slate-800"
+              >
+                <option value="English">English (English)</option>
+                <option value="Kinyarwanda">Kinyarwanda (Kinyarwanda)</option>
+                <option value="French">French (Français)</option>
+                <option value="Swahili">Swahili (Kiswahili)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                {loc.subject} <span className="text-red-500 font-bold">*</span>
               </label>
               <input
                 type="text"
@@ -1264,24 +1804,24 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
                 list="primary-secondary-subjects"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="e.g. Mathematics"
+                placeholder={loc.subjectPlaceholder}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-semibold text-slate-800 placeholder:text-slate-500 placeholder:font-normal"
               />
               <datalist id="primary-secondary-subjects">
                 {/* Primary subjects */}
-                {PRIMARY_SUBJECTS.map((sub) => (
+                {loc.primarySubjects.map((sub) => (
                   <option key={`dl-p-${sub}`} value={sub}>
                     Primary: {sub}
                   </option>
                 ))}
                 {/* Secondary Ordinary Level subjects */}
-                {SECONDARY_O_LEVEL_SUBJECTS.map((sub) => (
+                {loc.oLevelSubjects.map((sub) => (
                   <option key={`dl-s-o-${sub}`} value={sub}>
                     Secondary O-Level: {sub}
                   </option>
                 ))}
                 {/* Secondary Advanced Level subjects */}
-                {SECONDARY_A_LEVEL_SUBJECTS.map((sub) => (
+                {loc.aLevelSubjects.map((sub) => (
                   <option key={`dl-s-a-${sub}`} value={sub}>
                     Secondary A-Level: {sub}
                   </option>
@@ -1291,7 +1831,7 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Class / Grade (Umwaka w'Ishoori) <span className="text-red-500 font-bold">*</span>
+                {loc.classGrade} <span className="text-red-500 font-bold">*</span>
               </label>
               <input
                 type="text"
@@ -1299,7 +1839,7 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
                 list="primary-secondary-grades"
                 value={classGrade}
                 onChange={(e) => setClassGrade(e.target.value)}
-                placeholder="e.g. P5 or S3 MCB"
+                placeholder={loc.classGradePlaceholder}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-semibold text-slate-800 placeholder:text-slate-500 placeholder:font-normal"
               />
               <datalist id="primary-secondary-grades">
@@ -1330,21 +1870,21 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Term <span className="text-red-500 font-bold">*</span>
+                {loc.term} <span className="text-red-500 font-bold">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={term}
                 onChange={(e) => setTerm(e.target.value)}
-                placeholder="e.g. Term 1"
+                placeholder={loc.termPlaceholder}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden placeholder:text-slate-500"
               />
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Date <span className="text-red-500 font-bold">*</span>
+                {loc.date} <span className="text-red-500 font-bold">*</span>
               </label>
               <input
                 type="date"
@@ -1357,28 +1897,28 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Unit N° <span className="text-red-500 font-bold">*</span>
+                {loc.unitNo} <span className="text-red-500 font-bold">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={unitNo}
                 onChange={(e) => setUnitNo(e.target.value)}
-                placeholder="e.g. Unit 3"
+                placeholder={loc.unitNoPlaceholder}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden placeholder:text-slate-500"
               />
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Lesson N° <span className="text-red-500 font-bold">*</span>
+                {loc.lessonNo} <span className="text-red-500 font-bold">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={lessonNo}
                 onChange={(e) => setLessonNo(e.target.value)}
-                placeholder="e.g. 1 of 2"
+                placeholder={loc.lessonNoPlaceholder}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden placeholder:text-slate-500 font-medium"
               />
             </div>
@@ -1386,7 +1926,7 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-[11px] font-bold text-slate-700">
-                  Duration (Igihe cy'Isomo) <span className="text-red-500 font-bold">*</span>
+                  {loc.duration} <span className="text-red-500 font-bold">*</span>
                 </label>
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-950 border border-emerald-300">
                   Max 40 min
@@ -1401,37 +1941,37 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-bold text-slate-900 placeholder:text-slate-500 placeholder:font-normal"
               />
               <span className="text-[10px] text-emerald-800 font-semibold mt-1 block">
-                ⏱️ Igihe cy'isomo isanzwe ni iminota 40 ku isomo rimwe (Standard lesson period max 40 min).
+                {loc.durationTip}
               </span>
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Class Size <span className="text-red-500 font-bold">*</span>
+                {loc.classSize} <span className="text-red-500 font-bold">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={classSize}
                 onChange={(e) => setClassSize(e.target.value)}
-                placeholder="e.g. 45 learners"
+                placeholder={loc.classSizePlaceholder}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden placeholder:text-slate-500"
               />
             </div>
 
             <div className="sm:col-span-2">
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Class Location <span className="text-red-500 font-bold">*</span>
+                {loc.location} <span className="text-red-500 font-bold">*</span>
               </label>
               <select
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden bg-white"
               >
-                <option value="In Classroom">In Classroom</option>
-                <option value="Outside / School Playground">Outside / School Playground</option>
-                <option value="Science / Computer Laboratory">Science / Computer Laboratory</option>
-                <option value="School Library">School Library</option>
+                <option value="In Classroom">In Classroom / Mu Ishuri</option>
+                <option value="Outside / School Playground">Outside / School Playground / Hanze</option>
+                <option value="Science / Computer Laboratory">Science / Computer Laboratory / Muri Laboratwari</option>
+                <option value="School Library">School Library / Muri Isomero</option>
               </select>
             </div>
           </div>
@@ -1551,14 +2091,14 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
         {/* Special Educational Needs */}
         <div>
           <label className="block text-[11px] font-bold text-slate-700 mb-1">
-            Type of Special Educational Needs & number of learners <span className="text-red-500 font-bold">*</span>
+            {loc.specialNeeds} <span className="text-red-500 font-bold">*</span>
           </label>
           <input
             type="text"
             required
             value={specialNeeds}
             onChange={(e) => setSpecialNeeds(e.target.value)}
-            placeholder="e.g. 1 learner with low vision (or None)"
+            placeholder={loc.specialNeedsPlaceholder}
             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden placeholder:text-slate-500"
           />
         </div>
@@ -1567,34 +2107,34 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
         <div className="space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-800 border-b border-emerald-100 pb-1 flex items-center gap-1.5">
             <Layers className="w-4 h-4 text-emerald-600" />
-            2. Unit & Competence Objectives
+            {loc.sec2Title}
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Unit Title <span className="text-red-500 font-bold">*</span>
+                {loc.unitTitle} <span className="text-red-500 font-bold">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={unitTitle}
                 onChange={(e) => setUnitTitle(e.target.value)}
-                placeholder="e.g. Fractions and Decimals"
+                placeholder={loc.unitTitlePlaceholder}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-medium placeholder:text-slate-500 placeholder:font-normal"
               />
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Title of the Lesson <span className="text-red-500 font-bold">*</span>
+                {loc.lessonTitle} <span className="text-red-500 font-bold">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={lessonTitle}
                 onChange={(e) => setLessonTitle(e.target.value)}
-                placeholder="e.g. Addition of Proper Fractions"
+                placeholder={loc.lessonTitlePlaceholder}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-bold text-emerald-900 placeholder:text-slate-500 placeholder:font-normal"
               />
             </div>
@@ -1602,14 +2142,14 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
 
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">
-              Key Unit Competence <span className="text-red-500 font-bold">*</span>
+              {loc.keyUnitCompetence} <span className="text-red-500 font-bold">*</span>
             </label>
             <textarea
               rows={2}
               required
               value={keyUnitCompetence}
               onChange={(e) => setKeyUnitCompetence(e.target.value)}
-              placeholder="e.g. To add and subtract proper fractions correctly in real-life problems..."
+              placeholder={loc.keyUnitCompetencePlaceholder}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden placeholder:text-slate-500"
             />
           </div>
@@ -1617,32 +2157,32 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
           <div>
             <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
               <label className="block text-[11px] font-bold text-slate-800">
-                Instructional Objective (5 Models: Condition, Who, Action/Behavior, Content, Degree) <span className="text-red-500 font-bold">*</span>
+                {loc.instructionalObjective} <span className="text-red-500 font-bold">*</span>
               </label>
               <span className="text-[10px] text-emerald-800 font-extrabold bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300 flex items-center gap-1 shadow-2xs">
                 <Sparkles className="w-3 h-3 text-amber-600 fill-amber-400" />
-                <span>AI 5-Model Objective Auto-Generated</span>
+                <span>{loc.objectiveBadge}</span>
               </span>
             </div>
             <textarea
               rows={3}
               value={instructionalObjective}
               onChange={(e) => setInstructionalObjective(e.target.value)}
-              placeholder="e.g. Given illustrative fraction charts [Condition], learners [Who] will be able to calculate and solve [Action/Behavior] addition of proper fractions [Content] accurately without error within 40 minutes [Degree of Performance]."
+              placeholder={loc.instructionalObjectivePlaceholder}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden placeholder:text-slate-400 font-medium text-slate-800"
             />
             
             {/* 5 Models Criteria Micro Guide */}
             <div className="mt-1.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[10.5px] text-slate-600 space-y-1.5">
               <div className="font-extrabold text-slate-800 flex items-center gap-1">
-                <span>🎯 Five (5) Models of Instructional Objectives:</span>
+                <span>{loc.modelsGuideTitle}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-1 text-[10px] text-slate-700 font-medium pt-0.5">
-                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">1. Condition (Imfashanyigisho)</span>
-                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">2. Who (Umwigishwa)</span>
-                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">3. Action/Behavior (Igikorwa/Inshinga)</span>
-                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">4. Content (Mubiri w'isomo)</span>
-                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">5. Degree (Ipimo/Urugero)</span>
+                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">{loc.m1}</span>
+                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">{loc.m2}</span>
+                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">{loc.m3}</span>
+                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">{loc.m4}</span>
+                <span className="bg-white px-1.5 py-0.5 rounded-md border border-slate-200">{loc.m5}</span>
               </div>
             </div>
           </div>
@@ -1650,33 +2190,35 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Learning Materials <span className="text-red-500 font-bold">*</span>
+                {loc.learningMaterials} <span className="text-red-500 font-bold">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={learningMaterials}
                 onChange={(e) => setLearningMaterials(e.target.value)}
-                placeholder="e.g. Fraction strips, wall charts, chalkboard"
+                placeholder={loc.learningMaterialsPlaceholder}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden placeholder:text-slate-500"
               />
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                References <span className="text-red-500 font-bold">*</span>
+                {loc.references} <span className="text-red-500 font-bold">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={references}
                 onChange={(e) => setReferences(e.target.value)}
-                placeholder="e.g. REB Primary 5 Mathematics Pupil's Book Page 42"
+                placeholder={loc.referencesPlaceholder}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden placeholder:text-slate-500"
               />
             </div>
           </div>
         </div>
+
+
 
         {/* Quota Warning Callout if 0 remaining plans */}
         {user && !user.isAdmin && user.remainingPlans <= 0 && (
@@ -1703,6 +2245,8 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
           </div>
         )}
 
+
+
         {/* Generate Action Button */}
         <div className="pt-4 border-t border-slate-200">
           <button
@@ -1714,12 +2258,12 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
             {isGenerating ? (
               <>
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Generating {selectedLanguage} Lesson Plan... Please wait</span>
+                <span>{loc.generatingBtn}</span>
               </>
             ) : (
               <>
                 <Sparkles className="w-5 h-5 text-amber-300" />
-                <span>➡️ Generate Lesson Plan ({selectedLanguage})</span>
+                <span>{loc.generateBtn}</span>
               </>
             )}
           </button>
@@ -1736,20 +2280,21 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
 
             <div className="text-center space-y-1.5">
               <h3 className="text-lg font-black text-slate-900">
-                Lesson Plans z'Ukwezi Zarangiye (Plans Expired / Finished)
+                Monthly Quota Exhausted (0 Plans Remaining)
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Mwamaze gukoresha lesson plans zose z'ukwezi kwanyu / izo mwaguze (<strong className="text-amber-700">0 Lesson Plans Left</strong>). Kugira ngo mukomeze gukora no gukorera izindi lesson plans, banza ugure izindi lesson plans zishya mu ifatabuguzi (Subscription) ryo gukomeza igikorwa.
+                You have used all the free or paid lesson plans allocated to your account for this cycle (<strong className="text-amber-700">0 Lesson Plans Left</strong>). To continue creating high-quality lesson plans instantly, please upgrade or replenish your plan balance.
               </p>
             </div>
 
             <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-1.5">
               <div className="flex items-center gap-2 font-bold text-slate-900">
                 <Lock className="w-4 h-4 text-emerald-600" />
-                <span>Uburyo bwo kwishyura bworoshye:</span>
+                <span>Quick Payment Options:</span>
               </div>
-              <p>• Mobile Money (MTN / Airtel): <strong>{OWNER_INFO.momoCode}</strong></p>
-              <p>• Izina rya Konti: <strong>NKUNDIMANA Theogene</strong></p>
+              <p>• Mobile Money (MTN / Airtel Code): <strong>{OWNER_INFO.momoCode}</strong></p>
+              <p>• Account Name: <strong>NKUNDIMANA Theogene</strong></p>
+              <p>• Or choose a subscription plan below to unlock instant auto-activation.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-2">
@@ -1758,7 +2303,7 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
                 onClick={() => setShowQuotaPaymentModal(false)}
                 className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors"
               >
-                Funga / Cancel
+                Close / Cancel
               </button>
               <button
                 type="button"
@@ -1769,7 +2314,7 @@ export const LessonPlanForm: React.FC<LessonPlanFormProps> = ({
                 className="py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
               >
                 <CreditCard className="w-4 h-4" />
-                <span>Kwishyura Now</span>
+                <span>Go to Payments</span>
               </button>
             </div>
           </div>

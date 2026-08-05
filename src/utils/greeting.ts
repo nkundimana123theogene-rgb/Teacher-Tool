@@ -1,13 +1,13 @@
 export function getTimeBasedGreeting(
   userName?: string | null,
-  language: string = 'Kinyarwanda',
+  language: string = 'English',
   selectedCountry: string = 'Rwanda'
 ) {
   const rawName = userName?.trim() || '';
-  const name = rawName || 'Mwarimu';
+  const name = rawName || 'Teacher';
   const displayName = (rawName && !rawName.toLowerCase().startsWith('mwarimu') && !rawName.toLowerCase().startsWith('teacher') && !rawName.toLowerCase().startsWith('enseignant')) 
-    ? `Mwarimu ${rawName}` 
-    : (rawName || 'Mwarimu');
+    ? `Teacher ${rawName}` 
+    : (rawName || 'Teacher');
   
   let hour = new Date().getHours();
   let minute = new Date().getMinutes();

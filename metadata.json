@@ -1,5 +1,5 @@
 {
-  "name": "Teacher Tool",
+  "name": "Nkorera Education App",
   "description": "AI CBC Lesson Plan Generator Platform created by NKUNDIMANA Theogene for primary and secondary teachers. Features CBC/REB lesson plan formats, ECE nursery plan creators, multi-language support, high-security printed QR media creators, and progressive web app (PWA) instant installation.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
