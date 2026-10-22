@@ -1,163 +1,43 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#020617" />
-    <meta name="description" content="Nkorera Education - AI CBC Lesson Plan Generator, Nursery Plans, Class Diary & Certificate Creator for Teachers in Rwanda. Created by NKUNDIMANA Theogene." />
-    <meta name="keywords" content="nkorera, nkorera education, nkorera lesson plan, nkorera.education, nkorera app, nkorera learning, nkorera edu, REB lesson plan generator, gukora lesson plans, rwanda teachers tools, nkundimana theogene, CBC lesson plans, class diary generator, certificate creator rwanda, ece nursery plans, online lesson plans rwanda" />
-    <meta name="author" content="NKUNDIMANA Theogene" />
-    <meta name="robots" content="index, follow" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="alternate icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#10b981" />
     
-    <!-- Open Graph / Facebook / WhatsApp -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://nkorera.education/" />
-    <meta property="og:title" content="Nkorera Education - AI Lesson Plan Generator & Teacher Tools" />
-    <meta property="og:description" content="Generate REB/CBC compliant lesson plans, class diaries, and custom academic certificates instantly with AI. Built specifically for Rwandan educators." />
-    <meta property="og:image" content="/pwa-512x512.png" />
-    <meta property="og:site_name" content="Nkorera Education" />
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://nkorera.education/" />
-    <meta property="twitter:title" content="Nkorera Education - AI Lesson Plan Generator & Teacher Tools" />
-    <meta property="twitter:description" content="Generate REB/CBC compliant lesson plans, class diaries, and custom academic certificates instantly with AI. Built specifically for Rwandan educators." />
-    <meta property="twitter:image" content="/pwa-512x512.png" />
-
-    <!-- Google Structured Data (Schema.org JSON-LD) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Nkorera Education",
-      "url": "https://nkorera.education",
-      "description": "An advanced AI-powered educational suite for Rwandan teachers to generate CBC-compliant lesson plans, ECE nursery plans, class diaries, dynamic homework/exams, and printable academic certificates with secure QR validation.",
-      "applicationCategory": "EducationalApplication",
-      "operatingSystem": "All",
-      "browserRequirements": "Requires HTML5 compatible browser",
-      "creator": {
-        "@type": "Person",
-        "name": "NKUNDIMANA Theogene",
-        "jobTitle": "IT Developer & Educational Tech Expert",
-        "address": {
-          "@type": "PostalAddress",
-          "addressCountry": "RW",
-          "addressLocality": "Kigali"
-        }
-      },
-      "audience": {
-        "@type": "Audience",
-        "audienceType": "Teachers, School Directors, Educators in Rwanda"
-      },
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "RWF"
-      },
-      "featureList": [
-        "REB CBC Lesson Plan Generator",
-        "ECE Nursery Lesson Plan Creator",
-        "Academic Certificate Generator with Secure QR Codes",
-        "Auto-saved Class Diary drafting",
-        "Dynamic Homework & Exam Creator",
-        "Progressive Web App (PWA) Offline-Ready functionality"
-      ]
-    }
-    </script>
-
-    <meta name="google-site-verification" content="09XPSsLyVtvby0pYCHfe9EKmPYfXAetFgSl6WrSyxDY" />
+    <!-- Mobile & PWA installability meta tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Nkorera" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Nkorera Edu" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="application-name" content="Nkorera Edu" />
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/pwa-512x512.png" />
-    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/pwa-192x192.png" />
-    <link rel="apple-touch-icon" sizes="512x512" href="/pwa-512x512.png" />
-    <link rel="shortcut icon" href="/pwa-192x192.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Dancing+Script:wght@600;700&family=Great+Vibes&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Poppins:ital,wght@0,300..900;1,300..900&family=Cinzel:wght@600;700;800&family=Montserrat:wght@400;600;700;800&family=Pinyon+Script&family=Garamond&display=swap" rel="stylesheet">
-    <title>Nkorera Education - AI Lesson Plan Generator & Certificate Creator</title>
+    <meta name="apple-mobile-web-app-title" content="Nkorera" />
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Nkorera Education App</title>
+    <meta name="description" content="AI CBC Lesson Plan Generator Platform created by NKUNDIMANA Theogene for primary and secondary teachers. Features CBC/REB lesson plan formats, ECE nursery plan creators, English-standardized assessment builders, high-security printed QR media creators, and progressive web app (PWA) instant installation." />
+    <meta property="og:title" content="Nkorera Education App" />
+    <meta property="og:description" content="AI CBC Lesson Plan Generator Platform created by NKUNDIMANA Theogene for primary and secondary teachers. Features CBC/REB lesson plan formats, ECE nursery plan creators, English-standardized assessment builders, high-security printed QR media creators, and progressive web app (PWA) instant installation." />
   </head>
-  <body>
+  <body class="bg-slate-50 text-slate-900 antialiased font-sans">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker Registration -->
     <script>
-      (function() {
-        function canAccessStorageAndServiceWorker() {
-          try {
-            // Do not register Service Worker if we are running inside an iframe (e.g. AI Studio preview)
-            if (window.self !== window.top) {
-              if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                  for (var i = 0; i < registrations.length; i++) {
-                    registrations[i].unregister();
-                  }
-                }).catch(function() {});
-              }
-              return false;
-            }
-            if (!('serviceWorker' in navigator)) return false;
-            const testKey = '__sw_test__';
-            localStorage.setItem(testKey, '1');
-            localStorage.removeItem(testKey);
-            return true;
-          } catch (e) {
-            return false;
-          }
-        }
-
-        if (canAccessStorageAndServiceWorker()) {
-          window.addEventListener('load', () => {
-            try {
-              navigator.serviceWorker.register('/sw.js')
-                .then((reg) => {
-                  console.log('ServiceWorker registered:', reg.scope);
-                  
-                  // Detect new service worker installation
-                  reg.onupdatefound = () => {
-                    const installingWorker = reg.installing;
-                    if (installingWorker) {
-                      installingWorker.onstatechange = () => {
-                        if (installingWorker.state === 'installed') {
-                          if (navigator.serviceWorker.controller) {
-                            console.log('New app update available!');
-                            window.dispatchEvent(new CustomEvent('pwa-update-available', { detail: reg }));
-                          }
-                        }
-                      };
-                    }
-                  };
-
-                  // Periodically check for app updates every 15 minutes
-                  setInterval(() => {
-                    try {
-                      reg.update().catch(() => {});
-                    } catch (e) {}
-                  }, 15 * 60 * 1000);
-                })
-                .catch((err) => console.warn('ServiceWorker registration failed:', err));
-
-              let refreshing = false;
-              navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (!refreshing) {
-                  refreshing = true;
-                  window.location.reload();
-                }
-              });
-            } catch (err) {
-              console.warn('Failed to setup ServiceWorker:', err);
-            }
-          });
-        } else {
-          console.log('ServiceWorker registration skipped: Storage access is restricted (e.g., inside a sandboxed iframe).');
-        }
-      })();
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('Service Worker successfully registered with scope:', registration.scope);
+            })
+            .catch((error) => {
+              console.log('Service Worker registration failed:', error);
+            });
+        });
+      }
     </script>
   </body>
 </html>
-

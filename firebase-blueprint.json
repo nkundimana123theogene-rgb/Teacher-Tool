@@ -1,182 +1,296 @@
 {
   "entities": {
-    "User": {
-      "title": "User",
-      "description": "A user profile registered in Teacher Tool.",
+    "lesson_plan": {
+      "title": "Lesson Plan",
+      "description": "A comprehensive Competence-Based Curriculum (CBC) lesson plan saved permanently in Firestore",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The unique document ID for this lesson plan" },
+        "userId": { "type": "string", "description": "The ID of the teacher who owns this lesson plan" },
+        "schoolName": { "type": "string", "maxLength": 150, "description": "The name of the school" },
+        "teacherName": { "type": "string", "maxLength": 100, "description": "The name of the teacher" },
+        "term": { "type": "string", "enum": ["I", "II", "III"], "description": "The academic term" },
+        "date": { "type": "string", "format": "date", "description": "The date of the lesson" },
+        "subject": { "type": "string", "maxLength": 150, "description": "The course or subject" },
+        "className": { "type": "string", "maxLength": 100, "description": "The class level" },
+        "unitNumber": { "type": "string", "maxLength": 50, "description": "The unit number" },
+        "lessonNumber": { "type": "string", "maxLength": 50, "description": "The lesson number" },
+        "duration": { "type": "string", "maxLength": 50, "description": "The duration of the lesson" },
+        "classSize": { "type": "string", "maxLength": 50, "description": "The number of students in the class" },
+        "specialNeeds": { "type": "string", "maxLength": 500, "description": "Description of learners with special educational needs" },
+        "unitTitle": { "type": "string", "maxLength": 300, "description": "Title of the unit" },
+        "keyUnitCompetence": { "type": "string", "maxLength": 1000, "description": "Key Unit Competence of the unit" },
+        "lessonTitle": { "type": "string", "maxLength": 300, "description": "Title of the current lesson" },
+        "instructionalObjective": { "type": "string", "maxLength": 1500, "description": "SMART instructional objective" },
+        "classLocation": { "type": "string", "maxLength": 150, "description": "Where the class takes place" },
+        "learningMaterials": { "type": "string", "maxLength": 1500, "description": "Required teaching and learning materials" },
+        "references": { "type": "string", "maxLength": 1500, "description": "Academic references and curriculum citations" },
+        "timingIntro": { "type": "string", "maxLength": 50 },
+        "teacherActivityIntro": { "type": "string", "maxLength": 3000 },
+        "learnerActivityIntro": { "type": "string", "maxLength": 3000 },
+        "genericCompetencesIntro": { "type": "string", "maxLength": 2000 },
+        "timingDev": { "type": "string", "maxLength": 50 },
+        "teacherActivityDev": { "type": "string", "maxLength": 5000 },
+        "learnerActivityDev": { "type": "string", "maxLength": 5000 },
+        "genericCompetencesDev": { "type": "string", "maxLength": 2000 },
+        "timingConcl": { "type": "string", "maxLength": 50 },
+        "teacherActivityConcl": { "type": "string", "maxLength": 3000 },
+        "learnerActivityConcl": { "type": "string", "maxLength": 3000 },
+        "genericCompetencesConcl": { "type": "string", "maxLength": 2000 },
+        "teacherSelfEvaluation": { "type": "string", "maxLength": 2000, "description": "Self evaluation post-lesson" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "schoolName", "teacherName", "subject", "className", "lessonTitle"]
+    },
+    "announcement": {
+      "title": "Announcement",
+      "description": "Global news and updates displayed in the app dashboard",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "name": { "type": "string" },
-        "email": { "type": "string" },
-        "phone": { "type": "string" },
-        "country": { "type": "string" },
-        "currentPlan": { "type": "string" },
-        "remainingPlans": { "type": "number" },
-        "totalGenerated": { "type": "number" },
-        "lastFreeResetMonth": { "type": "string" },
-        "isAdmin": { "type": "boolean" },
-        "authProvider": { "type": "string" },
-        "password": { "type": "string" },
-        "createdAt": { "type": "string" },
-        "lastLoginAt": { "type": "string" },
-        "status": { "type": "string" },
-        "loginCount": { "type": "number" },
-        "sessionToken": { "type": "string" }
+        "title": { "type": "string", "maxLength": 150 },
+        "content": { "type": "string", "maxLength": 2000 },
+        "date": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["news", "update", "info", "alert"] },
+        "isActive": { "type": "boolean" }
       },
-      "required": ["id", "email", "name", "country", "currentPlan", "remainingPlans", "totalGenerated", "isAdmin"]
+      "required": ["id", "title", "content", "date"]
     },
-    "PaymentSubmission": {
-      "title": "PaymentSubmission",
-      "description": "A proof of payment submitted by a user for plan activation.",
+    "app_config": {
+      "title": "App Configuration",
+      "description": "Dynamic configuration settings for the application",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "userEmail": { "type": "string" },
-        "userName": { "type": "string" },
-        "userPhone": { "type": "string" },
-        "planId": { "type": "string" },
-        "planLabel": { "type": "string" },
-        "amountFrw": { "type": "number" },
-        "plansCount": { "type": "number" },
-        "momoTxRef": { "type": "string" },
-        "momoNumber": { "type": "string" },
-        "status": { "type": "string" },
-        "timestamp": { "type": "string" }
+        "whatsappNumber": { "type": "string" },
+        "supportEmail": { "type": "string" },
+        "chatbotGreeting": { "type": "string" },
+        "isMaintenanceMode": { "type": "boolean" }
       },
-      "required": ["id", "userEmail", "planId", "momoTxRef", "status", "timestamp"]
+      "required": ["id"]
     },
-    "PlanLog": {
-      "title": "PlanLog",
-      "description": "A log of a generated lesson plan for administrative auditing.",
+    "remedial_lesson_plan": {
+      "title": "Remedial Lesson Plan",
+      "description": "A remedial lesson plan for struggling learners",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "userEmail": { "type": "string" },
-        "userName": { "type": "string" },
-        "subject": { "type": "string" },
-        "classGrade": { "type": "string" },
-        "unitTitle": { "type": "string" },
-        "lessonTitle": { "type": "string" },
-        "language": { "type": "string" },
-        "format": { "type": "string" },
-        "timestamp": { "type": "string" },
-        "schoolName": { "type": "string" },
-        "instructionalObjective": { "type": "string" }
-      },
-      "required": ["id", "userEmail", "subject", "lessonTitle", "timestamp"]
-    },
-    "ResetCode": {
-      "title": "ResetCode",
-      "description": "A temporary verification code for user password recovery.",
-      "type": "object",
-      "properties": {
-        "email": { "type": "string" },
-        "code": { "type": "string" },
-        "expiresAt": { "type": "number" }
-      },
-      "required": ["email", "code", "expiresAt"]
-    },
-    "Certificate": {
-      "title": "Certificate",
-      "description": "An official certificate generated and verified in Nkorera Education.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "createdAt": { "type": "string" },
-        "certificateNumber": { "type": "string" },
-        "userEmail": { "type": "string" },
-        "recipientName": { "type": "string" },
-        "recipientRole": { "type": "string" },
-        "schoolName": { "type": "string" },
-        "certificateTitle": { "type": "string" },
-        "category": { "type": "string" },
-        "citationText": { "type": "string" },
-        "issueDate": { "type": "string" },
-        "issuer1Name": { "type": "string" },
-        "issuer1Title": { "type": "string" },
-        "issuer2Name": { "type": "string" },
-        "issuer2Title": { "type": "string" },
-        "borderStyle": { "type": "string" },
-        "language": { "type": "string" },
-        "gender": { "type": "string" },
-        "courseName": { "type": "string" },
-        "schoolLogo": { "type": "string" },
-        "issuer1Signature": { "type": "string" },
-        "issuer2Signature": { "type": "string" },
-        "useCursiveSignatures": { "type": "boolean" }
-      },
-      "required": ["id", "createdAt", "certificateNumber", "recipientName", "schoolName", "certificateTitle", "category", "citationText", "issueDate", "issuer1Name", "issuer1Title", "borderStyle", "language"]
-    },
-    "ClassDiary": {
-      "title": "ClassDiary",
-      "description": "A class diary (cahier de textes) record generated by a teacher.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "createdAt": { "type": "string" },
-        "userEmail": { "type": "string" },
-        "subject": { "type": "string" },
-        "classGrade": { "type": "string" },
+        "userId": { "type": "string" },
+        "teacherName": { "type": "string", "maxLength": 100 },
+        "className": { "type": "string", "maxLength": 50 },
+        "subject": { "type": "string", "maxLength": 100 },
+        "lessonName": { "type": "string", "maxLength": 200 },
+        "period": { "type": "string", "maxLength": 50 },
         "date": { "type": "string" },
-        "period": { "type": "string" },
-        "lessonTitle": { "type": "string" },
-        "workCoveredSummary": { "type": "string" },
-        "skillsCompetencesTargeted": { "type": "string" },
-        "homeworkAssigned": { "type": "string" },
-        "attendanceNotes": { "type": "string" },
-        "remarksObservations": { "type": "string" },
-        "language": { "type": "string" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "createdAt", "userEmail", "subject", "classGrade", "date", "period", "lessonTitle", "workCoveredSummary", "skillsCompetencesTargeted", "language"]
+      "required": ["id", "userId", "teacherName", "className", "subject", "lessonName"]
     },
-    "Tutorial": {
-      "title": "Tutorial",
-      "description": "System video tutorial and module guide item.",
+    "user_profile": {
+      "title": "User Profile",
+      "description": "User profile data including preferences and role",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "enum": ["teacher", "admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "subscription": {
+      "title": "Subscription",
+      "description": "User subscription details",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "title": { "type": "string" },
-        "module": { "type": "string" },
-        "description": { "type": "string" },
-        "videoUrl": { "type": "string" },
-        "pdfUrl": { "type": "string" },
-        "version": { "type": "string" },
-        "videoScript": { "type": "string" },
-        "guideContent": { "type": "string" },
+        "userId": { "type": "string" },
+        "plan": { "type": "string", "enum": ["free", "pro", "premium"] },
+        "status": { "type": "string", "enum": ["active", "expired", "pending"] },
+        "expiresAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "plan", "status"]
+    },
+    "qr_scan": {
+      "title": "QR Scan Record",
+      "description": "Logged QR scan record for verifying a unique certificate and its lock/unlock payment status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "verificationNo": { "type": "string", "maxLength": 100 },
+        "recipientName": { "type": "string", "maxLength": 150 },
+        "title": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "schoolName": { "type": "string", "maxLength": 200 },
+        "issueDate": { "type": "string", "maxLength": 100 },
+        "leftSignatureName": { "type": "string", "maxLength": 150 },
+        "leftSignatureTitle": { "type": "string", "maxLength": 150 },
+        "rightSignatureName": { "type": "string", "maxLength": 150 },
+        "rightSignatureTitle": { "type": "string", "maxLength": 150 },
+        "issuerWebsite": { "type": "string", "maxLength": 200 },
+        "status": { "type": "string", "enum": ["Unverified", "Authentic"] },
+        "isUnlocked": { "type": "boolean" },
+        "paymentStatus": { "type": "string", "enum": ["Locked", "Unlocked", "Paid", "Pending"] },
+        "unlockedBy": { "type": "string", "maxLength": 150 },
+        "unlockedAt": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string", "maxLength": 150 },
+        "scannedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "verificationNo", "recipientName", "status", "scannedAt"]
+    },
+    "certificate_payment": {
+      "title": "Certificate Payment",
+      "description": "Record of payment for a certificate",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "verificationNo": { "type": "string", "maxLength": 100 },
+        "recipientName": { "type": "string", "maxLength": 150 },
+        "amount": { "type": "number" },
+        "manualUnlock": { "type": "boolean" },
+        "isUnlocked": { "type": "boolean" },
+        "status": { "type": "string" },
+        "paidAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "amount", "paidAt"]
+    },
+    "assessment_template": {
+      "title": "Assessment Template",
+      "description": "Saved question bank assessment template synchronized across devices",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string", "maxLength": 300 },
+        "type": { "type": "string", "maxLength": 100 },
+        "subject": { "type": "string", "maxLength": 150 },
+        "grade": { "type": "string", "maxLength": 100 },
+        "topic": { "type": "string", "maxLength": 300 },
+        "unit": { "type": "string", "maxLength": 300 },
+        "language": { "type": "string", "maxLength": 50 },
         "createdAt": { "type": "string" },
         "updatedAt": { "type": "string" }
       },
-      "required": ["id", "title", "module", "description"]
+      "required": ["id", "userId", "name"]
+    },
+    "student_id_unlock": {
+      "title": "Student ID Unlock Request",
+      "description": "Unlock request and approval status for School Identification Form",
+      "type": "object",
+      "properties": {
+        "userEmail": { "type": "string" },
+        "userName": { "type": "string" },
+        "momoNumber": { "type": "string" },
+        "momoTxId": { "type": "string" },
+        "isUnlocked": { "type": "boolean" },
+        "status": { "type": "string" },
+        "unlockedBy": { "type": "string" },
+        "unlockedAt": { "type": "string" },
+        "requestedAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userEmail"]
+    },
+    "student_roster": {
+      "title": "Student Identification Roster",
+      "description": "Student identification records and school info synced across devices",
+      "type": "object",
+      "properties": {
+        "userEmail": { "type": "string" },
+        "schoolInfo": {
+          "type": "object",
+          "properties": {
+            "schoolName": { "type": "string" },
+            "academicYear": { "type": "string" },
+            "classCombo": { "type": "string" }
+          }
+        },
+        "students": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userEmail"]
+    },
+    "lesson_plan_template": {
+      "title": "Lesson Plan Template",
+      "description": "A user-defined preferred structure for generating lesson plans for a specific subject and class",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string", "maxLength": 300 },
+        "subject": { "type": "string", "maxLength": 150 },
+        "category": { "type": "string", "enum": ["Primary (P1-P3)", "Primary (P4-P6)", "Secondary O-Level (S1-S3)", "Secondary A-Level (S4-S6)", "Pre-Primary"] },
+        "gradeLevel": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "data": { "type": "object" }
+      },
+      "required": ["id", "userId", "title", "subject", "category", "gradeLevel"]
     }
   },
   "firestore": {
-    "users/{email}": {
-      "schema": "User",
-      "description": "User profiles indexed by their lowercase email."
+    "/lesson_plan_templates/{templateId}": {
+      "schema": "lesson_plan_template",
+      "description": "Collection of user-defined preferred lesson plan structures and templates"
     },
-    "payments/{paymentId}": {
-      "schema": "PaymentSubmission",
-      "description": "Payment proof submissions."
+    "/student_rosters/{userEmail}": {
+      "schema": "student_roster",
+      "description": "Collection of student identification rosters synchronized across devices"
     },
-    "planLogs/{logId}": {
-      "schema": "PlanLog",
-      "description": "Logs of generated lesson plans."
+    "/student_id_unlocks/{docEmail}": {
+      "schema": "student_id_unlock",
+      "description": "Collection of student id unlock requests and approval statuses"
     },
-    "resetCodes/{email}": {
-      "schema": "ResetCode",
-      "description": "Verification codes for forgot password."
+    "/qr_scans/{scanId}": {
+      "schema": "qr_scan",
+      "description": "Collection of unique logged QR scan records for verifying certificates"
     },
-    "certificates/{certificateId}": {
-      "schema": "Certificate",
-      "description": "Official certificates indexed by their ID or Certificate Number."
+    "/certificate_payments/{paymentId}": {
+      "schema": "certificate_payment",
+      "description": "Collection of certificate payments"
     },
-    "classDiaries/{diaryId}": {
-      "schema": "ClassDiary",
-      "description": "Class diary records for lesson monitoring."
+    "/assessment_templates/{templateId}": {
+      "schema": "assessment_template",
+      "description": "Collection of saved assessment templates synchronized to user cloud profile"
     },
-    "tutorials/{tutorialId}": {
-      "schema": "Tutorial",
-      "description": "System video tutorials and module documentation guides."
+    "/lesson_plans/{planId}": {
+      "schema": "lesson_plan",
+      "description": "Collection of all permanently saved CBC lesson plans, partitioned secure by userId"
+    },
+    "/remedial_lesson_plans/{planId}": {
+      "schema": "remedial_lesson_plan",
+      "description": "Collection of remedial lesson plans"
+    },
+    "/announcements/{announcementId}": {
+      "schema": "announcement",
+      "description": "Global announcements accessible by all users"
+    },
+    "/app_config/{configId}": {
+      "schema": "app_config",
+      "description": "Global app configuration settings"
+    },
+    "/user_profiles/{userId}": {
+      "schema": "user_profile",
+      "description": "User profiles"
+    },
+    "/subscriptions/{subId}": {
+      "schema": "subscription",
+      "description": "User subscriptions"
+    },
+    "/admins/{adminUid}": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string" }
+        }
+      },
+      "description": "Registry of system administrators"
     }
   }
 }

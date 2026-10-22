@@ -1,52 +1,121 @@
-export type LanguageOption = 'English' | 'Kinyarwanda' | 'French' | 'Swahili';
-
-export type PlanFormatOption = 'reb_grid' | 'open_format' | 'remedial_grid' | 'nursery_grid';
-
-export interface SubscriptionPlan {
-  id: string;
-  plansCount: number;
-  priceFrw: number;
-  label: string;
-  isFree?: boolean;
-  popular?: boolean;
-}
-
 export interface UserProfile {
   id: string;
-  name: string;
   email: string;
-  phone?: string;
+  name: string;
   country: string;
+  phone?: string;
+  password?: string;
   currentPlan: string;
   remainingPlans: number;
-  totalGenerated: number;
+  subscriptionPlan?: string;
+  creditsRemaining?: number;
+  totalCreditsAllowed?: number;
+  billingPeriodStart?: string;
+  billingPeriodEnd?: string;
+  nextRenewalDate?: string;
+  expiresAt?: string;
+  subscriptionExpiresAt?: string;
+  subscriptionEndDate?: string;
+  lastPaymentDate?: string;
+  lastPaymentPlanName?: string;
+  lastPaymentTxRef?: string;
+  totalPlansPurchased?: number;
+  purchasedPlans?: number;
   isAdmin?: boolean;
-  authProvider?: 'google' | 'email' | 'custom';
-  createdAt?: string;
-  lastLoginAt?: string;
-  status?: 'active' | 'blocked';
-  loginCount?: number;
-  sessionToken?: string;
-  canDownloadCertificate?: boolean;
+  hasPremiumToolsSub?: boolean;
+  isPaid?: boolean;
+  verifiedPayment?: boolean;
+  verifiedAt?: string;
+  lastPaymentAmount?: number;
+  momoNumber?: string;
+  verifiedServices?: string[];
+  totalGenerated?: number;
   monthlySlidesCount?: number;
   monthlyExercisesCount?: number;
   monthlyWorksheetsCount?: number;
-  monthlySchemesCount?: number;
   monthlyDiaryCount?: number;
-  lastResetMonth?: string;
-  hasPremiumToolsSub?: boolean;
-  premiumToolsExpiryDate?: string;
+  createdAt: string;
+  lastLoginAt?: string;
+  lastMonthlyResetAt?: string;
+  loginMethod?: string;
+  status?: string;
+  loginCount?: number;
+  logoutCount?: number;
+  sessionLogs?: { action: 'LOGIN' | 'LOGOUT', timestamp: string }[];
+  stats?: {
+    lessonPlansCount: number;
+    nurseryPlansCount: number;
+    examsCount: number;
+    worksheetsCount: number;
+    diaryEntriesCount: number;
+    certificatesCount: number;
+    totalItems: number;
+  };
+  aiUsageStats?: {
+    homeworkQuizCount: number;
+    presentationSlidesCount: number;
+    worksheetsCount: number;
+  };
 }
 
-export interface LessonPlanRequest {
+export interface AiBillingRecord {
+  id: string;
+  transactionRef: string;
+  date: string;
+  planId: string;
+  planName: string;
+  amountRwf: number;
+  credits: number;
+  paymentMethod: 'MTN Mobile Money' | 'Airtel Money' | 'Free Tier' | 'Admin Approval' | string;
+  phoneNumber: string;
+  status: 'Active' | 'Paid' | 'Completed' | string;
+  createdAt: string;
+  userEmail?: string;
+  userName?: string;
+  teacherName?: string;
+  teacherEmail?: string;
+  userId?: string;
+  expiresAt?: string;
+  expiryDate?: string;
+  usedPlans?: number;
+  remainingPlans?: number;
+  plansGranted?: number;
+  plansPurchased?: number;
+  amount?: number;
+  method?: string;
+  phone?: string;
+  transactionProof?: string;
+  receiptScreenshot?: string;
+  screenshotUrl?: string;
+}
+
+export interface CreditUsageLog {
+  id: string;
+  serviceType: 'homework_quiz' | 'presentation_slides' | 'printable_worksheet';
+  serviceName: string;
+  itemTitle: string;
+  creditsDeducted: number;
+  creditsRemainingAfter: number;
+  timestamp: string;
+}
+
+export interface LessonStep {
+  duration: string;
+  teacherActivity: string;
+  learnerActivity: string;
+  competences: string;
+}
+
+export interface CbcLessonPlanData {
+  id: string;
   schoolName: string;
   teacherName: string;
   term: string;
   date: string;
   subject: string;
-  classGrade: string;
-  unitNo: string;
-  lessonNo: string;
+  className: string;
+  unitNumber: string;
+  lessonNumber: string;
   duration: string;
   classSize: string;
   specialNeeds: string;
@@ -54,382 +123,402 @@ export interface LessonPlanRequest {
   keyUnitCompetence: string;
   lessonTitle: string;
   instructionalObjective: string;
-  location: string; // 'In classroom' | 'Outside'
+  classLocation: string; // e.g. "Inside classroom" or "Outside"
   learningMaterials: string;
   references: string;
-  language: LanguageOption;
-  format: PlanFormatOption;
-  additionalNotes?: string;
-  // Remedial Learning Program (RLP) fields
-  remedialCount?: string;
-  consolidationCount?: string;
-  extensionCount?: string;
-  remedialGroup1Category?: string;
-  remedialGroup2Category?: string;
-  remedialGroup3Category?: string;
-  remedialGroup4Category?: string;
-  district?: string;
-  mainProblemCategory?: string;
-  specificChallenges?: string;
-  teachingLearningAids?: string;
-}
-
-export interface LessonPlanStep {
-  stepName: 'Introduction' | 'Development' | 'Conclusion' | string;
-  timing: string;
-  teacherActivities: string;
-  learnerActivities: string;
-  competencesAndCrossCutting: string;
-}
-
-export type LessonStep = LessonPlanStep;
-
-export interface LessonPlanData {
-  id: string;
-  createdAt: string;
-  language: LanguageOption;
-  format: PlanFormatOption;
-  header: {
-    schoolName: string;
-    teacherName: string;
-    term: string;
-    date: string;
-    subject: string;
-    classGrade: string;
-    unitNo: string;
-    lessonNo: string;
-    duration: string;
-    classSize: string;
-    specialNeeds: string;
-    unitTitle: string;
-    keyUnitCompetence: string;
-    lessonTitle: string;
-    instructionalObjective: string;
-    location: string;
-    learningMaterials: string;
-    references: string;
-    remedialCount?: string;
-    consolidationCount?: string;
-    extensionCount?: string;
-    remedialGroup1Category?: string;
-    remedialGroup2Category?: string;
-    remedialGroup3Category?: string;
-    remedialGroup4Category?: string;
-    district?: string;
-    mainProblemCategory?: string;
-    specificChallenges?: string;
-    teachingLearningAids?: string;
-    // Section B Objectives
-    group1Objective?: string;
-    group2Objective?: string;
-    group3Objective?: string;
-    // Section C
-    identifiedProblems?: string;
-    remedialActivitiesGroup1?: string;
-    remedialActivitiesGroup2?: string;
-    remedialActivitiesGroup3?: string;
-    usedStepsAssessment?: string;
-    remedialAids?: string;
-    // Section D
-    consolidationCategory?: string;
-    consolidationActivities?: string;
-    consolidationMethodology?: string;
-    consolidationAids?: string;
-    extensionCategory?: string;
-    extensionActivities?: string;
-    extensionMethodology?: string;
-    extensionAids?: string;
-  };
-  steps: LessonPlanStep[];
-  selfEvaluation: string;
-  openFormatContent?: string;
-  tags?: string[];
-}
-
-export interface PaymentSubmission {
-  id: string;
-  userEmail: string;
-  userName: string;
-  userPhone: string;
-  planId: string;
-  planLabel: string;
-  amountFrw: number;
-  plansCount: number;
-  momoTxRef: string;
-  momoNumber: string;
-  status: 'pending' | 'approved' | 'rejected';
-  timestamp: string;
-}
-
-export interface LessonPlanLog {
-  id: string;
-  userEmail: string;
-  userName: string;
-  subject: string;
-  classGrade: string;
-  unitTitle: string;
-  lessonTitle: string;
-  language: string;
-  format: string;
-  timestamp: string;
-  schoolName?: string;
-  instructionalObjective?: string;
-}
-
-// Exercises / Homework / Classwork / Quiz types
-export type ExerciseType = 'homework' | 'classwork' | 'quiz';
-
-export type QuestionCategory = 
-  | 'multiple_choice'
-  | 'true_false'
-  | 'fill_blank'
-  | 'short_answer'
-  | 'long_answer'
-  | 'matching'
-  | 'calculation'
-  | 'essay';
-
-export interface ExerciseSectionConfig {
-  id: string;
-  title: string;
-  category: QuestionCategory;
-  questionCount: number;
-  marksPerQuestion: number;
-}
-
-export interface ExerciseFormRequest {
-  creationType: ExerciseType;
-  curriculumType: 'REB' | 'RTB';
-  subject: string;
-  grade: string;
-  topic: string;
-  unit?: string;
-  country: string;
-  curriculumStandard: string;
-  language: LanguageOption;
-  timeAllowed: string;
-  useSections: boolean;
-  sections: ExerciseSectionConfig[];
-  sourceContent?: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard' | 'Mixed';
-  includeAnswerKey: boolean;
-  includeMarkingScheme: boolean;
-  includeHints: boolean;
-  searchCurriculum: boolean;
-}
-
-export interface ExerciseQuestion {
-  number: number;
-  sectionTitle?: string;
-  type: QuestionCategory;
-  questionText: string;
-  options?: string[];
-  correctAnswer?: string;
-  explanation?: string;
-  markingGuide?: string;
-  hint?: string;
-  marks: number;
-}
-
-export interface ExerciseOutputData {
-  id: string;
-  createdAt: string;
-  creationType: ExerciseType;
-  title: string;
-  subject: string;
-  grade: string;
-  topic: string;
-  unit?: string;
-  timeAllowed: string;
-  totalQuestions: number;
-  totalMarks: number;
-  language: LanguageOption;
-  instructions: string[];
-  sections: {
-    title: string;
-    instructions?: string;
-    questions: ExerciseQuestion[];
-  }[];
-  answerKey?: {
-    questionNumber: number;
-    answer: string;
-    explanation?: string;
-  }[];
-  markingScheme?: {
-    questionNumber: number;
-    criteria: string;
-    maxMarks: number;
-  }[];
-}
-
-// Worksheet Generation types
-export interface WorksheetRequest {
-  subject: string;
-  gradeLevel: string;
-  topic: string;
-  worksheetType: string;
-  difficulty: string;
-  questionCount: number;
-  marksPerQuestion: number;
-  language: string;
-  curriculum?: string;
-  country?: string;
-  customInstructions?: string;
-  additionalDetails?: string;
-  webSearch: boolean;
-  includeAnswerKey: boolean;
-}
-
-export interface WorksheetQuestion {
-  number: number;
-  questionText: string;
-  options?: string[];
-  marks: number;
-}
-
-export interface WorksheetData {
-  id: string;
-  createdAt: string;
-  subject: string;
-  gradeLevel: string;
-  topic: string;
-  worksheetType: string;
-  difficulty: string;
-  questionCount: number;
-  marksPerQuestion: number;
-  totalMarks: number;
-  language: string;
-  curriculum?: string;
-  country?: string;
-  customInstructions?: string;
-  additionalDetails?: string;
-  title: string;
-  instructions: string[];
-  questions: WorksheetQuestion[];
-  answerKey?: {
-    questionNumber: number;
-    answer: string;
-    explanation?: string;
-  }[];
-}
-
-// Class Diary (Cahier de Textes) types
-export interface ClassDiaryRequest {
-  subject: string;
-  classGrade: string;
-  date: string;
-  period: string;
-  lessonTitle: string;
-  language: LanguageOption;
-  additionalInfo?: string;
-}
-
-export interface ClassDiaryData {
-  id: string;
-  createdAt: string;
-  userEmail: string;
-  subject: string;
-  classGrade: string;
-  date: string;
-  period: string;
-  lessonTitle: string;
-  workCoveredSummary: string; // Ibyakozwe / Résumé du cours
-  skillsCompetencesTargeted: string; // Ubushobozi bwifuzwa / Compétences visées
-  homeworkAssigned: string; // Umukoro watanzwe / Devoirs donnés
-  attendanceNotes: string; // Abasibye / Présence
-  remarksObservations: string; // Ibyagaragaye / Remarques
-  language: LanguageOption;
-}
-
-// AI Certificate Generator types
-export interface CertificateRequest {
-  recipientName: string;
-  recipientRole: string;
-  schoolName: string;
-  certificateTitle: string;
-  category: 'student_academic' | 'student_discipline' | 'remedial_progress' | 'teacher_cpd' | 'stem_award' | 'special_coach' | 'custom';
-  citationText: string;
-  issueDate: string;
-  issuer1Name: string;
-  issuer1Title: string;
-  issuer2Name?: string;
-  issuer2Title?: string;
-  issuer3Name?: string;
-  issuer3Title?: string;
-  borderStyle: 'lime_gold_luxury' | 'reb_academic' | 'modern_emerald_lime';
-  language: LanguageOption;
-  gender?: 'male' | 'female' | 'academic_emblem' | 'special_coach_logo' | 'auto';
-  ageGroup?: 'child' | 'adult' | 'auto';
-  recipientPhoto?: string;
-  courseName?: string;
-  schoolLogo?: string;
-  issuer1Signature?: string;
-  issuer2Signature?: string;
-  issuer3Signature?: string;
-  useCursiveSignatures?: boolean;
-}
-
-export interface CertificateData extends CertificateRequest {
-  id: string;
-  createdAt: string;
-  certificateNumber: string;
-  userEmail?: string;
-}
-
-// Help Center & Tutorial System Types
-export interface TutorialFaq {
-  question: string;
-  answer: string;
-}
-
-export interface TutorialItem {
-  id: string;
-  title: string;
-  module: 'lesson_plans' | 'remedial' | 'nursery' | 'slides' | 'exercises' | 'worksheets' | 'library' | 'class_diary' | 'certificates' | 'subscription' | 'admin' | string;
-  description: string;
-  videoUrl?: string;
-  pdfUrl?: string;
-  version: string;
-  videoScript?: string;
-  faqList?: TutorialFaq[];
-  guideContent?: string;
+  timingIntro: string;
+  teacherActivityIntro: string;
+  learnerActivityIntro: string;
+  genericCompetencesIntro: string;
+  timingDev: string;
+  teacherActivityDev: string;
+  learnerActivityDev: string;
+  genericCompetencesDev: string;
+  timingConcl: string;
+  teacherActivityConcl: string;
+  learnerActivityConcl: string;
+  genericCompetencesConcl: string;
+  descActivities?: string;
+  genericCompetences?: string;
+  crossCuttingIssues?: string;
+  teacherSelfEvaluation: string;
   createdAt: string;
   updatedAt: string;
-  tags?: string[];
 }
 
-export interface HelpChatMessage {
+export interface LessonPlan {
   id: string;
-  sender: 'user' | 'assistant';
-  text: string;
-  timestamp: string;
-  suggestedAction?: {
-    type: 'nav_tab' | 'open_video' | 'open_guide';
-    target: string;
-    label: string;
-  };
-  tutorialRef?: {
-    id: string;
-    title: string;
-    module: string;
-  };
-}
-
-export interface UserFeedback {
-  id: string;
-  userName: string;
-  userEmail: string;
-  userPhone: string;
-  category: 'suggestion' | 'bug' | 'praise' | 'help' | 'general';
-  rating: number;
+  teacherName: string;
+  schoolName: string;
+  planType?: string; // 'Competence-Based Curriculum (CBC)' | 'Remedial Lesson Plan'
+  language?: string; // 'English'
+  className: string;
   subject: string;
-  message: string;
-  status: 'pending' | 'reviewed' | 'resolved' | string;
-  adminReply?: string;
-  timestamp: string;
+  unitNumber: string;
+  unitName: string;
+  lessonNumber: string;
+  lessonName: string;
+  date: string;
+  duration: string;
+  classSize: string;
+  keyCompetence: string;
+  instructionalObjective?: string;
+  crossCuttingIssues?: string;
+  genericCompetences?: string;
+  objectives: {
+    knowledge: string;
+    skills: string;
+    attitudes: string;
+  };
+  materials: string;
+  steps: {
+    introduction: LessonStep;
+    presentation: LessonStep;
+    conclusion: LessonStep;
+  };
+  competencesAddressed: string;
+  references?: string;
+  createdAt: string;
 }
 
+export interface NurseryLessonPlanData {
+  id: string;
+  schoolName: string;
+  teacherName: string;
+  term: string;
+  date: string;
+  subject: string;
+  classLevel: string;
+  lessonName: string;
+  duration: string;
+  classSize: string;
+  language: string;
+  competenceFocus: string;
+  instructionalObjective: string;
+  learningMaterials: string;
+  steps: {
+    greetingCircle: {
+      duration: string;
+      activities: string;
+    };
+    guidedLearning: {
+      duration: string;
+      activities: string;
+    };
+    creativePlay: {
+      duration: string;
+      activities: string;
+    };
+    recapAndGoodbye: {
+      duration: string;
+      activities: string;
+    };
+  };
+  evaluationComments: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
+export interface ExamQuestion {
+  id: string;
+  type: 'multiple-choice' | 'short-answer' | 'true-false' | 'matching';
+  questionText: string;
+  options?: string[]; // MCQs only
+  correctAnswer?: string;
+  marks: number;
+}
 
+export interface Exam {
+  id: string;
+  title: string;
+  subject: string;
+  className: string;
+  duration: string;
+  instructions: string;
+  questions: ExamQuestion[];
+  totalMarks: number;
+  createdAt: string;
+}
 
+export interface WorksheetItem {
+  id: string;
+  instruction: string;
+  content: string; // Drawing space, matching table, or fill in blank
+}
 
+export interface Worksheet {
+  id: string;
+  title: string;
+  subject: string;
+  className: string;
+  topic: string;
+  instructions: string;
+  items: WorksheetItem[];
+  createdAt: string;
+}
+
+export interface DiaryEntry {
+  id: string;
+  date: string;
+  className: string;
+  subject: string;
+  lessonsCovered: string;
+  homeworkAssigned: string;
+  absentStudents: string;
+  notes: string;
+  createdAt: string;
+}
+
+export interface Certificate {
+  id: string;
+  recipientName: string;
+  awardTitle: string; // e.g. Best Performing Student, Teacher Excellence
+  schoolName: string;
+  issueDate: string;
+  signatureName: string;
+  signatureRole: string; // e.g. Head Teacher
+  theme: 'classic-gold' | 'emerald-academic' | 'royal-blue' | 'modern-teal';
+  secureCode: string; // Secure ID or QR Content representation
+  createdAt: string;
+}
+
+export interface RemedialGroupActivity {
+  problem: string;
+  activities: string;
+  methodology: string;
+  learningAids: string;
+}
+
+export interface RemedialConsolidationActivity {
+  categoryAndExplanation: string;
+  activities: string;
+  methodology: string;
+  learningAids: string;
+}
+
+export interface RemedialLessonPlanData {
+  id: string;
+  teacherName: string;
+  className: string;
+  subject: string;
+  lessonName: string;
+  period: string;
+  date: string;
+  language?: string;
+  group1Count: string;
+  group2Count: string;
+  group3Count: string;
+  introduction: string;
+  strugglingLearners: {
+    group1: {
+      categoriesAndIssues: string;
+      objectives: string;
+    };
+    group2: {
+      categoriesAndIssues: string;
+      objectives: string;
+    };
+    group3: {
+      categoriesAndIssues: string;
+      objectives: string;
+    };
+  };
+  remedialActivities: {
+    group1: RemedialGroupActivity;
+    group2: RemedialGroupActivity;
+  };
+  consolidationActivities: {
+    group3: RemedialConsolidationActivity;
+    group4: RemedialConsolidationActivity;
+  };
+  selfEvaluation: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SchemeOfWorkRow {
+  id: string;
+  weekNumber: number;
+  dates: string;
+  unitNumber: string;
+  unitTitle: string;
+  lessonNumber: string;
+  lessonTitle: string;
+  evaluation: string;
+  learningObjectives: string;
+  keyUnitCompetence: string;
+  teachingMethods: string;
+  evaluationProcedures: string;
+  resourcesAndReferences: string;
+  observations: string;
+  // 9-column official REB standard fields
+  contentSummary?: string;
+  teachingActivities?: string;
+  learningAids?: string;
+  assessment?: string;
+  references?: string;
+  weeklyRemarks?: string;
+}
+
+export interface SchemeOfWorkData {
+  id: string;
+  academicYear: string;
+  term: string;
+  schoolName: string;
+  subject: string;
+  teacherName: string;
+  className: string;
+  combination: string;
+  periodsPerWeek: string;
+  language: string; // 'English' | 'Kinyarwanda' | 'Français' | 'Kiswahili'
+  rows: SchemeOfWorkRow[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  type: 'news' | 'update' | 'info' | 'alert';
+  isActive: boolean;
+  authorName?: string;
+  authorEmail?: string;
+  isPinned?: boolean;
+}
+
+export interface AppConfig {
+  id: string;
+  whatsappNumber?: string;
+  supportEmail?: string;
+  chatbotGreeting?: string;
+  isMaintenanceMode?: boolean;
+  broadcastBanner?: string;
+  broadcastBannerActive?: boolean;
+  momoNumber?: string;
+  momoName?: string;
+  systemNotice?: string;
+  lastUpdated?: string;
+}
+
+export interface SavedAssessmentTemplate {
+  id: string;
+  userId?: string;
+  name: string;
+  type: string;
+  subject: string;
+  grade: string;
+  topic: string;
+  unit?: string;
+  language: string;
+  createdAt: string;
+  updatedAt?: string;
+  sections: any[];
+  instructions?: string[];
+  fullAssessment?: any;
+}
+
+export interface PresentationSlide {
+  slideNumber: number;
+  title: string;
+  subtitle?: string;
+  bulletPoints: string[];
+  timing?: string;
+  teacherNote?: string;
+  imagePrompt?: string;
+  imageSvg?: string;
+}
+
+export interface PresentationSlideDeck {
+  id: string;
+  userId?: string;
+  title: string;
+  subtitle?: string;
+  subject: string;
+  grade: string;
+  topic: string;
+  duration: string;
+  language: string;
+  country?: string;
+  curriculum?: string;
+  theme: string;
+  totalSlides: number;
+  slides: PresentationSlide[];
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export type MainViewType = 
+  | 'dashboard'
+  | 'lessonPlanning'
+  | 'teacherResources'
+  | 'rebBooks'
+  | 'myRecords'
+  | 'subscription'
+  | 'helpSupport';
+
+export interface CertificateRecord {
+  id: string;
+  verificationNo: string;
+  recipientName: string;
+  title?: string;
+  description?: string;
+  schoolName?: string;
+  issueDate?: string;
+  leftSignatureName?: string;
+  leftSignatureTitle?: string;
+  rightSignatureName?: string;
+  rightSignatureTitle?: string;
+  issuerWebsite?: string;
+  status: 'Unverified' | 'Authentic';
+  isUnlocked?: boolean;
+  paymentStatus?: 'Locked' | 'Unlocked' | 'Paid' | 'Pending';
+  unlockedBy?: string;
+  unlockedAt?: string;
+  momoNumber?: string;
+  momoTxId?: string;
+  momoSenderName?: string;
+  paymentRequestedAt?: string;
+  userId?: string;
+  scannedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CertificatePaymentRecord {
+  id: string;
+  userId: string;
+  verificationNo?: string;
+  recipientName?: string;
+  amount: number;
+  manualUnlock?: boolean;
+  isUnlocked?: boolean;
+  status?: string;
+  paidAt: string;
+  unlockedBy?: string;
+}
+
+export interface PaymentNotification {
+  id: string;
+  target: 'ADMIN' | 'USER' | 'BROADCAST';
+  recipientEmail?: string;
+  recipientPhone?: string;
+  type: 'PAYMENT_RECEIVED' | 'PAYMENT_SENT_PLANS_UNLOCKED' | 'SYSTEM_ALERT';
+  title: string;
+  message: string;
+  smsPreview?: string;
+  amount: number;
+  currency?: string;
+  phone?: string;
+  senderName?: string;
+  receiverName?: string;
+  receiverPhone?: string;
+  userEmail?: string;
+  plansGranted: number;
+  txRef: string;
+  paymentMethod: string;
+  read: boolean;
+  createdAt: string;
+  displayTime?: string;
+}

@@ -1,66 +1,36 @@
 {
-  "id": "com.nkorera.education.teacher.app",
-  "short_name": "Nkorera Edu",
-  "name": "Nkorera Education",
-  "description": "Nkorera Education - AI Lesson Plan Generator, Nursery Plans, Class Diary & Certificate Creator for Teachers in Rwanda.",
+  "id": "/",
+  "name": "Nkorera Education App",
+  "short_name": "Nkorera",
+  "description": "Rwandan Teachers Hub - CBC & ECE Lesson Plan Generator",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#10b981",
+  "categories": [
+    "education",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "/pwa-192x192.png",
-      "type": "image/png",
       "sizes": "192x192",
-      "purpose": "any"
-    },
-    {
-      "src": "/pwa-192x192.png",
       "type": "image/png",
-      "sizes": "192x192",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/pwa-512x512.png",
-      "type": "image/png",
-      "sizes": "512x512",
       "purpose": "any"
     },
     {
       "src": "/pwa-512x512.png",
-      "type": "image/png",
-      "sizes": "512x512",
-      "purpose": "maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/pwa-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "form_factor": "wide",
-      "label": "Nkorera Education AI Teacher Tool Dashboard"
+      "purpose": "any"
     },
     {
-      "src": "/pwa-512x512.png",
+      "src": "/pwa-maskable-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Nkorera Education Mobile View"
-    }
-  ],
-  "start_url": "/",
-  "background_color": "#020617",
-  "theme_color": "#a3e635",
-  "display": "standalone",
-  "orientation": "any",
-  "scope": "/",
-  "lang": "rw-RW",
-  "categories": ["education", "productivity", "utilities"],
-  "prefer_related_applications": false,
-  "shortcuts": [
-    {
-      "name": "Create Lesson Plan",
-      "short_name": "Lesson Plan",
-      "description": "Generate a new AI Lesson Plan",
-      "url": "/",
-      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+      "purpose": "maskable"
     }
   ]
 }

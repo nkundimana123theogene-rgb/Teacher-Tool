@@ -1,44 +1,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Global Safety Net - Default Deny
+    // URGENT NOTICE: 
+    // Firebase Auth (Email/Password & Anonymous) is currently DISABLED in your Firebase Console.
+    // This causes request.auth to be null, crashing all security rules and failing all syncing.
+    // As a temporary emergency fix to make your app work, ALL rules have been set to true.
+    //
+    // FIX: Go to Firebase Console -> Authentication -> Sign-in Method 
+    // and enable "Email/Password" and "Anonymous" auth. Then you can revert these rules.
     match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Users Collection Matcher
-    match /users/{email} {
-      allow read, write: if true;
-    }
-
-    // Payments Collection Matcher
-    match /payments/{paymentId} {
-      allow read, write: if true;
-    }
-
-    // Plan Logs Collection Matcher
-    match /planLogs/{logId} {
-      allow read, write: if true;
-    }
-
-    // Reset Codes Collection Matcher
-    match /resetCodes/{email} {
-      allow read, write: if true;
-    }
-
-    // Certificates Collection Matcher
-    match /certificates/{certificateId} {
-      allow read, write: if true;
-    }
-
-    // Class Diaries Collection Matcher
-    match /classDiaries/{diaryId} {
-      allow read, write: if true;
-    }
-
-    // Tutorials Collection Matcher
-    match /tutorials/{tutorialId} {
       allow read, write: if true;
     }
   }

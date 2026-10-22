@@ -1,38 +1,443 @@
 @import "tailwindcss";
 
-@utility animate-fade-in-up {
-  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+@layer base {
+  :root {
+    color-scheme: dark light;
+  }
+
+  html.dark,
+  body.dark {
+    background-color: #020617;
+    color: #f8fafc;
+    color-scheme: dark;
+  }
+
+  html:not(.dark),
+  body:not(.dark) {
+    background-color: #f8fafc;
+    color: #0f172a;
+    color-scheme: light;
+  }
+
+  body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
 }
 
-@utility animate-fade-in {
-  animation: fadeIn 0.3s ease-out both;
+/* Comprehensive Light Mode Overrides when .dark is absent */
+html:not(.dark) body,
+html:not(.dark) #root {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
 }
 
-@utility animate-scale-in {
-  animation: scaleIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+html:not(.dark) .bg-slate-950,
+html:not(.dark) .bg-slate-950\/95,
+html:not(.dark) .bg-slate-950\/90,
+html:not(.dark) .bg-slate-950\/80,
+html:not(.dark) .bg-slate-950\/50,
+html:not(.dark) .bg-slate-900,
+html:not(.dark) .bg-slate-900\/95,
+html:not(.dark) .bg-slate-900\/90,
+html:not(.dark) .bg-slate-900\/80,
+html:not(.dark) .bg-slate-900\/50,
+html:not(.dark) .bg-slate-900\/40,
+html:not(.dark) .bg-slate-900\/30,
+html:not(.dark) .bg-slate-900\/20 {
+  background-color: #ffffff !important;
 }
 
-@utility animate-slide-in-right {
-  animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+html:not(.dark) .bg-slate-800,
+html:not(.dark) .bg-slate-800\/80,
+html:not(.dark) .bg-slate-800\/60,
+html:not(.dark) .bg-slate-800\/50,
+html:not(.dark) .bg-slate-800\/30 {
+  background-color: #f1f5f9 !important;
 }
 
-@utility animate-bounce-subtle {
-  animation: bounceSubtle 2s infinite;
+html:not(.dark) .text-slate-100,
+html:not(.dark) .text-slate-200,
+html:not(.dark) .text-slate-300,
+html:not(.dark) .text-white {
+  color: #0f172a !important;
 }
 
-@utility animate-pulse-gentle {
-  animation: pulseGentle 2.5s infinite ease-in-out;
+html:not(.dark) .text-slate-400,
+html:not(.dark) .text-slate-500 {
+  color: #334155 !important;
 }
 
-@utility animate-marquee {
-  animation: marquee 28s linear infinite;
+html:not(.dark) .border-slate-800,
+html:not(.dark) .border-slate-800\/80,
+html:not(.dark) .border-slate-800\/60,
+html:not(.dark) .border-slate-900,
+html:not(.dark) .border-slate-700,
+html:not(.dark) .border-emerald-500\/30,
+html:not(.dark) .border-emerald-500\/20 {
+  border-color: #cbd5e1 !important;
 }
 
-@utility animate-marquee-slow {
-  animation: marquee 45s linear infinite;
+html:not(.dark) input,
+html:not(.dark) select,
+html:not(.dark) textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
 }
 
-@keyframes marquee {
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: #64748b !important;
+}
+
+html:not(.dark) .bg-emerald-950,
+html:not(.dark) .bg-emerald-950\/80,
+html:not(.dark) .bg-emerald-950\/50 {
+  background-color: #ecfdf5 !important;
+  color: #047857 !important;
+}
+
+html:not(.dark) .bg-amber-950,
+html:not(.dark) .bg-amber-950\/80,
+html:not(.dark) .bg-amber-950\/50 {
+  background-color: #fffbeb !important;
+  color: #b45309 !important;
+}
+
+html:not(.dark) .bg-blue-950,
+html:not(.dark) .bg-blue-950\/80,
+html:not(.dark) .bg-blue-950\/50 {
+  background-color: #eff6ff !important;
+  color: #1d4ed8 !important;
+}
+
+html:not(.dark) .bg-indigo-950,
+html:not(.dark) .bg-indigo-950\/80,
+html:not(.dark) .bg-indigo-950\/50 {
+  background-color: #eef2ff !important;
+  color: #4338ca !important;
+}
+
+html:not(.dark) .hover\:bg-slate-800:hover,
+html:not(.dark) .hover\:bg-slate-900:hover,
+html:not(.dark) .hover\:bg-slate-950:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* Print optimizations for generated lesson plans and certificates */
+@media print {
+  html, body {
+    width: 100% !important;
+    height: auto !important;
+    background-color: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Hide UI elements that shouldn't be printed */
+  header, 
+  nav, 
+  footer, 
+  button, 
+  .no-print, 
+  [id^="nav-"], 
+  [id^="dashboard-"],
+  #sidebar,
+  .print-hidden,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Reset modal backdrop and overlay containers on print */
+  .fixed.inset-0 {
+    position: static !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+    height: auto !important;
+  }
+
+  /* Make modal inner containers clean and unbordered for print */
+  .bg-slate-950, .bg-slate-900, .border-slate-800, .border-emerald-500\/30 {
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #000000 !important;
+  }
+
+  /* Ensure textareas and inputs expand and show full content on printout */
+  textarea, input[type="text"] {
+    border: none !important;
+    background: transparent !important;
+    resize: none !important;
+    overflow: visible !important;
+    color: #000000 !important;
+  }
+
+  /* Make sure the printable container takes full width and has no shadows */
+  .printable-area,
+  #cbc-one-page-document,
+  #nursery-lesson-plan-document,
+  #remedial-print-document,
+  #student-id-pdf-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    position: static !important;
+    left: 0;
+    top: 0;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
+  }
+
+  .student-id-page-card {
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 8mm 10mm !important;
+    background: #ffffff !important;
+    overflow: hidden !important;
+  }
+
+  /* Table formatting for clean pagination and unbroken margins */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    page-break-after: auto !important;
+  }
+
+  td, th {
+    page-break-inside: avoid !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+
+  /* Page break rules */
+  .page-break {
+    page-break-before: always !important;
+  }
+  
+  /* Standard A4 printable margins */
+  @page {
+    size: A4 portrait;
+    margin: 6mm 6mm 6mm 6mm;
+  }
+}
+
+.no-break {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+/* Certificate Patterns & Borders */
+.cert-pattern-gold {
+  background-image: radial-gradient(#d97706 0.5px, transparent 0.5px);
+  background-size: 16px 16px;
+  opacity: 0.05;
+}
+
+.cert-pattern-emerald {
+  background-image: radial-gradient(#059669 0.5px, transparent 0.5px);
+  background-size: 20px 20px;
+  opacity: 0.05;
+}
+
+.cert-pattern-royal {
+  background-image: radial-gradient(#312e81 0.5px, transparent 0.5px);
+  background-size: 24px 24px;
+  opacity: 0.05;
+}
+
+.cert-ornate-border {
+  position: relative;
+}
+
+.cert-ornate-border::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  border: 2px solid currentColor;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.cert-corner {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 4px solid currentColor;
+}
+
+.cert-corner-tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.cert-corner-tr { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.cert-corner-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.cert-corner-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+
+/* Animations */
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+  100% { transform: scale(0.95); opacity: 0.5; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes gradient-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes rainbow-rotate {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+.animate-rainbow-rotate {
+  animation: rainbow-rotate 6s linear infinite;
+}
+
+.animate-gradient-flow {
+  background-size: 300% 300%;
+  animation: gradient-flow 4s ease infinite;
+}
+
+.animate-gradient-flow-fast {
+  background-size: 300% 300%;
+  animation: gradient-flow 2.5s ease infinite;
+}
+
+.rainbow-glow-border {
+  position: relative;
+}
+
+.rainbow-glow-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f59e0b, #ec4899, #8b5cf6, #3b82f6, #06b6d4, #10b981, #f59e0b);
+  background-size: 300% 300%;
+  animation: gradient-flow 4s linear infinite, rainbow-rotate 8s linear infinite;
+  z-index: -1;
+}
+
+.pulse-ring {
+  animation: pulse-ring 2s infinite ease-in-out;
+}
+
+@keyframes spin-conic {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-spin-conic {
+  animation: spin-conic 4s linear infinite;
+}
+
+.animate-spin-conic-fast {
+  animation: spin-conic 2.5s linear infinite;
+}
+
+.animate-spin-slow {
+  animation: spin 5s linear infinite !important;
+}
+
+.animate-spin-slow-reverse {
+  animation: spin 5s linear infinite reverse !important;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Custom scrollbar for dense panels */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Embedded cleanup stylesheet */
+body.is-embedded iframe:not([title*="Nkorera"]),
+body.is-embedded div[id*="chatbase"],
+body.is-embedded iframe[id*="chatbase"],
+body.is-embedded iframe[src*="chatbase"],
+body.is-embedded [class*="chatbot"],
+body.is-embedded [id*="chatbot"],
+body.is-embedded [id*="chat-widget"],
+body.is-embedded [class*="chat-widget"],
+body.is-embedded #chatbase-bubble-button,
+body.is-embedded #chatbase-message-container,
+body.is-embedded .chatbase-bubble,
+body.is-embedded [src*="landbot"],
+body.is-embedded [id*="landbot"],
+body.is-embedded .landbot-launcher,
+body.is-embedded #whatsapp-widget,
+body.is-embedded .whatsapp-chat-widget,
+body.is-embedded [class*="tawk"],
+body.is-embedded [id*="tawk"] {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+/* Continuous Marquee Text Animation */
+@keyframes continuous-marquee {
   0% {
     transform: translateX(0%);
   }
@@ -41,327 +446,33 @@
   }
 }
 
-@keyframes fadeInUp {
-  0% {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.animate-marquee-smooth {
+  display: flex;
+  width: max-content;
+  animation: continuous-marquee 22s linear infinite;
 }
 
-@keyframes fadeIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
+.animate-marquee-smooth:hover {
+  animation-play-state: paused;
 }
 
-@keyframes scaleIn {
-  0% {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-  100% {
-    opacity: 1;
-  }
+/* Custom visible sleek horizontal scrollbar for navigation tabs */
+.custom-scrollbar-nav::-webkit-scrollbar {
+  height: 6px;
 }
-
-@keyframes slideInRight {
-  0% {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0);
-  }
+.custom-scrollbar-nav::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 9999px;
 }
-
-@keyframes bounceSubtle {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-4px);
-  }
+.custom-scrollbar-nav::-webkit-scrollbar-thumb {
+  background: #10b981;
+  border-radius: 9999px;
 }
-
-@keyframes pulseGentle {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.85;
-  }
+.custom-scrollbar-nav::-webkit-scrollbar-thumb:hover {
+  background: #34d399;
 }
-
-@media print {
-  @page {
-    size: A4 landscape !important;
-    margin: 0mm !important;
-  }
-  
-  html, body {
-    background: white !important;
-    color: black !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 297mm !important;
-    height: 210mm !important;
-    max-width: 297mm !important;
-    max-height: 210mm !important;
-    overflow: hidden !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  /* Dynamically selected page sizes from body classes */
-  body.print-landscape {
-    @page {
-      size: A4 landscape !important;
-      margin: 0mm !important;
-    }
-  }
-
-  body.print-portrait {
-    @page {
-      size: A4 portrait !important;
-      margin: 0mm !important;
-    }
-  }
-
-  /* Force exact 1-page bounds on body, root and main containers during printing */
-  body.print-landscape,
-  body.print-landscape #root,
-  body.print-landscape main {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 297mm !important;
-    height: 210mm !important;
-    max-width: 297mm !important;
-    max-height: 210mm !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  body.print-portrait,
-  body.print-portrait #root,
-  body.print-portrait main {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 210mm !important;
-    height: 297mm !important;
-    max-width: 210mm !important;
-    max-height: 297mm !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  /* Hide navigation, headers, footers, buttons and print-hidden elements */
-  header, nav, footer, button, .print\:hidden {
-    display: none !important;
-  }
-
-  /* When printing certificates or qr badge specifically, isolate them to prevent multi-page spill */
-  body.print-landscape *,
-  body.print-portrait * {
-    visibility: hidden;
-  }
-
-  body.print-landscape .printable-certificate-frame,
-  body.print-landscape .printable-certificate-frame *,
-  body.print-portrait .printable-certificate-frame,
-  body.print-portrait .printable-certificate-frame *,
-  body.print-landscape #qr-print-frame,
-  body.print-landscape #qr-print-frame *,
-  body.print-portrait #qr-print-frame,
-  body.print-portrait #qr-print-frame * {
-    visibility: visible !important;
-  }
-
-  /* Position A4 Landscape Certificate to fit perfectly on 1 single page without any spill or page 2 */
-  body.print-landscape .printable-certificate-frame {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 297mm !important;
-    height: 210mm !important;
-    max-width: 297mm !important;
-    max-height: 210mm !important;
-    margin: 0 !important;
-    padding: clamp(1.5mm, 1vh, 3mm) clamp(3mm, 1.5vw, 5mm) !important;
-    box-sizing: border-box !important;
-    border-radius: 0 !important;
-    border-width: clamp(4mm, 1.5vh, 6mm) !important;
-    box-shadow: none !important;
-    -webkit-box-shadow: none !important;
-    outline: none !important;
-    z-index: 9999999 !important;
-    background: white !important;
-    overflow: hidden !important;
-    page-break-after: avoid !important;
-    page-break-before: avoid !important;
-    page-break-inside: avoid !important;
-    break-after: avoid !important;
-    break-before: avoid !important;
-    break-inside: avoid !important;
-    display: grid !important;
-    grid-template-rows: auto 1fr auto !important;
-    justify-content: center !important;
-    align-content: space-between !important;
-    justify-items: center !important;
-    align-items: center !important;
-    gap: clamp(0.5mm, 0.8vh, 2mm) !important;
-  }
-
-  /* Force box-sizing on all children inside printable-certificate-frame */
-  body.print-landscape .printable-certificate-frame * {
-    box-sizing: border-box !important;
-  }
-
-  /* Prevent browser from creating page 2 */
-  body.print-landscape,
-  body.print-landscape html {
-    height: 210mm !important;
-    max-height: 210mm !important;
-    overflow: hidden !important;
-  }
-
-  /* Dynamic font sizing & responsive text adjustments based on content length for print */
-  body.print-landscape .printable-certificate-frame h1 {
-    font-size: clamp(11pt, 2vh, 16pt) !important;
-    line-height: 1.1 !important;
-    margin-top: 0.3mm !important;
-    margin-bottom: 0.3mm !important;
-    word-break: break-word !important;
-  }
-
-  body.print-landscape .printable-certificate-frame h2 {
-    font-size: clamp(8.5pt, 1.4vh, 11pt) !important;
-    line-height: 1.1 !important;
-    word-break: break-word !important;
-  }
-
-  body.print-landscape .printable-certificate-frame h3 {
-    font-size: clamp(11.5pt, 2.2vh, 18pt) !important;
-    line-height: 1.1 !important;
-    word-break: break-word !important;
-  }
-
-  body.print-landscape .printable-certificate-frame p {
-    font-size: clamp(7pt, 1.2vh, 9pt) !important;
-    line-height: 1.12 !important;
-    margin-top: 0.2mm !important;
-    margin-bottom: 0.2mm !important;
-  }
-
-  /* Compact avatar & badges in print mode to save vertical space for long texts */
-  body.print-landscape .printable-certificate-frame .group.inline-block > div {
-    width: clamp(11mm, 2.2vh, 14mm) !important;
-    height: clamp(11mm, 2.2vh, 14mm) !important;
-    min-width: clamp(11mm, 2.2vh, 14mm) !important;
-    min-height: clamp(11mm, 2.2vh, 14mm) !important;
-    padding: 0.5mm !important;
-    border-width: 2px !important;
-  }
-
-  body.print-landscape .printable-certificate-frame .group.inline-block svg {
-    width: clamp(9mm, 1.8vh, 11mm) !important;
-    height: clamp(9mm, 1.8vh, 11mm) !important;
-  }
-
-  /* Footer grid & signature scaling in print */
-  body.print-landscape .printable-certificate-frame .grid.grid-cols-4 {
-    padding-top: clamp(0.5mm, 0.5vh, 1mm) !important;
-    margin-top: auto !important;
-    gap: clamp(1mm, 0.8vh, 1.5mm) !important;
-  }
-
-  body.print-landscape .printable-certificate-frame .grid.grid-cols-4 .h-8,
-  body.print-landscape .printable-certificate-frame .grid.grid-cols-4 .h-10 {
-    height: clamp(4.5mm, 1vh, 5.5mm) !important;
-  }
-
-  /* Position QR badge frames centrally on the page */
-  body.print-landscape #qr-print-frame,
-  body.print-portrait #qr-print-frame {
-    position: fixed !important;
-    left: 50% !important;
-    top: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    margin: 0 !important;
-    box-sizing: border-box !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    z-index: 9999999 !important;
-    background: white !important;
-    page-break-after: avoid !important;
-    page-break-before: avoid !important;
-    page-break-inside: avoid !important;
-    break-after: avoid !important;
-    break-before: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  /* Layout-specific printing styles to guarantee single A4 page fit */
-  body.print-portrait #qr-print-frame.layout-flyer {
-    width: 210mm !important;
-    height: 297mm !important;
-    max-width: 210mm !important;
-    max-height: 297mm !important;
-    padding: 10mm !important;
-    border-width: 12mm !important;
-  }
-
-  body.print-portrait #qr-print-frame.layout-sticker,
-  body.print-landscape #qr-print-frame.layout-sticker {
-    width: 150mm !important;
-    height: 150mm !important;
-    padding: 12mm !important;
-    border-width: 8mm !important;
-  }
-
-  body.print-portrait #qr-print-frame.layout-wallet,
-  body.print-landscape #qr-print-frame.layout-wallet {
-    width: 180mm !important;
-    height: 110mm !important;
-    padding: 8mm !important;
-    border-width: 6mm !important;
-  }
-
-  /* Printable Certificate Frame */
-  .printable-certificate-frame {
-    width: 297mm !important;
-    height: 210mm !important;
-    max-width: 297mm !important;
-    max-height: 210mm !important;
-    margin: 0 !important;
-    padding: 8mm !important;
-    box-sizing: border-box !important;
-    page-break-inside: avoid !important;
-    page-break-after: avoid !important;
-    page-break-before: avoid !important;
-    break-inside: avoid !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    overflow: hidden !important;
-    display: grid !important;
-    grid-template-rows: auto 1fr auto !important;
-    justify-content: center !important;
-    align-content: space-between !important;
-    justify-items: center !important;
-    align-items: center !important;
-  }
+.custom-scrollbar-nav {
+  scrollbar-width: thin;
+  scrollbar-color: #10b981 rgba(15, 23, 42, 0.9);
 }
 

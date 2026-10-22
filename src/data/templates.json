@@ -1,0 +1,22 @@
+[
+  {
+    "id": "cbc",
+    "title": "CBC Lesson Plan",
+    "description": "Competency-Based Curriculum Template",
+    "pages": [
+      "https://lovable.dev/projects/ce9e8502-01eb-4cf4-af7b-0cf06e3a508c/page_1.png",
+      "https://lovable.dev/projects/ce9e8502-01eb-4cf4-af7b-0cf06e3a508c/page_2.png"
+    ]
+  },
+  {
+    "id": "rlp",
+    "title": "RLP Lesson Plan",
+    "description": "Remedial Lesson Plan Template",
+    "pages": [
+      "https://lovable.dev/projects/ce9e8502-01eb-4cf4-af7b-0cf06e3a508c/page_3.png",
+      "https://lovable.dev/projects/ce9e8502-01eb-4cf4-af7b-0cf06e3a508c/page_4.png",
+      "https://lovable.dev/projects/ce9e8502-01eb-4cf4-af7b-0cf06e3a508c/page_5.png",
+      "https://lovable.dev/projects/ce9e8502-01eb-4cf4-af7b-0cf06e3a508c/page_6.png"
+    ]
+  }
+]

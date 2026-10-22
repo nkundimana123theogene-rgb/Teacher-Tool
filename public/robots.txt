@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://nkorera.education/sitemap.xml

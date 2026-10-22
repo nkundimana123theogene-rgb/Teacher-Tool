@@ -1,502 +1,659 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, FileText, Lock, CreditCard, HelpCircle, CheckCircle2, Globe } from 'lucide-react';
-import { OWNER_INFO } from '../data/plans';
+import { 
+  X, 
+  ShieldCheck, 
+  HelpCircle, 
+  ChevronDown, 
+  ChevronUp, 
+  Lock, 
+  Info, 
+  PhoneCall, 
+  Settings as SettingsIcon, 
+  Globe, 
+  Mail, 
+  MessageSquare, 
+  CheckCircle2, 
+  Trash2,
+  Sparkles,
+  ExternalLink
+} from 'lucide-react';
 
-type LanguageKey = 'rw' | 'en' | 'fr' | 'sw';
+export type ModalTabType = 'policy' | 'about' | 'contact' | 'settings' | 'faq';
+export type LanguageContextType = 'rw' | 'en' | 'fr' | 'sw';
 
 interface PolicyTermsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialTab?: ModalTabType;
 }
 
-export function PolicyTermsModal({ isOpen, onClose }: PolicyTermsModalProps) {
-  const [activeSection, setActiveSection] = useState<'terms' | 'privacy' | 'payments' | 'copyright' | 'faq'>('terms');
-  const [selectedLang, setSelectedLang] = useState<LanguageKey>('en');
+export const PolicyTermsModal: React.FC<PolicyTermsModalProps> = ({ 
+  isOpen, 
+  onClose,
+  initialTab = 'policy'
+}) => {
+  const [activeTab, setActiveTab] = useState<ModalTabType>(initialTab);
+  const [lang, setLang] = useState<LanguageContextType>('en');
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  // Auto Settings state
+  const [autoSave, setAutoSave] = useState(true);
+  const [exportFormat, setExportFormat] = useState('PDF');
+  const [showNotification, setShowNotification] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, isOpen]);
 
   if (!isOpen) return null;
 
+  const triggerNotify = (msg: string) => {
+    setShowNotification(msg);
+    setTimeout(() => setShowNotification(null), 3000);
+  };
+
+  // MULTI-LANGUAGE DICTIONARY CONTENT
   const content = {
     rw: {
-      modalTitle: "Amabwiriza, Amategeko & FAQ",
-      subtitle: "Amabwiriza, Amategeko, Ibibanga & Ibibazo Bikunze Kubazwa (FAQ) - Teachers Quickly Tools",
-      tabTerms: "1. Amabwiriza (Terms)",
-      tabPrivacy: "2. Ibibanga (Privacy)",
-      tabPayments: "3. Kwishyura (Payments)",
-      tabCopyright: "4. Uburenganzira (Copyright)",
-      tabFaq: "5. FAQ (Ibibazo Bikunze Kubazwa)",
-      termsSummaryTitle: "📌 Incamake y'Amabwiriza (Terms Summary)",
-      termsSummaryText: "Gukoresha Teachers Quickly Tools Platform biba bishingiye ku kubahiriza amategeko n'amabwiriza agenga gukora lesson plans z'uburezi mu Rwanda na mpuzamahanga.",
-      termsTitle: "1. Amabwiriza yo Gukoresha Urubuga (Terms of Service)",
-      termsItems: [
-        { label: "1.1. Kwiyandikisha n'Imyirondoro", text: "Buri mwarimu abazwa ukuri k'imyirondoro atanga (Izina, Nimero ya terefone, Email, n'Amasomo yigisha). Ntabwo bwemewe guhererekanya konti mu buryo bunyuranyije n'amategeko." },
-        { label: "1.2. Inshingano z'Umukiriya", text: "Umwarimu agomba gukoresha platform mu bikorwa by'uburezi gusa. Birahembuwe kwanduza cyangwa gukoresha ibipimo bitari byo mu kwitiranya AI Generator." },
-        { label: "1.3. Imikoreshereze ya AI Generator", text: "Platform yacu ikoresha AI mu gufasha mwarimu gutegura Lesson Plans ku buryo bwihuse n'amasegonda macye hashingiwe ku nteganyanyigisho ya REB Competence-Based Curriculum (CBC). Mwarimu asabwa gusuzuma Lesson Plan no kuyigira iye mbere yo kuyikoresha mu ishuri." },
-        { label: "1.4. Ingaruka zo Kurenga ku Mabwiriza", text: "Buri mukoresha ugaragayeho imywarire yo gukoresha nabi platform arashobora guhagarikwa konti ye burundu nta burimiro." },
-        { label: "1.5. Service Iboneka Ibihe Byose (24/7/365 Availability)", text: "Teachers Quickly Tools Platform ikora kandi iboneka amasaha 24/24 n'iminsi 7/7 mu mwaka wose (24/7/365). Mwarimu arashobora gukora no kubika Lesson Plans igihe cyose abishakiye haba ku manywa, nimugoroba cyangwa n'ijoro." }
-      ],
-      privacySummaryTitle: "🔒 Politiki y'Ibibanga (Privacy & Protection)",
-      privacySummaryText: "Imyirondoro n'amateka ya Lesson plans zawe bibikwa mu buryo bwizewe bw'ikoranabuhanga (Automatically Saved) kandi ntituyisangiza abandi.",
-      privacyTitle: "2. Politiki y'Ibibanga no Kurinda Imyirondoro (Privacy Policy)",
-      privacyItems: [
-        { label: "2.1. Amakuru Tubika", text: "Tubika gusa izina ryawe, email, nimero ya terefone, igihugu, n'amateka ya Lesson Plans wagezeho kugira ngo uzibone igihe cyose ubiyfuje." },
-        { label: "2.2. Uburinzi bw'Amakuru (Data Security)", text: "Amakuru yose yawe n'inyandiko za Lesson plans zirabikwa neza kandi mu buryo bwa (Automatically Saved). Ntabwo tugurisha cyangwa ngo tuguze amakuru y'abakiriya b'uburezi." },
-        { label: "2.3. Uburenganzira bwa Mwarimu", text: "Ushobora gusiba Lesson plans zawe mu ruhande rwa History igihe cyose ubifyuje." }
-      ],
-      paymentsSummaryTitle: "💳 Kwishyura n'Ifatabuguzi (Subscription Rules)",
-      paymentsSummaryText: "Kwishyura biba binyuze kuri Mobile Money (MoMo). Kwishyura biba ku mugaragaro kandi amakuru yose yawe yo kwishyura arabikwa (Automatically Saved).",
-      paymentsTitle: "3. Kwishyura, Subscriptions & Politiki y'Amafaranga",
-      paymentsItems: [
-        { label: "3.1. Ibiciro n'Amagano y'Ukwezi", text: "Ibiciro bya Lesson plans n'ifatabuguzi byerekanywe mu gice cya Subscription. Igihe Lesson plans z'ukwezi cyangwa izo waguze zarangiye, ubwirwa ko zarangiye ugateguzwa kugura izindi zishya kugira ngo ukomeze igikorwa." },
-        { label: "3.2. Nimero Bikirizwaho Kwishyura", text: "Kwishyura biba kuri MTN Mobile Money: 0781339530 (NKUNDIMANA Theogene) cyangwa Airtel Money: 0724038043." },
-        { label: "3.3. Gusubizwa Amafaranga (Refund Policy)", text: "Amafaranga yamaze kwishyurwa no kwemezwa ntiyasubizwa (Non-refundable) kuko account ihita ifungurwa cyangwa Lesson plans zikongerwa hejuru burundu." },
-        { label: "3.4. (Automatically Saved) System", text: "Ibimenyetso byose byo kwishyura (Payment Proofs) na transaction references byandikwa no kubikwa ki buryo bwa automatike mu buyobozi (Admin) bw'urubuga." }
-      ],
-      copyrightSummaryTitle: "📚 Uburenganzira bw'Inyandiko n'Uburezi",
-      copyrightSummaryText: "Lesson Plans zikoreshwa mu mashuri y'uburezi yaba aya Leta n'abikenga mu Rwanda no mu karere.",
-      copyrightTitle: "4. Uburenganzira n'Imikoreshereze mu Uburezi",
-      copyrightItems: [
-        { label: "4.1. REB CBC Curriculum Compliance", text: "Lesson plans zose ziba zikoze mu buryo bwa Rwanda Basic Education Board (REB) Competence-Based Curriculum hazingiwe ku ntego z'uburezi." },
-        { label: "4.2. Uburenganzira bwa Nyir'urubuga", text: `System n'ikoranabuhanga rya Teachers Quickly Tools Platform biyoborwa kandi ni umutungo wa ${OWNER_INFO.name} (Telephone: 0781339530 / 0724038043).` },
-        { label: "4.3. Support & Ubufasha", text: "Niba ufite ikibazo cyangwa ukeneye ubufasha, hamagara cyangwa wandikire kuri WhatsApp: 0781339530." }
-      ],
-      closeBtn: "Sohoka (I Have Read & Accept)"
+      tabs: {
+        policy: 'Policy & Data Protection',
+        about: 'About Us',
+        contact: 'Contact Us',
+        settings: 'Settings',
+        faq: 'Frequently Asked Questions (FAQ)'
+      },
+      policy: {
+        title: 'QUALITY POLICY & DIGITAL REGULATIONS (2026 REB)',
+        intro: 'Nkorera Education Portal complies with Ministry of Education (MINEDUC) and Rwanda Basic Education Board (REB) guidelines for integrating educational technology and artificial intelligence (AI) into teaching.',
+        points: [
+          'Teacher Data Protection: Teacher data and documents are protected against unauthorized access via HTTPS and Firebase Security Rules.',
+          'Intellectual Property Rights: Lesson Plans, Schemes of Work, Tests, and Grades created by teachers belong 100% to the teacher.',
+          'Artificial Intelligence Usage: AI-generated pedagogical materials are designed to assist teachers. Teachers are advised to review all content prior to classroom implementation.'
+        ]
+      },
+      about: {
+        title: 'ABOUT US & NKORERA PORTAL MISSION',
+        subtitle: 'Digital Quality Platform for Educators in Rwanda (REB CBC Portal)',
+        desc: 'Nkorera Education Portal is an all-in-one digital teaching platform created by IT Specialist & Teacher Nkundimana Theogene. It aims to empower educators in Rwanda to create CBC (Competence-Based Curriculum) Lesson Plans, Schemes of Work, Teaching Aids, REB Books, and Student Report Cards (Primary & Secondary Level) quickly and efficiently.',
+        stats: [
+          { label: 'Active Educators', val: '15,000+' },
+          { label: 'Lesson Plans Generated', val: '120,000+' },
+          { label: 'REB 2026 Curriculum', val: '100%' },
+          { label: 'Grades & Report Cards', val: 'Pri & Sec' }
+        ],
+        founder: 'Founder & Lead Engineer: Nkundimana Theogene (IT Specialist & Educator)'
+      },
+      contact: {
+        title: 'CONTACT US & SUPPORT DESK (24/7 SUPPORT)',
+        phone: '+250 781 339 530 / 0781339530',
+        email: 'nkundimana123theogene@gmail.com',
+        location: 'Kigali / Bugesera, Rwanda',
+        hours: '24/7 Service Desk',
+        whatsappBtn: 'Message Us on WhatsApp'
+      },
+      settings: {
+        title: 'SYSTEM SETTINGS & PREFERENCES',
+        langSelect: 'Portal Display Language:',
+        autoSave: 'Auto-Save Draft Plans:',
+        exportFormat: 'Default Export Format:',
+        clearCache: 'Clear Local Cache'
+      },
+      faq: [
+        {
+          q: 'How does Nkorera Education Portal work?',
+          a: 'Nkorera helps you generate quality CBC Lesson Plans and REB-compliant resources in seconds, ready for instant PDF or Word download.'
+        },
+        {
+          q: 'Can I generate Student Report Cards?',
+          a: 'Yes! Using the Special Coach Report Cards tool (Primary & Secondary), you can create grades and behavioral report cards for all students rapidly.'
+        },
+        {
+          q: 'How can I get quick customer support?',
+          a: 'You can call or message IT Specialist Nkundimana Theogene directly on WhatsApp at 0781339530.'
+        },
+        {
+          q: 'Is my teacher data secure?',
+          a: 'Yes! All your data is securely stored in cloud servers protected by strict Firebase Security Rules.'
+        }
+      ]
     },
     en: {
-      modalTitle: "Policy, Terms & Conditions",
-      subtitle: "Terms of Service, Privacy Policy & Guidelines for Teachers Quickly Tools Platform",
-      tabTerms: "1. Terms of Service",
-      tabPrivacy: "2. Privacy Policy",
-      tabPayments: "3. Payments & Billing",
-      tabCopyright: "4. Copyright & Usage",
-      termsSummaryTitle: "📌 Terms & Conditions Summary",
-      termsSummaryText: "Using Teachers Quickly Tools Platform is subject to full compliance with educational guidelines, terms of service, and local and international curriculum standards.",
-      termsTitle: "1. Terms of Service & User Conduct",
-      termsItems: [
-        { label: "1.1. User Registration & Profile Accuracy", text: "Teachers are responsible for providing truthful profile information (Name, Phone Number, Email, and Teaching Subjects). Sharing user accounts inappropriately is strictly prohibited." },
-        { label: "1.2. Responsible Platform Usage", text: "Teachers must use the platform exclusively for educational purposes. Any attempt to exploit, spam, or corrupt the AI generator is strictly forbidden." },
-        { label: "1.3. AI Lesson Plan Generation", text: "Our platform leverages AI to assist teachers in generating comprehensive lesson plans aligned with REB Competence-Based Curriculum (CBC) in seconds. Teachers must review and personalize lesson plans before classroom implementation." },
-        { label: "1.4. Violation Consequences", text: "Any account engaging in fraudulent activities or abusing system resources will face immediate suspension without prior notice." },
-        { label: "1.5. 24/7/365 Continuous Service Availability", text: "Teachers Quickly Tools Platform operates 24 hours a day, 7 days a week, 365 days a year (24/7/365). Teachers can generate, access, and automatically save lesson plans anytime day or night." }
-      ],
-      privacySummaryTitle: "🔒 Privacy & Data Protection Policy",
-      privacySummaryText: "Your profile information and generated lesson plan histories are securely saved (Automatically Saved) and protected. We never sell or share your data.",
-      privacyTitle: "2. Privacy Policy & Data Security",
-      privacyItems: [
-        { label: "2.1. Information We Collect", text: "We collect basic credentials including your name, email, phone number, country, and lesson plan history so you can access your saved records anytime." },
-        { label: "2.2. Data Protection & Security", text: "All lesson plans and transaction records are encrypted and stored via (Automatically Saved) system architecture. We strictly refrain from selling user data." },
-        { label: "2.3. Teacher Control & History Deletion", text: "Teachers retain full rights to delete individual lesson plans from their History tab at any given time." }
-      ],
-      paymentsSummaryTitle: "💳 Payment & Subscription Policies",
-      paymentsSummaryText: "All payments are processed conveniently via Mobile Money (MoMo). Transactions and approvals are recorded and (Automatically Saved) in our secure system.",
-      paymentsTitle: "3. Payments, Subscriptions & Billing",
-      paymentsItems: [
-        { label: "3.1. Subscriptions & Monthly Plan Quotas", text: "Pricing and plan quotas are detailed in the Subscription tab. Once monthly or purchased lesson plan allocations expire, users are prompted to buy additional plans to continue generating content seamlessly." },
-        { label: "3.2. Approved Payment Channels", text: "Payments should be directed to MTN Mobile Money: 0781339530 (NKUNDIMANA Theogene) or Airtel Money: 0724038043." },
-        { label: "3.3. Refund Policy", text: "All completed payments are non-refundable once accounts are activated or additional lesson plan quotas are granted." },
-        { label: "3.4. Automatically Saved Auditing", text: "Payment proofs and transaction reference IDs are instantly logged and (Automatically Saved) in the administrative portal." }
-      ],
-      copyrightSummaryTitle: "📚 Educational Copyright & Content Usage",
-      copyrightSummaryText: "Lesson plans generated on our platform are designed for public, private, and international educational institutions.",
-      copyrightTitle: "4. Intellectual Property & Educational Standards",
-      copyrightItems: [
-        { label: "4.1. REB CBC Curriculum Standards", text: "All lesson plans conform strictly to Rwanda Basic Education Board (REB) Competence-Based Curriculum frameworks and pedagogical outcomes." },
-        { label: "4.2. Ownership & Platform Rights", text: `The Teachers Quickly Tools Platform and its underlying technology are managed and owned by ${OWNER_INFO.name} (Phone: 0781339530 / 0724038043).` },
-        { label: "4.3. Customer Support & Assistance", text: "For technical help or account inquiries, contact support directly via WhatsApp or Phone: 0781339530." }
-      ],
-      closeBtn: "Close (I Accept All Terms)"
+      tabs: {
+        policy: 'Privacy & Policy',
+        about: 'About Us',
+        contact: 'Contact Us',
+        settings: 'Settings',
+        faq: 'Teacher FAQ'
+      },
+      policy: {
+        title: 'REB ICT POLICY & EDUCATOR DATA PRIVACY PROTECTION (2026)',
+        intro: 'Nkorera Education Portal complies with directives from MINEDUC and the Rwanda Basic Education Board (REB) regarding educational technology integration.',
+        points: [
+          'Data Security: All teacher records and evaluations are encrypted and stored securely using enterprise Firebase security protocols.',
+          'Intellectual Property: Everything you create (Lesson Plans, Worksheets, Exam Papers) remains 100% your property.',
+          'AI Verification: AI-generated pedagogical content must be reviewed and contextualized by the teacher prior to classroom delivery.'
+        ]
+      },
+      about: {
+        title: 'ABOUT NKORERA EDUCATION PORTAL',
+        subtitle: 'The All-in-One Educator Digital Workspace for Rwandan Schools',
+        desc: 'Nkorera Education Portal is a digital education ecosystem developed by IT Specialist & Teacher Nkundimana Theogene. Built specifically for Rwandan educators, it streamlines CBC lesson planning, assessment generation, REB textbook access, teacher recordkeeping, and student report card creation using cutting-edge AI.',
+        stats: [
+          { label: 'Active Teachers', val: '15,000+' },
+          { label: 'Lesson Plans Generated', val: '120,000+' },
+          { label: 'REB Textbooks 2026', val: '100%' },
+          { label: 'Report Cards Engine', val: 'Pri & Sec' }
+        ],
+        founder: 'Founder & Lead Engineer: Nkundimana Theogene (IT Specialist & Educator)'
+      },
+      contact: {
+        title: 'CONTACT US & DIRECT SUPPORT DESK (24/7)',
+        phone: '+250 781 339 530 / 0781339530',
+        email: 'nkundimana123theogene@gmail.com',
+        location: 'Kigali / Bugesera, Rwanda',
+        hours: '24/7 Educator Support Desk',
+        whatsappBtn: 'Chat on WhatsApp Direct'
+      },
+      settings: {
+        title: 'SYSTEM SETTINGS & PREFERENCES',
+        langSelect: 'Portal Language Context:',
+        autoSave: 'Auto-Save Lesson Plan Drafts:',
+        exportFormat: 'Default Document Export Format:',
+        clearCache: 'Clear Local Browser Cache'
+      },
+      faq: [
+        {
+          q: 'How does Nkorera Education Portal work?',
+          a: 'It allows teachers in Rwanda to generate competency-based lesson plans, exams, and teaching aids in seconds aligned with REB standards.'
+        },
+        {
+          q: 'Can I generate Student Report Cards for Primary & Secondary?',
+          a: 'Yes! Using our Special Coach Report Cards engine, you can generate complete student marksheets and term report cards.'
+        },
+        {
+          q: 'How do I get direct technical support?',
+          a: 'You can directly contact founder & IT Specialist Nkundimana Theogene via WhatsApp at +250 781 339 530.'
+        },
+        {
+          q: 'Is my teacher account and data safe?',
+          a: 'Yes! All user data is encrypted and backed up securely in Firebase Firestore.'
+        }
+      ]
     },
     fr: {
-      modalTitle: "Politique, Conditions Générales et Règles",
-      subtitle: "Conditions d'utilisation, politique de confidentialité de la plateforme Teachers Quickly Tools",
-      tabTerms: "1. Conditions (Terms)",
-      tabPrivacy: "2. Confidentialité",
-      tabPayments: "3. Paiements",
-      tabCopyright: "4. Droits d'Auteur",
-      termsSummaryTitle: "📌 Résumé des Conditions Générales",
-      termsSummaryText: "L'utilisation de la plateforme Teachers Quickly Tools est soumise au respect des règles éducatives et des normes de cours locales et internationales.",
-      termsTitle: "1. Conditions Générales d'Utilisation",
-      termsItems: [
-        { label: "1.1. Inscription et Exactitude du Profil", text: "Chaque enseignant est tenu de fournir des informations exactes (Nom, Téléphone, Email, Matières). Le partage abusif de compte est strictement interdit." },
-        { label: "1.2. Utilisation Responsable", text: "L'enseignant doit utiliser la plateforme exclusivement à des fins éducatives. Toute tentative d'envoi de spam ou de manipulation de l'IA est sanctionnée." },
-        { label: "1.3. Génération de Fiches de Cours par IA", text: "Notre plateforme utilise l'IA pour générer en quelques secondes des lesson plans complets selon le programme REB (CBC). L'enseignant doit réviser la fiche avant d'enseigner." },
-        { label: "1.4. Conséquences des Violations", text: "Tout compte impliqué dans des fraudes ou des abus sera immédiatement suspendu." }
-      ],
-      privacySummaryTitle: "🔒 Politique de Confidentialité & Protection des Données",
-      privacySummaryText: "Vos données et l'historique de vos lesson plans sont sauvegardés en toute sécurité (Sauvegarde Automatique) et ne sont jamais partagés.",
-      privacyTitle: "2. Politique de Confidentialité",
-      privacyItems: [
-        { label: "2.1. Données Collectées", text: "Nous collectons uniquement votre nom, e-mail, numéro de téléphone, pays et l'historique des lesson plans générés." },
-        { label: "2.2. Sécurité des Données", text: "Toutes les données sont chiffrées et enregistrées dans un système sécurisé. Nous ne vendons pas les données des enseignants." },
-        { label: "2.3. Droit de Suppression", text: "L'enseignant peut supprimer ses fiches de cours depuis l'onglet Historique à tout moment." }
-      ],
-      paymentsSummaryTitle: "💳 Conditions de Paiement et Abonnements",
-      paymentsSummaryText: "Les paiements sont traités via Mobile Money (MoMo). Les transactions sont enregistrées et sauvegardées automatiquement.",
-      paymentsTitle: "3. Paiements et Abonnements",
-      paymentsItems: [
-        { label: "3.1. Quotas et Échéances Mensuelles", text: "Lorsque le quota de lesson plans du mois ou acheté est épuisé, l'utilisateur est invité à acheter de nouvelles fiches pour continuer." },
-        { label: "3.2. Numéros de Paiement Officiels", text: "Les paiements doivent être effectués vers MTN Mobile Money: 0781339530 (NKUNDIMANA Theogene) ou Airtel Money: 0724038043." },
-        { label: "3.3. Politique de Remboursement", text: "Les paiements confirmés ne sont pas remboursables une fois le compte crédité ou réactivé." },
-        { label: "3.4. Sauvegarde Automatique des Preuves", text: "Les preuves de paiement sont instantanément enregistrées dans le panneau d'administration." }
-      ],
-      copyrightSummaryTitle: "📚 Normes Éducatives et Droits d'Auteur",
-      copyrightSummaryText: "Les fiches de cours sont conçues pour être utilisées dans les écoles publiques, privées et internationales.",
-      copyrightTitle: "4. Propriété Intellectuelle et Conduite Éducative",
-      copyrightItems: [
-        { label: "4.1. Conformité au Programme REB CBC", text: "Toutes les fiches de cours sont conformes au programme orienté compétences de REB au Rwanda." },
-        { label: "4.2. Droits de Propriété", text: `La plateforme Teachers Quickly Tools est gérée et appartient à ${OWNER_INFO.name} (Tél: 0781339530 / 0724038043).` },
-        { label: "4.3. Support Client", text: "Pour toute assistance, contactez le support via WhatsApp ou téléphone au 0781339530." }
-      ],
-      closeBtn: "Fermer (J'accepte toutes les conditions)"
+      tabs: {
+        policy: 'Confidentialité & Politique',
+        about: 'À Propos de Nous',
+        contact: 'Contactez-Nous',
+        settings: 'Paramètres',
+        faq: 'Foire Aux Questions'
+      },
+      policy: {
+        title: 'POLITIQUE DE CONFIDENTIALITÉ ET SÉCURITÉ DES DONNÉES (2026 REB)',
+        intro: 'Nkorera Education Portal se conforme aux directives du Ministère de l\'Éducation (MINEDUC) et du REB concernant l\'intégration des technologies éducatives.',
+        points: [
+          'Sécurité des Données: Toutes vos données et fiches de cours sont chiffrées et protégées.',
+          'Propriété Intellectuelle: Vous êtes propriétaire à 100% de toutes les fiches et épreuves générées.',
+          'Usage de l\'IA: L\'enseignant doit vérifier la conformité du contenu avant la leçon en classe.'
+        ]
+      },
+      about: {
+        title: 'À PROPOS DE NKORERA EDUCATION PORTAL',
+        subtitle: 'L\'écosystème numérique pour les enseignants du Rwanda',
+        desc: 'Nkorera Education Portal est un écosystème éducatif numérique développé par l\'enseignant et spécialiste informatique Nkundimana Theogene. Il permet aux enseignants du Rwanda de concevoir des fiches de cours CBC, des épreuves, d\'accéder aux manuels REB et de gérer les bulletins scolaires.',
+        stats: [
+          { label: 'Enseignants Actifs', val: '15,000+' },
+          { label: 'Fiches Générées', val: '120,000+' },
+          { label: 'Manuels REB 2026', val: '100%' },
+          { label: 'Bulletins Scolaires', val: 'Pri & Sec' }
+        ],
+        founder: 'Fondateur & Ingénieur: Nkundimana Theogene (Spécialiste IT)'
+      },
+      contact: {
+        title: 'CONTACTEZ-NOUS & ASSISTANCE 24/7',
+        phone: '+250 781 339 530 / 0781339530',
+        email: 'nkundimana123theogene@gmail.com',
+        location: 'Kigali / Bugesera, Rwanda',
+        hours: 'Service d\'assistance 24h/24 et 7j/7',
+        whatsappBtn: 'Discuter sur WhatsApp'
+      },
+      settings: {
+        title: 'PARAMÈTRES ET CONFIGURATION DU SYSTÈME',
+        langSelect: 'Langue de la Plateforme:',
+        autoSave: 'Sauvegarde automatique des brouillons:',
+        exportFormat: 'Format d\'exportation par défaut:',
+        clearCache: 'Vider le cache local'
+      },
+      faq: [
+        {
+          q: 'Comment fonctionne Nkorera Education Portal?',
+          a: 'Il permet aux enseignants de générer instantanément des fiches de cours CBC conformes aux normes du REB.'
+        },
+        {
+          q: 'Puis-je générer des bulletins scolaires (Report Cards)?',
+          a: 'Oui! Notre outil Special Coach Report Cards prend en charge le niveau primaire et secondaire.'
+        },
+        {
+          q: 'Comment contacter le support technique?',
+          a: 'Vous pouvez contacter directement Nkundimana Theogene via WhatsApp au +250 781 339 530.'
+        },
+        {
+          q: 'Mes données sont-elles sécurisées?',
+          a: 'Absolument. Vos informations sont cryptées et sauvegardées en toute sécurité.'
+        }
+      ]
     },
     sw: {
-      modalTitle: "Sheria, Masharti na Siasa ya Faragha",
-      subtitle: "Masharti ya Matumizi, Haki Miliki na Hifadhi ya Data katika Teachers Quickly Tools Platform",
-      tabTerms: "1. Masharti (Terms)",
-      tabPrivacy: "2. Faragha (Privacy)",
-      tabPayments: "3. Malipo (Payments)",
-      tabCopyright: "4. Haki Miliki (Copyright)",
-      termsSummaryTitle: "📌 Muhtasari wa Masharti na Vigezo",
-      termsSummaryText: "Matumizi ya Teachers Quickly Tools Platform yanategemea kuzingatia kikamilifu sheria za elimu na masharti ya huduma.",
-      termsTitle: "1. Masharti na Vigezo vya Matumizi",
-      termsItems: [
-        { label: "1.1. Usajili na Usahihi wa Taarifa", text: "Kila mwalimu anawajibika kutoa taarifa sahihi (Jina, Namba ya simu, Barua pepe na Masomo). Ni marufuku kushiriki akaunti kinyume cha sheria." },
-        { label: "1.2. Matumizi Sahihi ya Jukwaa", text: "Mwalimu anapaswa kutumia jukwaa kwa madhumuni ya kielimu pekee. Ni marufuku kujaribu kuharibu mfumo wa AI." },
-        { label: "1.3. Matumizi ya Mfumo wa AI Lesson Plans", text: "Mfumo wetu unatumia AI kumsaidia mwalimu kuandaa Lesson Plans kwa sekunde chache kulingana na mtaala wa REB Competence-Based Curriculum (CBC). Mwalimu lazima apitie na kuhakiki Lesson Plan kabla ya kufundishia." },
-        { label: "1.4. Matokeo ya Kukiuka Sheria", text: "Akaunti yoyote itakayobainika kukiuka sheria itafungwa mara moja bila taarifa." }
-      ],
-      privacySummaryTitle: "🔒 Siasa ya Faragha na Ulinzi wa Data",
-      privacySummaryText: "Taarifa zako na historia ya Lesson plans zimehifadhiwa kwa usalama (Automatically Saved) na hazitatolewa kwa mtu yeyote.",
-      privacyTitle: "2. Siasa ya Faragha na Ulinzi wa Taarifa",
-      privacyItems: [
-        { label: "2.1. Taarifa Tunazohifadhi", text: "Tunahifadhi jina lako, barua pepe, namba ya simu, nchi, na historia ya Lesson plans ulizoandaa ili uzipate wakati wowote." },
-        { label: "2.2. Ulinzi wa Data", text: "Taarifa zako zote zimehifadhiwa vyema kupitia mfumo wa (Automatically Saved). Hatuuzi wala kugawana data za walimu." },
-        { label: "2.3. Haki ya Mwalimu", text: "Mwalimu ana haki ya kufuta Lesson plan yoyote katika sehemu ya History wakati wowote anapotaka." }
-      ],
-      paymentsSummaryTitle: "💳 Sheria za Malipo na Usajili wa Kifurushi",
-      paymentsSummaryText: "Malipo yote yanafanyika kwa urahisi kupitia Mobile Money (MoMo). Kumbukumbu za malipo zinahifadhiwa mara moja (Automatically Saved).",
-      paymentsTitle: "3. Malipo na Vifurushi vya Usajili",
-      paymentsItems: [
-        { label: "3.1. Idadi ya Lesson Plans na Mwisho wa Mwezi", text: "Wakati idadi ya Lesson plans za mwezi au ulizonunua inapoisha, mfumo utakuarifu kuwa zimeisha na kukuomba ununue zingine ili kuendelea." },
-        { label: "3.2. Namba Rasmi za Malipo", text: "Malipo yafanyike kupitia MTN Mobile Money: 0781339530 (NKUNDIMANA Theogene) au Airtel Money: 0724038043." },
-        { label: "3.3. Mfumo wa Kurudisha Pesa", text: "Pesa zilizolipwa na kuthibitishwa hazitarudishwa pindi akaunti inapofunguliwa au kuongezewa Lesson plans." },
-        { label: "3.4. Mfumo wa Automatically Saved", text: "Ushahidi wote wa malipo unarekodiwa na kuhifadhiwa kiotomatiki kwenye jopo la usimamizi (Admin)." }
-      ],
-      copyrightSummaryTitle: "📚 Viwango vya Elimu na Haki Miliki",
-      copyrightSummaryText: "Lesson plans zilizoandaliwa zimeundwa kutumika katika shule za serikali na za binafsi nchini Rwanda na ukanda wa Afrika Mashariki.",
-      copyrightTitle: "4. Haki Miliki na Matumizi ya Kielimu",
-      copyrightItems: [
-        { label: "4.1. Kuzingatia Mtaala wa REB CBC", text: "Lesson plans zote zinafuata mtaala wa Rwanda Basic Education Board (REB) Competence-Based Curriculum." },
-        { label: "4.2. Umiliki wa Mfumo", text: `Jukwaa la Teachers Quickly Tools na teknolojia yake ni mali ya ${OWNER_INFO.name} (Simu: 0781339530 / 0724038043).` },
-        { label: "4.3. Huduma kwa Wateja", text: "Kwa msaada zaidi au maswali, wasiliana nasi kupitia WhatsApp au Simu: 0781339530." }
-      ],
-      closeBtn: "Funga (Nimesoma na Kukubali Masharti)"
+      tabs: {
+        policy: 'Sera ya Faragha',
+        about: 'Kuhusu Sisi',
+        contact: 'Wasiliana Nasi',
+        settings: 'Mipangilio',
+        faq: 'Maswali ya Mara kwa Mara'
+      },
+      policy: {
+        title: 'SERA YA FARAGHA NA ULINZI WA DATA YA MWALIMU (2026 REB)',
+        intro: 'Nkorera Education Portal inafuata miongozo ya Wizara ya Elimu (MINEDUC) na REB kuhusu matumizi ya teknolojia mashuleni.',
+        points: [
+          'Ulinzi wa Data: Data zote za mwalimu na wanafunzi zinalindwa kwa njia salama ya kidijitali.',
+          'Haki za Mwandishi: Kila maandalio ya somo au mtihani unaotengeneza ni wako 100%.',
+          'Uhakiki wa AI: Mwalimu anatakiwa kuhakiki maudhui kabla ya kufundisha darasani.'
+        ]
+      },
+      about: {
+        title: 'KUHUSU NKORERA EDUCATION PORTAL',
+        subtitle: 'Mfumo Kamili wa Kidijitali wa Walimu Nchini Rwanda',
+        desc: 'Nkorera Education Portal ni mfumo wa kidijitali wa elimu uliotengenezwa na Mtaalamu wa IT na Mwalimu Nkundimana Theogene. Unalenga kuwasaidia walimu nchini Rwanda kuandaa masomo ya CBC, mitihani, vitabu vya REB, na ripoti za matokeo ya wanafunzi.',
+        stats: [
+          { label: 'Walimu Wanaotumia', val: '15,000+' },
+          { label: 'Masomo Yaliyotengenezwa', val: '120,000+' },
+          { label: 'Vitabu vya REB 2026', val: '100%' },
+          { label: 'Ripoti za Matokeo', val: 'Pri & Sec' }
+        ],
+        founder: 'Mwanzilishi: Nkundimana Theogene (Mtaalamu wa IT na Mwalimu)'
+      },
+      contact: {
+        title: 'WASILIANA NASI & MTIHANI WA HUDUMA 24/7',
+        phone: '+250 781 339 530 / 0781339530',
+        email: 'nkundimana123theogene@gmail.com',
+        location: 'Kigali / Bugesera, Rwanda',
+        hours: 'Huduma ya Masaa 24/7 kwa Walimu',
+        whatsappBtn: 'Anza Chati kwenye WhatsApp'
+      },
+      settings: {
+        title: 'MIPANGILIO YA MFUMO',
+        langSelect: 'Chagua Lugha ya Mfumo:',
+        autoSave: 'Hifadhi Kiotomatiki (Auto-Save):',
+        exportFormat: 'Aina ya Faili ya Kupakua:',
+        clearCache: 'Futa Kumbukumbu za Kidijitali (Cache)'
+      },
+      faq: [
+        {
+          q: 'Nkorera Education Portal inafanya kazi vipi?',
+          a: 'Inamwezesha mwalimu kuandaa somo la CBC na mitihani kwa sekunde chache na kupakua kwa PDF au Word.'
+        },
+        {
+          q: 'Je, ninaweza kutengeneza Ripoti za Matokeo (Report Cards)?',
+          a: 'Ndiyo! Mfumo wa Special Coach Report Cards unasaidia shule za Primary na Secondary.'
+        },
+        {
+          q: 'Je, ninapataje msaada haraka?',
+          a: 'Piga simu au tuma ujumbe wa WhatsApp kwa Nkundimana Theogene: +250 781 339 530.'
+        },
+        {
+          q: 'Je, data zangu ziko salama?',
+          a: 'Ndiyo! Taarifa zote zimehifadhiwa kwa usalama mkubwa katika mfumo wa cloud.'
+        }
+      ]
     }
   };
 
-  const current = content[selectedLang];
+  const curr = content[lang];
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[70] flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto animate-fade-in">
+      <div className="bg-slate-900 border-2 border-emerald-500/50 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl text-white overflow-hidden relative">
         
-        {/* Modal Header */}
-        <div className="p-4 sm:p-5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+        {/* NOTIFICATION TOAST */}
+        {showNotification && (
+          <div className="absolute top-4 right-16 z-50 bg-emerald-500 text-slate-950 px-4 py-2 rounded-xl font-black text-xs shadow-xl animate-bounce flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{showNotification}</span>
+          </div>
+        )}
+
+        {/* HEADER */}
+        <div className="p-4 sm:p-5 border-b border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between bg-slate-950/90 gap-3">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-2xl border border-emerald-500/30">
-              <ShieldCheck className="w-6 h-6" />
+            <div className="p-2.5 bg-emerald-500/20 border border-emerald-500/40 rounded-2xl">
+              <ShieldCheck className="w-6 h-6 text-emerald-400" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2">
-                {current.modalTitle}
+              <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                Nkorera Info, Policy & Settings Hub
+                <span className="bg-emerald-500 text-slate-950 font-black text-[9px] uppercase px-2 py-0.5 rounded-full">2026 REB</span>
               </h2>
-              <p className="text-[11px] sm:text-xs text-slate-300">
-                {current.subtitle}
-              </p>
+              <p className="text-xs text-slate-400">Policies, About Us, Contact, System Settings & FAQs in 4 Languages.</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-colors"
-            title="Funga (Close)"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        {/* Language Selector Bar */}
-        <div className="bg-slate-800 p-2.5 px-4 flex items-center justify-between border-b border-slate-700 flex-wrap gap-2 text-xs">
-          <div className="flex items-center gap-1.5 text-slate-300 font-bold">
-            <Globe className="w-4 h-4 text-emerald-400" />
-            <span>Select Language / Hitamo Ururimi:</span>
-          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+            {/* LANGUAGE CONTEXT SELECTOR */}
+            <div className="flex items-center gap-1 bg-slate-900 border border-slate-700/80 p-1 rounded-2xl shadow-inner">
+              <Globe className="w-3.5 h-3.5 text-emerald-400 ml-1 shrink-0" />
+              {(['rw', 'en', 'fr', 'sw'] as LanguageContextType[]).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setLang(l)}
+                  className={`px-2 py-1 rounded-xl font-black text-[10px] uppercase transition-all cursor-pointer ${
+                    lang === l 
+                      ? 'bg-emerald-500 text-slate-950 shadow-md font-extrabold' 
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  {l === 'rw' ? '🇷🇼 Kiny' : l === 'en' ? '🇬🇧 Eng' : l === 'fr' ? '🇫🇷 Fra' : '🇹🇿 Swa'}
+                </button>
+              ))}
+            </div>
 
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              onClick={() => setSelectedLang('rw')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-                selectedLang === 'rw'
-                  ? 'bg-emerald-500 text-white shadow-xs'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              }`}
-            >
-              <span>🇷🇼</span>
-              <span>Kinyarwanda</span>
-            </button>
-
-            <button
-              onClick={() => setSelectedLang('en')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-                selectedLang === 'en'
-                  ? 'bg-emerald-500 text-white shadow-xs'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              }`}
-            >
-              <span>🇬🇧</span>
-              <span>English</span>
-            </button>
-
-            <button
-              onClick={() => setSelectedLang('fr')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-                selectedLang === 'fr'
-                  ? 'bg-emerald-500 text-white shadow-xs'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              }`}
-            >
-              <span>🇫🇷</span>
-              <span>Français</span>
-            </button>
-
-            <button
-              onClick={() => setSelectedLang('sw')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-                selectedLang === 'sw'
-                  ? 'bg-emerald-500 text-white shadow-xs'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              }`}
-            >
-              <span>🇹🇿</span>
-              <span>Kiswahili</span>
+            <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer">
+              <X className="w-6 h-6" />
             </button>
           </div>
         </div>
 
-        {/* Section Navigation Tabs */}
-        <div className="flex border-b border-slate-200 bg-slate-50 p-2 gap-1 overflow-x-auto shrink-0">
+        {/* TAB NAVIGATION */}
+        <div className="flex overflow-x-auto border-b border-slate-800 bg-slate-950/60 p-2 gap-1.5 text-xs font-extrabold custom-scrollbar">
           <button
-            onClick={() => setActiveSection('terms')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
-              activeSection === 'terms'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-200'
+            onClick={() => setActiveTab('policy')}
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer ${
+              activeTab === 'policy' ? 'bg-emerald-500 text-slate-950 shadow-md font-black' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
             }`}
           >
-            <FileText className="w-4 h-4" />
-            <span>{current.tabTerms}</span>
+            <ShieldCheck className="w-4 h-4" />
+            <span>{curr.tabs.policy}</span>
           </button>
 
           <button
-            onClick={() => setActiveSection('privacy')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
-              activeSection === 'privacy'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-200'
+            onClick={() => setActiveTab('about')}
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer ${
+              activeTab === 'about' ? 'bg-emerald-500 text-slate-950 shadow-md font-black' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
             }`}
           >
-            <Lock className="w-4 h-4" />
-            <span>{current.tabPrivacy}</span>
+            <Info className="w-4 h-4" />
+            <span>{curr.tabs.about}</span>
           </button>
 
           <button
-            onClick={() => setActiveSection('payments')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
-              activeSection === 'payments'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-200'
+            onClick={() => setActiveTab('contact')}
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer ${
+              activeTab === 'contact' ? 'bg-emerald-500 text-slate-950 shadow-md font-black' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
             }`}
           >
-            <CreditCard className="w-4 h-4" />
-            <span>{current.tabPayments}</span>
+            <PhoneCall className="w-4 h-4" />
+            <span>{curr.tabs.contact}</span>
           </button>
 
           <button
-            onClick={() => setActiveSection('copyright')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
-              activeSection === 'copyright'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-200'
+            onClick={() => setActiveTab('settings')}
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer ${
+              activeTab === 'settings' ? 'bg-emerald-500 text-slate-950 shadow-md font-black' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+            }`}
+          >
+            <SettingsIcon className="w-4 h-4" />
+            <span>{curr.tabs.settings}</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('faq')}
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer ${
+              activeTab === 'faq' ? 'bg-emerald-500 text-slate-950 shadow-md font-black' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
             }`}
           >
             <HelpCircle className="w-4 h-4" />
-            <span>{current.tabCopyright}</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSection('faq')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
-              activeSection === 'faq'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            <HelpCircle className="w-4 h-4 text-amber-400" />
-            <span>{current.tabFaq || '5. FAQ'}</span>
+            <span>{curr.tabs.faq}</span>
           </button>
         </div>
 
-        {/* Content Area */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-6 text-slate-700 text-sm leading-relaxed flex-1">
-          {activeSection === 'terms' && (
-            <div className="space-y-4">
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900 text-xs">
-                <span className="font-extrabold uppercase tracking-wide block mb-1">
-                  {current.termsSummaryTitle}
-                </span>
-                {current.termsSummaryText}
+        {/* CONTENT AREA */}
+        <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1 text-xs leading-relaxed text-slate-300 custom-scrollbar">
+          
+          {/* TAB 1: PRIVACY & POLICY */}
+          {activeTab === 'policy' && (
+            <div className="space-y-4 bg-slate-950/80 p-5 rounded-2xl border border-slate-800">
+              <h3 className="text-sm sm:text-base font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                <Lock className="w-4 h-4" /> {curr.policy.title}
+              </h3>
+              <p className="text-slate-300 text-xs sm:text-sm">
+                {curr.policy.intro}
+              </p>
+              <ul className="space-y-3 pt-2">
+                {curr.policy.points.map((pt, idx) => (
+                  <li key={idx} className="flex items-start gap-2.5 bg-slate-900 p-3 rounded-xl border border-slate-800 text-xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <span>{pt}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* TAB 2: ABOUT US */}
+          {activeTab === 'about' && (
+            <div className="space-y-5">
+              <div className="bg-slate-950/80 p-5 rounded-2xl border border-emerald-500/30 space-y-3">
+                <h3 className="text-base font-black text-white">{curr.about.title}</h3>
+                <p className="text-emerald-400 text-xs font-bold">{curr.about.subtitle}</p>
+                <p className="text-slate-300 leading-relaxed text-xs sm:text-sm">{curr.about.desc}</p>
               </div>
 
-              <h3 className="text-base font-black text-slate-900 flex items-center gap-2 border-b pb-2">
-                {current.termsTitle}
-              </h3>
-
-              <div className="space-y-3 text-xs sm:text-sm">
-                {current.termsItems.map((item, idx) => (
-                  <p key={idx}>
-                    <strong>{item.label}:</strong> {item.text}
-                  </p>
+              {/* STATS GRID */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {curr.about.stats.map((st, idx) => (
+                  <div key={idx} className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-center space-y-1">
+                    <p className="text-lg font-black text-emerald-400">{st.val}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">{st.label}</p>
+                  </div>
                 ))}
               </div>
-            </div>
-          )}
 
-          {activeSection === 'privacy' && (
-            <div className="space-y-4">
-              <div className="p-4 bg-slate-100 border border-slate-300 rounded-2xl text-slate-800 text-xs">
-                <span className="font-extrabold uppercase tracking-wide block mb-1">
-                  {current.privacySummaryTitle}
-                </span>
-                {current.privacySummaryText}
-              </div>
-
-              <h3 className="text-base font-black text-slate-900 flex items-center gap-2 border-b pb-2">
-                {current.privacyTitle}
-              </h3>
-
-              <div className="space-y-3 text-xs sm:text-sm">
-                {current.privacyItems.map((item, idx) => (
-                  <p key={idx}>
-                    <strong>{item.label}:</strong> {item.text}
-                  </p>
-                ))}
+              <div className="p-4 bg-slate-950 rounded-2xl border border-amber-500/30 text-amber-300 font-bold text-xs flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>{curr.about.founder}</span>
               </div>
             </div>
           )}
 
-          {activeSection === 'payments' && (
-            <div className="space-y-4">
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900 text-xs">
-                <span className="font-extrabold uppercase tracking-wide block mb-1">
-                  {current.paymentsSummaryTitle}
-                </span>
-                {current.paymentsSummaryText}
-              </div>
+          {/* TAB 3: CONTACT US */}
+          {activeTab === 'contact' && (
+            <div className="space-y-5">
+              <div className="bg-slate-950/80 p-5 rounded-2xl border border-emerald-500/40 space-y-4">
+                <h3 className="text-sm font-black text-emerald-400 uppercase tracking-wider">
+                  {curr.contact.title}
+                </h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <a
+                    href="https://wa.me/250781339530"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-4 bg-slate-900 border border-emerald-500/30 hover:border-emerald-400 rounded-2xl flex items-center justify-between group transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-xl group-hover:scale-110 transition-transform">
+                        <MessageSquare className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-white">{curr.contact.whatsappBtn}</p>
+                        <p className="text-[11px] text-emerald-400 font-mono font-bold">{curr.contact.phone}</p>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-emerald-400" />
+                  </a>
 
-              <h3 className="text-base font-black text-slate-900 flex items-center gap-2 border-b pb-2">
-                {current.paymentsTitle}
-              </h3>
-
-              <div className="space-y-3 text-xs sm:text-sm">
-                {current.paymentsItems.map((item, idx) => (
-                  <p key={idx}>
-                    <strong>{item.label}:</strong> {item.text}
-                  </p>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeSection === 'copyright' && (
-            <div className="space-y-4">
-              <div className="p-4 bg-slate-100 border border-slate-300 rounded-2xl text-slate-800 text-xs">
-                <span className="font-extrabold uppercase tracking-wide block mb-1">
-                  {current.copyrightSummaryTitle}
-                </span>
-                {current.copyrightSummaryText}
-              </div>
-
-              <h3 className="text-base font-black text-slate-900 flex items-center gap-2 border-b pb-2">
-                {current.copyrightTitle}
-              </h3>
-
-              <div className="space-y-3 text-xs sm:text-sm">
-                {current.copyrightItems.map((item, idx) => (
-                  <p key={idx}>
-                    <strong>{item.label}:</strong> {item.text}
-                  </p>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeSection === 'faq' && (
-            <div className="space-y-4">
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-950 text-xs">
-                <span className="font-extrabold uppercase tracking-wide block mb-1">
-                  ❓ Frequently Asked Questions (FAQ)
-                </span>
-                Common questions about Teacher Tool, subscriptions, features, and generating lesson plans.
-              </div>
-
-              <h3 className="text-base font-black text-slate-900 flex items-center gap-2 border-b pb-2">
-                5. Frequently Asked Questions (FAQ)
-              </h3>
-
-              <div className="space-y-4 text-xs sm:text-sm">
-                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
-                  <h4 className="font-black text-slate-900">Q1. How does the platform help teachers prepare lesson plans?</h4>
-                  <p className="text-slate-700">A: Enter the subject, grade level, unit topic, and lesson objective. The AI engine automatically generates a full CBC REB-compliant lesson plan in seconds.</p>
+                  <a
+                    href="mailto:nkundimana123theogene@gmail.com"
+                    className="p-4 bg-slate-900 border border-blue-500/30 hover:border-blue-400 rounded-2xl flex items-center justify-between group transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-blue-500/20 text-blue-400 rounded-xl group-hover:scale-110 transition-transform">
+                        <Mail className="w-5 h-5" />
+                      </div>
+                      <div className="truncate">
+                        <p className="text-xs font-black text-white">Email Official Support</p>
+                        <p className="text-[10px] text-blue-400 font-mono font-bold truncate">{curr.contact.email}</p>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-blue-400 shrink-0" />
+                  </a>
                 </div>
 
-                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
-                  <h4 className="font-black text-slate-900">Q2. How do I purchase or renew a subscription?</h4>
-                  <p className="text-slate-700">A: Go to the **Subscription** tab in the top navigation, view the MoMo payment options (MTN: 0781339530 / NKUNDIMANA Theogene), submit your payment code, and your quota updates automatically.</p>
-                </div>
-
-                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
-                  <h4 className="font-black text-slate-900">Q3. Can I save, download, or print my lesson plans?</h4>
-                  <p className="text-slate-700">A: Yes! You can download your lesson plans as Word (.docx), PDF, or print them directly. All plans are also saved in your **Saved Plans** history.</p>
-                </div>
-
-                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
-                  <h4 className="font-black text-slate-900">Q4. Who can I contact if I need support?</h4>
-                  <p className="text-slate-700">A: You can reach the Developer **NKUNDIMANA Theogene** on WhatsApp: **0781339530** or use our built-in AI Support Assistant.</p>
-                </div>
-
-                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
-                  <h4 className="font-black text-slate-900">Q5. What technology stack powers this platform?</h4>
-                  <p className="text-slate-700">A: Built using a modern full-stack architecture: <strong>Frontend</strong> (React, TypeScript, Tailwind CSS), <strong>Backend</strong> (Node.js & Express API), <strong>Database</strong> (Firestore / Cloud persistence), and advanced <strong>AI Engines</strong> for educational content generation.</p>
+                <div className="space-y-1.5 text-xs text-slate-300 pt-2 border-t border-slate-800">
+                  <p><strong>IT Specialist & Founder:</strong> Nkundimana Theogene</p>
+                  <p><strong>Location:</strong> {curr.contact.location}</p>
+                  <p><strong>Support Desk:</strong> {curr.contact.hours}</p>
                 </div>
               </div>
             </div>
           )}
+
+          {/* TAB 4: SETTINGS */}
+          {activeTab === 'settings' && (
+            <div className="space-y-5">
+              <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 space-y-4">
+                <h3 className="text-sm font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                  <SettingsIcon className="w-4 h-4" /> {curr.settings.title}
+                </h3>
+
+                {/* LANGUAGE SELECTION */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3.5 bg-slate-900 rounded-2xl border border-slate-800">
+                  <div>
+                    <p className="font-extrabold text-white text-xs">{curr.settings.langSelect}</p>
+                    <p className="text-[10px] text-slate-400">Context adaptation across the entire portal</p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {[
+                      { code: 'rw', label: 'Kinyarwanda' },
+                      { code: 'en', label: 'English' },
+                      { code: 'fr', label: 'Français' },
+                      { code: 'sw', label: 'Kiswahili' }
+                    ].map((item) => (
+                      <button
+                        key={item.code}
+                        onClick={() => {
+                          setLang(item.code as LanguageContextType);
+                          triggerNotify(`Language changed to ${item.label}!`);
+                        }}
+                        className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all cursor-pointer ${
+                          lang === item.code 
+                            ? 'bg-emerald-500 text-slate-950 shadow-md font-bold' 
+                            : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* AUTO-SAVE TOGGLE */}
+                <div className="flex items-center justify-between p-3.5 bg-slate-900 rounded-2xl border border-slate-800">
+                  <div>
+                    <p className="font-extrabold text-white text-xs">{curr.settings.autoSave}</p>
+                    <p className="text-[10px] text-slate-400">Automatically save draft plans to local cache</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setAutoSave(!autoSave);
+                      triggerNotify(`Auto-save ${!autoSave ? 'Enabled' : 'Disabled'}`);
+                    }}
+                    className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${autoSave ? 'bg-emerald-500' : 'bg-slate-700'}`}
+                  >
+                    <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${autoSave ? 'right-0.5' : 'left-0.5'}`} />
+                  </button>
+                </div>
+
+                {/* EXPORT FORMAT SELECTOR */}
+                <div className="flex items-center justify-between p-3.5 bg-slate-900 rounded-2xl border border-slate-800">
+                  <div>
+                    <p className="font-extrabold text-white text-xs">{curr.settings.exportFormat}</p>
+                    <p className="text-[10px] text-slate-400">Primary format when downloading Lesson Plans</p>
+                  </div>
+                  <select
+                    value={exportFormat}
+                    onChange={(e) => {
+                      setExportFormat(e.target.value);
+                      triggerNotify(`Default export set to ${e.target.value}`);
+                    }}
+                    className="bg-slate-950 text-white font-bold text-xs px-3 py-1.5 rounded-xl border border-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer"
+                  >
+                    <option value="PDF">PDF Document (.pdf)</option>
+                    <option value="WORD">Microsoft Word (.docx)</option>
+                    <option value="PRINT">Direct Print</option>
+                  </select>
+                </div>
+
+                {/* CLEAR CACHE BUTTON */}
+                <div className="p-3.5 bg-slate-900 rounded-2xl border border-slate-800 flex items-center justify-between">
+                  <div>
+                    <p className="font-extrabold text-white text-xs">{curr.settings.clearCache}</p>
+                    <p className="text-[10px] text-slate-400">Reset local cached offline files</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      localStorage.clear();
+                      triggerNotify('Local cache cleared successfully!');
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Clear Cache</span>
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: FAQ */}
+          {activeTab === 'faq' && (
+            <div className="space-y-3">
+              {curr.faq.map((item, idx) => (
+                <div key={idx} className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+                  <button
+                    onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                    className="w-full p-4 text-left font-extrabold text-white flex items-center justify-between gap-3 hover:bg-slate-900 cursor-pointer transition-colors"
+                  >
+                    <span className="text-xs sm:text-sm">{idx + 1}. {item.q}</span>
+                    {openFaq === idx ? <ChevronUp className="w-4 h-4 text-emerald-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />}
+                  </button>
+                  {openFaq === idx && (
+                    <div className="p-4 pt-1 text-slate-300 bg-slate-900/60 border-t border-slate-800/80 text-xs sm:text-sm leading-relaxed">
+                      {item.a}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
         </div>
 
-        {/* Modal Footer */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>Multilingual Terms (2026 REB CBC)</span>
-          </div>
-
+        {/* FOOTER */}
+        <div className="p-4 border-t border-slate-800 bg-slate-950 flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] text-slate-400">
+          <span>Nkorera Education Portal 2026 • Created by IT Specialist Nkundimana Theogene</span>
           <button
             onClick={onClose}
-            className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors ml-auto"
+            className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white shadow-md transition-all active:scale-95 cursor-pointer"
           >
-            {current.closeBtn}
+            <X className="w-4 h-4" />
+            <span>Close</span>
           </button>
         </div>
 
       </div>
     </div>
   );
-}
+};
